@@ -16,7 +16,10 @@ struct PopupView: View {
         }
         .padding(18)
         .frame(width: 460)
-        .background(GlassSheet(cornerRadius: 26))
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
         .compositingGroup()
         .shadow(color: .black.opacity(0.25), radius: 24, y: 10)
         .padding(30) // room for the soft shadow inside the borderless panel
@@ -118,14 +121,10 @@ struct PopupView: View {
     }
 
     /// Recessed rounded well the result text sits in, so it reads as a
-    /// layer beneath the glass.
+    /// layer beneath the sheet. No stroke - contrast alone separates it.
     private var inset: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
             .fill(.background.opacity(0.35))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(.separator.opacity(0.5), lineWidth: 0.5)
-            )
     }
 
     // MARK: - Steering
@@ -145,13 +144,15 @@ struct PopupView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Capsule().fill(.background.opacity(0.35)))
-        .overlay(
-            Capsule().strokeBorder(
-                steeringFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.separator.opacity(0.5)),
-                lineWidth: steeringFocused ? 1.5 : 0.5
-            )
+        .background(
+            Capsule().fill(.background.opacity(steeringFocused ? 0.55 : 0.35))
         )
+        .overlay {
+            // Focus feedback only - no resting outline.
+            if steeringFocused {
+                Capsule().strokeBorder(.tint, lineWidth: 1.5)
+            }
+        }
         .animation(.easeOut(duration: 0.15), value: steeringFocused)
         .disabled(session.original.isEmpty)
     }
@@ -187,36 +188,6 @@ struct PopupView: View {
 }
 
 // MARK: - Glass helpers
-
-/// The popup's backdrop: Liquid Glass on macOS 26+, layered
-/// ultra-thin material with a gradient rim on macOS 14/15.
-struct GlassSheet: View {
-    var cornerRadius: CGFloat
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        if #available(macOS 26.0, *) {
-            Color.clear.glassEffect(.regular, in: shape)
-        } else {
-            shape
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    shape.strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                .white.opacity(0.55),
-                                .white.opacity(0.08),
-                                .white.opacity(0.25)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-                )
-        }
-    }
-}
 
 extension View {
     /// Glass button styles on macOS 26+, bordered fallbacks below.
