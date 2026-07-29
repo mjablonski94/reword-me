@@ -188,8 +188,13 @@ the provider's `retry-after` hint when present.
   console (linked from the Provider tab), not in the chat apps themselves.
 - **"Rate limit reached"** - the provider throttled the key; the popup shows the retry hint.
   Consider a cheaper model tier (Automatic already picks the cheapest).
-- **Accessibility grant disappears after rebuilding from source** - expected with ad-hoc signing;
-  re-grant once.
+- **The hotkey keeps asking for Accessibility even though it looks enabled** - the System
+  Settings entry belongs to a previous build: every rebuild from source gets a fresh ad-hoc
+  signature, and macOS treats it as a new app while still showing the old, now-meaningless
+  entry as ON. Remove RewordMe from the Accessibility list with the minus button and add the
+  current app again. `./build.sh` now resets the stale grant automatically
+  (`tccutil reset Accessibility com.mjablonski.rewordme`), so after a rebuild the list shows
+  the truth: not granted yet.
 - **macOS asks for my password to access the Keychain** - that is the Keychain protecting your
   stored API key: the prompt comes from macOS, and the key never leaves your Mac. Choose
   "Always Allow" and it will not ask again. Builds from source are re-signed on every rebuild,

@@ -28,7 +28,13 @@ if [ -n "$IDENTITY" ] && codesign --force --sign "$IDENTITY" "$APP" 2>/dev/null;
     codesign --verify --strict "$APP" && echo "Signature verified."
 else
     codesign --force --sign - "$APP" >/dev/null 2>&1 || true
-    echo "Ad-hoc signed (re-grant Accessibility after rebuilds; a Developer ID build keeps it)."
+    # The fresh ad-hoc signature invalidates any previous Accessibility
+    # grant, but System Settings would keep showing the stale entry as
+    # enabled. Dropping it keeps the UI truthful: the app prompts again
+    # and the new grant actually matches this binary.
+    tccutil reset Accessibility com.mjablonski.rewordme >/dev/null 2>&1 || true
+    echo "Ad-hoc signed. Accessibility grant was reset - grant it again on next launch"
+    echo "(a Developer ID build keeps the grant across rebuilds)."
 fi
 
 echo "Built ./$APP"

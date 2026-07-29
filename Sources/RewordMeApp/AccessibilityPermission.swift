@@ -28,6 +28,10 @@ enum AccessibilityPermission {
         Grant it in System Settings > Privacy & Security > Accessibility by \
         turning on RewordMe.
 
+        Already enabled in the list? Then macOS is remembering a previous \
+        build of RewordMe - remove the entry with the minus button and add \
+        the current app again.
+
         Prefer not to? You can still right-click selected text and use \
         Services > Reword with RewordMe - that path needs no permission.
         """
