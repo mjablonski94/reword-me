@@ -38,12 +38,8 @@ the least costly model your provider offers.
 ## Features
 
 - **Menu-bar only** (no Dock icon). Works over any app: Mail, Slack, browsers, editors.
-- **Global hotkey**: select text anywhere, press **Option+Command+R**, the popup appears at the
-  selection.
-- **Auto-popup by default**: select text with the mouse and, once the selection has survived
-  unchanged for a second, the popup fades in PopClip-style. Whitespace, punctuation runs and
-  other selection noise never trigger it. Prefer it quieter? Switch the trigger in
-  Settings > General to hotkey-only.
+- **Global hotkey, fully editable**: select text anywhere and press **Option+Command+R** (the
+  default) - or record any combination you like in Settings > General.
 - **Services menu**: right-click selected text > Services > *Reword with RewordMe* - this path
   needs no Accessibility permission at all.
 - **Writing-Tools-style popup**: a menu-first panel beside the selection - a "describe your
@@ -135,8 +131,8 @@ Settings live in three tabs:
   Gemini Flash-Lite - preferring stable releases over previews. Pick an explicit model any time;
   **Load Models** shows everything your key can access.
 - **Rewriting** - the do/don't rules list (each rule toggleable) and the freeform base prompt.
-- **General** - the trigger (hotkey, or automatic on every mouse text selection), launch at
-  login, Accessibility status.
+- **General** - the shortcut (click it, press a new combination; Esc cancels; it must include
+  Command, Option or Control), launch at login, Accessibility status.
 
 Non-secret settings are stored as JSON at
 `~/Library/Application Support/RewordMe/config.json`. API keys are stored only in the login

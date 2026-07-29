@@ -7,7 +7,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let hotkeyManager = HotkeyManager()
     private let popupController = PopupController()
-    private let selectionWatcher = SelectionWatcher()
     private var servicesProvider: ServicesProvider!
     private var settingsWindowController: SettingsWindowController?
 
@@ -15,7 +14,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMainMenu()
         setupStatusItem()
         setupHotkey()
-        setupSelectionWatcher()
         setupServicesProvider()
         // Deliberately no Accessibility prompt here: the grant is explained
         // and requested from the tray menu or on the first hotkey press.
@@ -90,12 +88,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(.separator())
         }
 
+        let hotkey = ConfigStore().load().hotkey
         let rewordItem = NSMenuItem(
             title: "Reword Selection",
             action: #selector(rewordSelection),
-            keyEquivalent: "r"
+            keyEquivalent: hotkey.character
         )
-        rewordItem.keyEquivalentModifierMask = [.command, .option]
+        rewordItem.keyEquivalentModifierMask = hotkey.cocoaModifiers
         rewordItem.target = self
         menu.addItem(rewordItem)
         menu.addItem(.separator())
@@ -139,40 +138,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.onHotkey = { [weak self] in
             self?.rewordSelection()
         }
-        hotkeyManager.register()
-    }
-
-    private func setupSelectionWatcher() {
-        selectionWatcher.onSelection = { [weak self] text, bounds in
-            self?.popupController.present(text: text, near: bounds)
-        }
-        applyTriggerMode()
+        applyHotkey()
         NotificationCenter.default.addObserver(
             forName: .rewordConfigChanged,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.applyTriggerMode()
-            }
-        }
-        // Picks the watcher up once Accessibility gets granted while the
-        // selection mode is already chosen.
-        Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.applyTriggerMode()
+                self?.applyHotkey()
             }
         }
     }
 
-    private func applyTriggerMode() {
-        let config = ConfigStore().load()
-        let shouldWatch = config.triggerMode == .selection && AccessibilityPermission.isTrusted
-        if shouldWatch, !selectionWatcher.isRunning {
-            selectionWatcher.start()
-        } else if !shouldWatch, selectionWatcher.isRunning {
-            selectionWatcher.stop()
-        }
+    private func applyHotkey() {
+        hotkeyManager.apply(ConfigStore().load().hotkey)
     }
 
     private func setupServicesProvider() {

@@ -12,7 +12,12 @@ final class ConfigTests: XCTestCase {
             ],
             basePrompt: "Keep my voice.",
             ollamaHost: "http://192.168.1.20:11434",
-            triggerMode: .hotkey
+            hotkey: HotkeyConfig(
+                keyCode: 17,
+                carbonModifiers: HotkeyConfig.carbonCommand | HotkeyConfig.carbonShift,
+                character: "t",
+                display: "⇧⌘T"
+            )
         )
         let data = try JSONEncoder().encode(config)
         let decoded = try JSONDecoder().decode(RewordConfig.self, from: data)
@@ -24,7 +29,13 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(decoded, .default)
         XCTAssertEqual(decoded.provider, .anthropic)
         XCTAssertNil(decoded.model)
-        XCTAssertEqual(decoded.triggerMode, .selection, "auto-popup is the default trigger")
+        XCTAssertEqual(decoded.hotkey, .default)
+        XCTAssertEqual(decoded.hotkey.display, "⌥⌘R")
+        XCTAssertEqual(decoded.hotkey.keyCode, 15, "R key")
+        XCTAssertEqual(
+            decoded.hotkey.carbonModifiers,
+            HotkeyConfig.carbonCommand | HotkeyConfig.carbonOption
+        )
     }
 
     func testEveryProviderHasAnAPIKeyConsoleLink() {

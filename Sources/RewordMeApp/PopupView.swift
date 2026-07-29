@@ -91,7 +91,7 @@ struct PopupView: View {
             Image(systemName: "cursorarrow.and.square.on.square.dashed")
                 .font(.system(size: 22))
                 .foregroundStyle(.secondary)
-            Text("No text selected. Select some text, then press Option+Command+R.")
+            Text("No text selected. Select some text, then press \(ConfigStore().load().hotkey.display).")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

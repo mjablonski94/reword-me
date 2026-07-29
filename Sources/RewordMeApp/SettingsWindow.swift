@@ -192,23 +192,36 @@ struct RewritingSettingsView: View {
 
 struct GeneralSettingsView: View {
     @ObservedObject var model: SettingsModel
+    @StateObject private var recorder = HotkeyRecorder()
     @State private var accessibilityTrusted = AccessibilityPermission.isTrusted
 
     private let timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var body: some View {
         Form {
-            Section("Trigger") {
-                Picker("Show the popup", selection: $model.config.triggerMode) {
-                    Text("Automatically on text selection").tag(TriggerMode.selection)
-                    Text("Only when pressing Option+Command+R").tag(TriggerMode.hotkey)
+            Section("Shortcut") {
+                HStack {
+                    Text("Reword selection")
+                    Spacer()
+                    Button {
+                        if recorder.isRecording {
+                            recorder.cancel()
+                        } else {
+                            recorder.begin { hotkey in
+                                model.config.hotkey = hotkey
+                            }
+                        }
+                    } label: {
+                        Text(recorder.isRecording ? "Press keys..." : model.config.hotkey.display)
+                            .font(.body.monospaced())
+                            .frame(minWidth: 110)
+                    }
                 }
-                .pickerStyle(.radioGroup)
-                if model.config.triggerMode == .selection {
-                    Text("The popup appears whenever you finish selecting text with the mouse, in any app. Needs Accessibility access.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(recorder.isRecording
+                    ? "Press the new combination now - it needs Command, Option or Control. Esc cancels."
+                    : "Click the shortcut to change it.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Text("Also available from the Services menu: right-click selected text, then Services > Reword with RewordMe.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
