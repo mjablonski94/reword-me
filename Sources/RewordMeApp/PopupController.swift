@@ -29,13 +29,15 @@ final class PopupController {
         let hosting = NSHostingController(rootView: view)
 
         let panel = RewordPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 260),
-            styleMask: [.nonactivatingPanel, .titled, .closable, .fullSizeContentView],
+            contentRect: NSRect(x: 0, y: 0, width: 460, height: 280),
+            styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        panel.titleVisibility = .hidden
-        panel.titlebarAppearsTransparent = true
+        // The glass sheet draws its own shape; the panel itself is invisible.
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -43,11 +45,17 @@ final class PopupController {
         panel.becomesKeyOnlyIfNeeded = false
         panel.isMovableByWindowBackground = true
         panel.isReleasedWhenClosed = false
+        hosting.view.wantsLayer = true
         panel.contentViewController = hosting
         self.panel = panel
 
         position(panel, near: bounds)
+        panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.18
+            panel.animator().alphaValue = 1
+        }
 
         session.generate()
     }

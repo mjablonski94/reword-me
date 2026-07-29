@@ -37,6 +37,8 @@ the least costly model your provider offers.
   needs no Accessibility permission at all.
 - **Floating, non-activating popup**: shows the rewrite without stealing focus from the app you
   are writing in, so your selection stays alive underneath.
+- **Glass UI**: the popup is a borderless Liquid Glass sheet on macOS 26 (Tahoe) with glass
+  buttons, falling back to an ultra-thin material with a gradient rim on macOS 14/15.
 - **Regenerate and steer**: not happy with the result? Type a one-shot instruction like
   *"make it more formal"* and regenerate. Steering applies to that generation only.
 - **Replace in place** (via Accessibility, with a clipboard-paste fallback) or **Copy**.

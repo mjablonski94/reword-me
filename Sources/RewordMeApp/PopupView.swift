@@ -3,24 +3,41 @@ import SwiftUI
 
 struct PopupView: View {
     @ObservedObject var session: RewordSession
+    @FocusState private var steeringFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             header
             content
+                .animation(.spring(duration: 0.35), value: session.isLoading)
+                .animation(.spring(duration: 0.35), value: session.result)
             steeringField
             actions
         }
-        .padding(14)
-        .frame(width: 440)
-        .background(.regularMaterial)
+        .padding(18)
+        .frame(width: 460)
+        .background(GlassSheet(cornerRadius: 26))
+        .compositingGroup()
+        .shadow(color: .black.opacity(0.25), radius: 24, y: 10)
+        .padding(30) // room for the soft shadow inside the borderless panel
     }
 
+    // MARK: - Header
+
     private var header: some View {
-        HStack {
-            Label("RewordMe", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            Image(systemName: "wand.and.sparkles")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.purple, .indigo, .blue],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .symbolEffect(.pulse, isActive: session.isLoading)
+            Text("RewordMe")
+                .font(.headline)
             Spacer()
             if !session.modelLabel.isEmpty {
                 Text(session.modelLabel)
@@ -28,60 +45,127 @@ struct PopupView: View {
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
+            Button {
+                session.onClose?()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .background(.quaternary.opacity(0.5), in: Circle())
+            }
+            .buttonStyle(.plain)
         }
     }
+
+    // MARK: - Content
 
     @ViewBuilder
     private var content: some View {
         if session.original.isEmpty {
-            Text("No text selected. Select some text, then press Option+Command+R.")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, minHeight: 60, alignment: .center)
+            hintCard(
+                icon: "cursorarrow.and.square.on.square.dashed",
+                text: "No text selected. Select some text, then press Option+Command+R."
+            )
         } else if session.isLoading {
-            HStack(spacing: 8) {
+            VStack(spacing: 10) {
                 ProgressView()
                     .controlSize(.small)
                 Text("Rewording...")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, minHeight: 100, alignment: .center)
+            .frame(maxWidth: .infinity, minHeight: 110)
+            .transition(.opacity)
         } else if let error = session.errorMessage {
             VStack(alignment: .leading, spacing: 6) {
-                Label("Something went wrong", systemImage: "exclamationmark.triangle")
+                Label("Something went wrong", systemImage: "exclamationmark.triangle.fill")
                     .font(.callout.weight(.semibold))
+                    .foregroundStyle(.orange)
                 Text(error)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
-            .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 90, alignment: .topLeading)
+            .background(inset)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
         } else {
             ScrollView {
                 Text(session.result)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
             }
-            .frame(minHeight: 80, maxHeight: 220)
+            .frame(minHeight: 90, maxHeight: 230)
+            .background(inset)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }
 
+    private func hintCard(icon: String, text: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 26))
+                .foregroundStyle(.secondary)
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 110)
+    }
+
+    /// Recessed rounded well the result text sits in, so it reads as a
+    /// layer beneath the glass.
+    private var inset: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(.background.opacity(0.35))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(.separator.opacity(0.5), lineWidth: 0.5)
+            )
+    }
+
+    // MARK: - Steering
+
     private var steeringField: some View {
-        TextField(
-            "Steer the next generation, e.g. \"more formal\"",
-            text: $session.steering
+        HStack(spacing: 6) {
+            Image(systemName: "slider.horizontal.3")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField(
+                "Steer the next generation, e.g. \"more formal\"",
+                text: $session.steering
+            )
+            .textFieldStyle(.plain)
+            .focused($steeringFocused)
+            .onSubmit { session.generate() }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(.background.opacity(0.35)))
+        .overlay(
+            Capsule().strokeBorder(
+                steeringFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.separator.opacity(0.5)),
+                lineWidth: steeringFocused ? 1.5 : 0.5
+            )
         )
-        .textFieldStyle(.roundedBorder)
-        .onSubmit { session.generate() }
+        .animation(.easeOut(duration: 0.15), value: steeringFocused)
         .disabled(session.original.isEmpty)
     }
 
+    // MARK: - Actions
+
     private var actions: some View {
-        HStack {
+        HStack(spacing: 8) {
             Button {
                 session.generate()
             } label: {
                 Label("Regenerate", systemImage: "arrow.clockwise")
             }
+            .glassButtonStyle()
             .disabled(session.isLoading || session.original.isEmpty)
 
             Spacer()
@@ -89,13 +173,67 @@ struct PopupView: View {
             Button("Copy") {
                 session.copyResult()
             }
+            .glassButtonStyle()
             .disabled(session.result.isEmpty || session.isLoading)
 
             Button("Replace") {
                 session.replaceSelection()
             }
+            .glassButtonStyle(prominent: true)
             .keyboardShortcut(.defaultAction)
             .disabled(session.result.isEmpty || session.isLoading)
+        }
+    }
+}
+
+// MARK: - Glass helpers
+
+/// The popup's backdrop: Liquid Glass on macOS 26+, layered
+/// ultra-thin material with a gradient rim on macOS 14/15.
+struct GlassSheet: View {
+    var cornerRadius: CGFloat
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if #available(macOS 26.0, *) {
+            Color.clear.glassEffect(.regular, in: shape)
+        } else {
+            shape
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    shape.strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.55),
+                                .white.opacity(0.08),
+                                .white.opacity(0.25)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+                )
+        }
+    }
+}
+
+extension View {
+    /// Glass button styles on macOS 26+, bordered fallbacks below.
+    @ViewBuilder
+    func glassButtonStyle(prominent: Bool = false) -> some View {
+        if #available(macOS 26.0, *) {
+            if prominent {
+                buttonStyle(.glassProminent)
+            } else {
+                buttonStyle(.glass)
+            }
+        } else {
+            if prominent {
+                buttonStyle(.borderedProminent)
+            } else {
+                buttonStyle(.bordered)
+            }
         }
     }
 }
