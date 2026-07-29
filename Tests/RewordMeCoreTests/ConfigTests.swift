@@ -24,6 +24,13 @@ final class ConfigTests: XCTestCase {
         XCTAssertNil(decoded.model)
     }
 
+    func testEveryProviderHasAnAPIKeyConsoleLink() {
+        for provider in ProviderKind.allCases {
+            XCTAssertEqual(provider.apiKeyConsoleURL.scheme, "https")
+            XCTAssertFalse(provider.apiKeyConsoleName.isEmpty)
+        }
+    }
+
     func testStoreSaveAndLoad() throws {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("rewordme-tests-\(UUID().uuidString)")

@@ -62,12 +62,17 @@ struct ProviderSettingsView: View {
             Section("API key") {
                 SecureField(model.config.provider.keyPlaceholder, text: $model.apiKey)
                 HStack {
-                    Text("Stored in your login Keychain, never in plain files.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Link(
+                        "Get an API key at \(model.config.provider.apiKeyConsoleName)",
+                        destination: model.config.provider.apiKeyConsoleURL
+                    )
+                    .font(.caption)
                     Spacer()
                     Button("Save Key") { model.saveAPIKey() }
                 }
+                Text("Stored in your login Keychain, never in plain files.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Model") {

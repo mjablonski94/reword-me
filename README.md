@@ -92,7 +92,10 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
 ## Usage
 
 1. Open **Settings** from the menu-bar icon, pick a provider and paste its API key, then
-   **Save Key**.
+   **Save Key**. The Provider tab links straight to the right console:
+   - Claude: https://platform.claude.com/settings/keys
+   - OpenAI: https://platform.openai.com/api-keys
+   - Gemini: https://aistudio.google.com/apikey (free tier available)
 2. Select text in any app.
 3. Press **Option+Command+R** (or right-click > Services > *Reword with RewordMe*).
 4. In the popup: **Regenerate** for another take, type a steering line and press Return to guide
@@ -169,7 +172,8 @@ the provider's `retry-after` hint when present.
   the Cmd+C fallback. Check that Accessibility is granted; the Services-menu path always works.
 - **Replace does nothing** - some apps accept neither AX writes nor synthetic Cmd+V. Use Copy.
 - **"The API key was rejected"** - re-paste the key in Settings and Save Key. Gemini keys start
-  with `AIza`, Anthropic with `sk-ant-`, OpenAI with `sk-`.
+  with `AIza`, Anthropic with `sk-ant-`, OpenAI with `sk-`. Keys are created in each provider's
+  console (linked from the Provider tab), not in the chat apps themselves.
 - **"Rate limit reached"** - the provider throttled the key; the popup shows the retry hint.
   Consider a cheaper model tier (Automatic already picks the cheapest).
 - **Accessibility grant disappears after rebuilding from source** - expected with ad-hoc signing;

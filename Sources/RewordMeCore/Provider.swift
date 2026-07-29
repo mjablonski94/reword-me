@@ -23,6 +23,23 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .gemini: return "AIza..."
         }
     }
+
+    /// Where the user creates an API key for this provider.
+    public var apiKeyConsoleURL: URL {
+        switch self {
+        case .anthropic: return URL(string: "https://platform.claude.com/settings/keys")!
+        case .openai: return URL(string: "https://platform.openai.com/api-keys")!
+        case .gemini: return URL(string: "https://aistudio.google.com/apikey")!
+        }
+    }
+
+    public var apiKeyConsoleName: String {
+        switch self {
+        case .anthropic: return "platform.claude.com"
+        case .openai: return "platform.openai.com"
+        case .gemini: return "aistudio.google.com"
+        }
+    }
 }
 
 /// A model as reported by the provider's model-listing endpoint.
