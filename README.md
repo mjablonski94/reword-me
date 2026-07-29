@@ -1,5 +1,10 @@
 # RewordMe
 
+![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
+![Swift](https://img.shields.io/badge/Swift-6-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-%E2%98%95-yellow)](https://buymeacoffee.com/kofcio94f)
+
 A tiny macOS menu-bar app that rewrites your selected text with an LLM. Select text in any app,
 press **Option+Command+R**, and a floating popup appears with a reworded version - regenerate it,
 steer the next generation ("more formal"), copy it, or replace the selection in place. Bring your
@@ -22,8 +27,10 @@ the least costly model your provider offers.
 - [Configuration](#configuration)
 - [Architecture](#architecture)
 - [Development](#development)
+- [Distribution](#distribution)
 - [Troubleshooting](#troubleshooting)
 - [Privacy](#privacy)
+- [Support](#support)
 - [License](#license)
 
 ---
@@ -184,6 +191,23 @@ swift test           # unit tests (RewordMeCore)
 Rate limits (HTTP 429) and invalid keys are surfaced as readable messages in the popup, including
 the provider's `retry-after` hint when present.
 
+The app icon is generated from code: `swift make-icon.swift && iconutil -c icns AppIcon.iconset
+-o AppIcon.icns`.
+
+## Distribution
+
+```bash
+./make-dmg.sh        # drag-to-install DMG from the current build (ad-hoc, for testing)
+./dist.sh            # Developer ID signed + notarized + stapled release DMG
+```
+
+`dist.sh` needs an Apple Developer Program membership:
+
+```bash
+export DEVELOPER_ID="Developer ID Application: Your Name (TEAMID)"
+export NOTARY_PROFILE="your-notarytool-keychain-profile"
+```
+
 ## Troubleshooting
 
 - **The popup says "No text selected"** - the frontmost app exposes no AX selection and blocked
@@ -216,7 +240,13 @@ the provider's `retry-after` hint when present.
 - The clipboard is used only as a fallback and is restored to its previous contents immediately.
 - Nothing else leaves your machine.
 
-If RewordMe saves you time, you can [buy me a coffee](https://buymeacoffee.com/kofcio94f).
+## Support
+
+RewordMe is free and MIT-licensed. If it saves you time, you can
+[buy me a coffee](https://buymeacoffee.com/kofcio94f) - also reachable from the menu-bar menu
+and Settings > General.
+
+Bugs and ideas: [open an issue](https://github.com/mjablonski94/reword-me/issues).
 
 ## License
 

@@ -107,11 +107,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsItem.target = self
         menu.addItem(settingsItem)
         menu.addItem(.separator())
+        let coffeeItem = NSMenuItem(
+            title: "Buy Me a Coffee",
+            action: #selector(openBuyMeACoffee),
+            keyEquivalent: ""
+        )
+        coffeeItem.image = NSImage(
+            systemSymbolName: "cup.and.saucer.fill",
+            accessibilityDescription: "Buy Me a Coffee"
+        )
+        coffeeItem.target = self
+        menu.addItem(coffeeItem)
         menu.addItem(NSMenuItem(
             title: "Quit RewordMe",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
+    }
+
+    @objc private func openBuyMeACoffee() {
+        NSWorkspace.shared.open(URL(string: "https://buymeacoffee.com/kofcio94f")!)
     }
 
     @objc private func showAccessibilityOnboarding() {
