@@ -13,15 +13,20 @@ public struct RewordService: Sendable {
         let key = try validated(apiKey)
         let request: URLRequest
         switch provider {
-        case .anthropic: request = AnthropicAPI.modelsRequest(apiKey: key)
-        case .openai: request = OpenAIAPI.modelsRequest(apiKey: key)
-        case .gemini: request = GeminiAPI.modelsRequest(apiKey: key)
+        case .anthropic:
+            request = AnthropicAPI.modelsRequest(apiKey: key)
+        case .gemini:
+            request = GeminiAPI.modelsRequest(apiKey: key)
+        default:
+            request = OpenAICompatibleAPI.modelsRequest(
+                baseURL: provider.openAICompatibleBaseURL!, apiKey: key
+            )
         }
         let data = try await perform(request)
         switch provider {
         case .anthropic: return try AnthropicAPI.parseModels(data)
-        case .openai: return try OpenAIAPI.parseModels(data)
         case .gemini: return try GeminiAPI.parseModels(data)
+        default: return try OpenAICompatibleAPI.parseModels(data, includeModel: provider.includesModel)
         }
     }
 
@@ -39,20 +44,24 @@ public struct RewordService: Sendable {
             request = try AnthropicAPI.rewordRequest(
                 apiKey: key, model: model, systemPrompt: systemPrompt, text: text
             )
-        case .openai:
-            request = try OpenAIAPI.rewordRequest(
-                apiKey: key, model: model, systemPrompt: systemPrompt, text: text
-            )
         case .gemini:
             request = try GeminiAPI.rewordRequest(
                 apiKey: key, model: model, systemPrompt: systemPrompt, text: text
+            )
+        default:
+            request = try OpenAICompatibleAPI.rewordRequest(
+                baseURL: provider.openAICompatibleBaseURL!,
+                apiKey: key,
+                model: model,
+                systemPrompt: systemPrompt,
+                text: text
             )
         }
         let data = try await perform(request)
         switch provider {
         case .anthropic: return try AnthropicAPI.parseReword(data)
-        case .openai: return try OpenAIAPI.parseReword(data)
         case .gemini: return try GeminiAPI.parseReword(data)
+        default: return try OpenAICompatibleAPI.parseReword(data)
         }
     }
 

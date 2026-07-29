@@ -63,42 +63,74 @@ final class ProviderParsingTests: XCTestCase {
         )
     }
 
-    // MARK: - OpenAI
+    // MARK: - OpenAI-compatible family
 
     func testOpenAIModelFilterKeepsChatModelsOnly() {
-        XCTAssertTrue(OpenAIAPI.isChatModel("gpt-4o-mini"))
-        XCTAssertTrue(OpenAIAPI.isChatModel("gpt-5-nano"))
-        XCTAssertTrue(OpenAIAPI.isChatModel("o3-mini"))
-        XCTAssertFalse(OpenAIAPI.isChatModel("text-embedding-3-small"))
-        XCTAssertFalse(OpenAIAPI.isChatModel("whisper-1"))
-        XCTAssertFalse(OpenAIAPI.isChatModel("gpt-4o-realtime-preview"))
-        XCTAssertFalse(OpenAIAPI.isChatModel("dall-e-3"))
-        XCTAssertFalse(OpenAIAPI.isChatModel("gpt-4o-audio-preview"))
+        let openai = ProviderKind.openai
+        XCTAssertTrue(openai.includesModel("gpt-4o-mini"))
+        XCTAssertTrue(openai.includesModel("gpt-5-nano"))
+        XCTAssertTrue(openai.includesModel("o3-mini"))
+        XCTAssertFalse(openai.includesModel("text-embedding-3-small"))
+        XCTAssertFalse(openai.includesModel("whisper-1"))
+        XCTAssertFalse(openai.includesModel("gpt-4o-realtime-preview"))
+        XCTAssertFalse(openai.includesModel("dall-e-3"))
+        XCTAssertFalse(openai.includesModel("gpt-4o-audio-preview"))
     }
 
-    func testOpenAIParseModels() throws {
+    func testMistralModelFilter() {
+        let mistral = ProviderKind.mistral
+        XCTAssertTrue(mistral.includesModel("ministral-8b-latest"))
+        XCTAssertTrue(mistral.includesModel("mistral-small-latest"))
+        XCTAssertFalse(mistral.includesModel("mistral-embed"))
+        XCTAssertFalse(mistral.includesModel("mistral-moderation-latest"))
+        XCTAssertFalse(mistral.includesModel("mistral-ocr-latest"))
+        XCTAssertFalse(mistral.includesModel("voxtral-mini-latest"))
+    }
+
+    func testXAIModelFilter() {
+        let xai = ProviderKind.xai
+        XCTAssertTrue(xai.includesModel("grok-3-mini"))
+        XCTAssertFalse(xai.includesModel("grok-2-image-1212"))
+    }
+
+    func testOpenAICompatibleParseModelsAppliesFilter() throws {
         let json = """
         {"data":[{"id":"gpt-4o-mini","object":"model"},
                  {"id":"whisper-1","object":"model"},
                  {"id":"gpt-4o","object":"model"}]}
         """
-        let models = try OpenAIAPI.parseModels(Data(json.utf8))
+        let models = try OpenAICompatibleAPI.parseModels(
+            Data(json.utf8),
+            includeModel: ProviderKind.openai.includesModel
+        )
         XCTAssertEqual(models.map(\.id), ["gpt-4o", "gpt-4o-mini"])
     }
 
-    func testOpenAIParseReword() throws {
+    func testOpenAICompatibleParseReword() throws {
         let json = """
         {"choices":[{"message":{"role":"assistant","content":"  Rewritten.  "}}]}
         """
-        XCTAssertEqual(try OpenAIAPI.parseReword(Data(json.utf8)), "Rewritten.")
+        XCTAssertEqual(try OpenAICompatibleAPI.parseReword(Data(json.utf8)), "Rewritten.")
     }
 
-    func testOpenAIEmptyContentThrows() {
+    func testOpenAICompatibleEmptyContentThrows() {
         let json = """
         {"choices":[{"message":{"role":"assistant","content":""}}]}
         """
-        XCTAssertThrowsError(try OpenAIAPI.parseReword(Data(json.utf8))) { error in
+        XCTAssertThrowsError(try OpenAICompatibleAPI.parseReword(Data(json.utf8))) { error in
             XCTAssertEqual(error as? RewordError, .emptyResponse)
+        }
+    }
+
+    func testOpenAICompatibleRequestsTargetTheProviderBaseURL() throws {
+        for provider in ProviderKind.allCases {
+            guard let base = provider.openAICompatibleBaseURL else { continue }
+            let request = try OpenAICompatibleAPI.rewordRequest(
+                baseURL: base, apiKey: "k", model: "m", systemPrompt: "s", text: "t"
+            )
+            XCTAssertEqual(request.url?.host, base.host)
+            XCTAssertTrue(request.url!.path.hasSuffix("chat/completions"))
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer k")
         }
     }
 

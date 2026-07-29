@@ -1,16 +1,19 @@
 import Foundation
 
-/// Raw HTTP bindings for the OpenAI Chat Completions API.
-enum OpenAIAPI {
-    static let baseURL = URL(string: "https://api.openai.com/v1")!
-
-    static func modelsRequest(apiKey: String) -> URLRequest {
+/// Raw HTTP bindings for the OpenAI chat-completions dialect, shared by
+/// OpenAI, Mistral, xAI and DeepSeek - only the base URL and the model
+/// filter differ per provider.
+enum OpenAICompatibleAPI {
+    static func modelsRequest(baseURL: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("models"))
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         return request
     }
 
-    static func parseModels(_ data: Data) throws -> [ModelInfo] {
+    static func parseModels(
+        _ data: Data,
+        includeModel: (String) -> Bool
+    ) throws -> [ModelInfo] {
         struct Response: Decodable {
             struct Model: Decodable {
                 let id: String
@@ -23,25 +26,13 @@ enum OpenAIAPI {
         }
         return response.data
             .map(\.id)
-            .filter(isChatModel)
+            .filter(includeModel)
             .sorted()
             .map { ModelInfo(id: $0) }
     }
 
-    /// The models endpoint lists everything (embeddings, audio, images).
-    /// Keep only chat-capable text models.
-    static func isChatModel(_ id: String) -> Bool {
-        let lower = id.lowercased()
-        let excluded = [
-            "embedding", "whisper", "tts", "audio", "realtime", "image",
-            "dall-e", "moderation", "transcribe", "computer-use", "search", "instruct"
-        ]
-        if excluded.contains(where: lower.contains) { return false }
-        if lower.hasPrefix("gpt-") { return true }
-        return lower.range(of: "^o[0-9]", options: .regularExpression) != nil
-    }
-
     static func rewordRequest(
+        baseURL: URL,
         apiKey: String,
         model: String,
         systemPrompt: String,

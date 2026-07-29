@@ -56,7 +56,7 @@ struct ProviderSettingsView: View {
                         Text(kind.displayName).tag(kind)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
             }
 
             Section("API key") {

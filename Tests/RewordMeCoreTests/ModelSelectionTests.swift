@@ -50,6 +50,35 @@ final class ModelSelectionTests: XCTestCase {
         XCTAssertEqual(pick?.id, "gemini-3.0-flash-lite-preview")
     }
 
+    func testMistralPicksMinistralTier() {
+        let models = [
+            ModelInfo(id: "mistral-large-latest"),
+            ModelInfo(id: "mistral-small-latest"),
+            ModelInfo(id: "ministral-8b-latest")
+        ]
+        let pick = ModelSelection.defaultModel(for: .mistral, from: models)
+        XCTAssertEqual(pick?.id, "ministral-8b-latest")
+    }
+
+    func testXAIPicksMiniTier() {
+        let models = [
+            ModelInfo(id: "grok-4"),
+            ModelInfo(id: "grok-4-fast"),
+            ModelInfo(id: "grok-3-mini")
+        ]
+        let pick = ModelSelection.defaultModel(for: .xai, from: models)
+        XCTAssertEqual(pick?.id, "grok-3-mini")
+    }
+
+    func testDeepSeekPicksChatOverReasoner() {
+        let models = [
+            ModelInfo(id: "deepseek-reasoner"),
+            ModelInfo(id: "deepseek-chat")
+        ]
+        let pick = ModelSelection.defaultModel(for: .deepseek, from: models)
+        XCTAssertEqual(pick?.id, "deepseek-chat")
+    }
+
     func testEmptyListReturnsNil() {
         XCTAssertNil(ModelSelection.defaultModel(for: .anthropic, from: []))
     }

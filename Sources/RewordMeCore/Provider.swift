@@ -5,6 +5,9 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
     case anthropic
     case openai
     case gemini
+    case mistral
+    case xai
+    case deepseek
 
     public var id: String { rawValue }
 
@@ -13,6 +16,9 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .anthropic: return "Claude (Anthropic)"
         case .openai: return "ChatGPT (OpenAI)"
         case .gemini: return "Gemini (Google)"
+        case .mistral: return "Mistral"
+        case .xai: return "Grok (xAI)"
+        case .deepseek: return "DeepSeek"
         }
     }
 
@@ -21,6 +27,9 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .anthropic: return "sk-ant-..."
         case .openai: return "sk-..."
         case .gemini: return "AIza..."
+        case .mistral: return "API key from console.mistral.ai"
+        case .xai: return "xai-..."
+        case .deepseek: return "sk-..."
         }
     }
 
@@ -30,6 +39,9 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .anthropic: return URL(string: "https://platform.claude.com/settings/keys")!
         case .openai: return URL(string: "https://platform.openai.com/api-keys")!
         case .gemini: return URL(string: "https://aistudio.google.com/apikey")!
+        case .mistral: return URL(string: "https://console.mistral.ai/api-keys")!
+        case .xai: return URL(string: "https://console.x.ai")!
+        case .deepseek: return URL(string: "https://platform.deepseek.com/api_keys")!
         }
     }
 
@@ -38,6 +50,46 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .anthropic: return "platform.claude.com"
         case .openai: return "platform.openai.com"
         case .gemini: return "aistudio.google.com"
+        case .mistral: return "console.mistral.ai"
+        case .xai: return "console.x.ai"
+        case .deepseek: return "platform.deepseek.com"
+        }
+    }
+
+    /// Base URL for providers that speak the OpenAI chat-completions
+    /// dialect; nil for providers with their own wire format.
+    public var openAICompatibleBaseURL: URL? {
+        switch self {
+        case .anthropic, .gemini: return nil
+        case .openai: return URL(string: "https://api.openai.com/v1")!
+        case .mistral: return URL(string: "https://api.mistral.ai/v1")!
+        case .xai: return URL(string: "https://api.x.ai/v1")!
+        case .deepseek: return URL(string: "https://api.deepseek.com/v1")!
+        }
+    }
+
+    /// Model-list filter: OpenAI-style listings mix chat models with
+    /// embeddings, audio and image models; keep chat-capable text models.
+    public func includesModel(_ modelID: String) -> Bool {
+        let lower = modelID.lowercased()
+        switch self {
+        case .anthropic, .gemini:
+            return true // their APIs are filtered during parsing
+        case .openai:
+            let excluded = [
+                "embedding", "whisper", "tts", "audio", "realtime", "image",
+                "dall-e", "moderation", "transcribe", "computer-use", "search", "instruct"
+            ]
+            if excluded.contains(where: lower.contains) { return false }
+            if lower.hasPrefix("gpt-") { return true }
+            return lower.range(of: "^o[0-9]", options: .regularExpression) != nil
+        case .mistral:
+            let excluded = ["embed", "moderation", "ocr", "transcribe", "voxtral"]
+            return !excluded.contains(where: lower.contains)
+        case .xai:
+            return !lower.contains("image")
+        case .deepseek:
+            return true
         }
     }
 }

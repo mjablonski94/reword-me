@@ -32,6 +32,19 @@ public enum ModelSelection {
             if lower.contains("flash") { return 1 }
             if lower.contains("pro") { return 2 }
             return 3
+        case .mistral:
+            if lower.contains("ministral") || lower.contains("tiny") { return 0 }
+            if lower.contains("nemo") || lower.contains("small") { return 1 }
+            if lower.contains("medium") { return 2 }
+            if lower.contains("large") { return 3 }
+            return 2
+        case .xai:
+            if lower.contains("mini") { return 0 }
+            if lower.contains("fast") { return 1 }
+            return 2
+        case .deepseek:
+            if lower.contains("chat") { return 0 }
+            return 1
         }
     }
 

@@ -46,10 +46,11 @@ the least costly model your provider offers.
   *"Keep it under two sentences"*) sent with every rewrite.
 - **Base prompt**: freeform standing instructions (*"I am a non-native speaker; fix grammar but
   keep my voice."*).
-- **Multi-provider**: Anthropic, OpenAI or Gemini - just paste one API key. Keys are stored in the
-  login Keychain, never in plain files.
+- **Multi-provider**: Claude, ChatGPT, Gemini, Mistral, Grok (xAI) or DeepSeek - just paste one
+  API key. Keys are stored in the login Keychain, never in plain files.
 - **Model choice**: pick any model the provider lists, or leave it on **Automatic**, which
-  resolves to the least costly tier (Haiku / nano / Flash-Lite) so everyday rewrites stay cheap.
+  resolves to the least costly tier (Haiku / nano / Flash-Lite / Ministral / grok-mini /
+  deepseek-chat) so everyday rewrites stay cheap.
 - **Launch at login** (start with the system) via `SMAppService`.
 
 ## How it works
@@ -98,6 +99,9 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
    - Claude: https://platform.claude.com/settings/keys
    - OpenAI: https://platform.openai.com/api-keys
    - Gemini: https://aistudio.google.com/apikey (free tier available)
+   - Mistral: https://console.mistral.ai/api-keys (free tier available)
+   - Grok (xAI): https://console.x.ai
+   - DeepSeek: https://platform.deepseek.com/api_keys
 2. Select text in any app.
 3. Press **Option+Command+R** (or right-click > Services > *Reword with RewordMe*).
 4. In the popup: **Regenerate** for another take, type a steering line and press Return to guide
@@ -134,7 +138,7 @@ Sources/
 ├── RewordMeCore/            pure logic, fully unit-tested, no AppKit
 │   ├── Provider.swift       provider kinds, model info, typed errors
 │   ├── AnthropicAPI.swift   request building + response parsing (Messages API)
-│   ├── OpenAIAPI.swift      request building + response parsing (Chat Completions)
+│   ├── OpenAICompatibleAPI.swift  the chat-completions dialect: OpenAI, Mistral, xAI, DeepSeek
 │   ├── GeminiAPI.swift      request building + response parsing (generateContent)
 │   ├── ModelSelection.swift least-costly default model heuristic
 │   ├── PromptBuilder.swift  core + rules + base prompt + steering assembly
