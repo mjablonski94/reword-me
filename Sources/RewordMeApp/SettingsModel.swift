@@ -3,6 +3,12 @@ import RewordMeCore
 import ServiceManagement
 import SwiftUI
 
+extension Notification.Name {
+    /// Posted after every config save so the app delegate can re-apply
+    /// behavior that lives outside the Settings window (trigger mode).
+    static let rewordConfigChanged = Notification.Name("RewordMeConfigChanged")
+}
+
 /// Backing model for the Settings window. Config changes save to disk
 /// immediately; API keys go straight to the Keychain.
 @MainActor
@@ -10,6 +16,7 @@ final class SettingsModel: ObservableObject {
     @Published var config: RewordConfig {
         didSet {
             try? configStore.save(config)
+            NotificationCenter.default.post(name: .rewordConfigChanged, object: nil)
             if oldValue.provider != config.provider {
                 apiKey = KeychainStore.apiKey(for: config.provider) ?? ""
                 availableModels = []

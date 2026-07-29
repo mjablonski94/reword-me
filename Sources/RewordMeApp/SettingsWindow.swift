@@ -198,10 +198,16 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Shortcut") {
-                LabeledContent("Reword selection") {
-                    Text("Option+Command+R")
-                        .font(.body.monospaced())
+            Section("Trigger") {
+                Picker("Show the popup", selection: $model.config.triggerMode) {
+                    Text("When pressing Option+Command+R").tag(TriggerMode.hotkey)
+                    Text("Automatically on text selection").tag(TriggerMode.selection)
+                }
+                .pickerStyle(.radioGroup)
+                if model.config.triggerMode == .selection {
+                    Text("The popup appears whenever you finish selecting text with the mouse, in any app. Needs Accessibility access.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Text("Also available from the Services menu: right-click selected text, then Services > Reword with RewordMe.")
                     .font(.caption)

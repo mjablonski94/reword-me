@@ -1,5 +1,13 @@
 import Foundation
 
+/// How the popup gets summoned.
+public enum TriggerMode: String, Codable, Sendable, CaseIterable {
+    /// Only on Option+Command+R (or the Services menu).
+    case hotkey
+    /// Automatically whenever text is selected anywhere.
+    case selection
+}
+
 /// Everything except API keys (those live in the Keychain).
 public struct RewordConfig: Codable, Equatable, Sendable {
     public var provider: ProviderKind
@@ -9,19 +17,22 @@ public struct RewordConfig: Codable, Equatable, Sendable {
     public var basePrompt: String
     /// Where the local Ollama server listens; only used by the ollama provider.
     public var ollamaHost: String
+    public var triggerMode: TriggerMode
 
     public init(
         provider: ProviderKind = .anthropic,
         model: String? = nil,
         rules: [RewriteRule] = [],
         basePrompt: String = "",
-        ollamaHost: String = OllamaEndpoint.defaultHost
+        ollamaHost: String = OllamaEndpoint.defaultHost,
+        triggerMode: TriggerMode = .hotkey
     ) {
         self.provider = provider
         self.model = model
         self.rules = rules
         self.basePrompt = basePrompt
         self.ollamaHost = ollamaHost
+        self.triggerMode = triggerMode
     }
 
     public static let `default` = RewordConfig()
@@ -34,6 +45,8 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         basePrompt = try container.decodeIfPresent(String.self, forKey: .basePrompt) ?? ""
         ollamaHost = try container.decodeIfPresent(String.self, forKey: .ollamaHost)
             ?? OllamaEndpoint.defaultHost
+        triggerMode = try container.decodeIfPresent(TriggerMode.self, forKey: .triggerMode)
+            ?? .hotkey
     }
 
     /// Endpoint override for providers whose server address is user
