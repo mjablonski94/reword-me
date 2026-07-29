@@ -3,33 +3,86 @@ import Foundation
 import RewordMeCore
 import SwiftUI
 
-/// State behind one popup: the original selection, the generated rewrite,
-/// the steering line, and the actions on them.
+/// State behind one popup. Menu-first, like Apple's Writing Tools:
+/// nothing is generated until the user picks an action, so the popup can
+/// appear on every selection without costing a single token.
 @MainActor
 final class RewordSession: ObservableObject {
+    enum Stage: Equatable {
+        case menu
+        case loading
+        case result
+        case failed(String)
+    }
+
+    struct Preset: Identifiable {
+        var id: String { title }
+        let title: String
+        let icon: String
+        let instruction: String
+    }
+
+    static let proofread = Preset(
+        title: "Proofread",
+        icon: "text.magnifyingglass",
+        instruction: "Only fix grammar, spelling and punctuation. Keep the wording and tone unchanged otherwise."
+    )
+
+    static let rewrite = Preset(
+        title: "Rewrite",
+        icon: "arrow.trianglehead.2.clockwise.rotate.90",
+        instruction: ""
+    )
+
+    static let tonePresets: [Preset] = [
+        Preset(title: "Friendly", icon: "face.smiling",
+               instruction: "Make it warmer and more friendly."),
+        Preset(title: "Professional", icon: "briefcase",
+               instruction: "Make it more professional and polished."),
+        Preset(title: "Concise", icon: "text.badge.minus",
+               instruction: "Make it more concise without losing meaning.")
+    ]
+
     @Published var original: String
+    @Published var stage: Stage = .menu
     @Published var result: String = ""
     @Published var steering: String = ""
-    @Published var isLoading = false
-    @Published var errorMessage: String?
     @Published var modelLabel: String = ""
 
     var onClose: (() -> Void)?
+    var onReplace: ((String) -> Void)?
 
     private let service = RewordService()
     private let configStore = ConfigStore()
     private var generationTask: Task<Void, Never>?
+    private var lastInstruction: String?
 
     init(original: String) {
         self.original = original
     }
 
-    func generate() {
+    /// Runs a rewrite. An explicit preset instruction wins; otherwise
+    /// whatever the user typed into the describe field is the steering.
+    func reword(instruction explicit: String? = nil) {
+        let typed = steering.trimmingCharacters(in: .whitespacesAndNewlines)
+        let instruction = explicit ?? (typed.isEmpty ? nil : typed)
+        lastInstruction = instruction
+        run(instruction: instruction)
+    }
+
+    func regenerate() {
+        run(instruction: lastInstruction)
+    }
+
+    func backToMenu() {
         generationTask?.cancel()
-        isLoading = true
-        errorMessage = nil
+        stage = .menu
+    }
+
+    private func run(instruction: String?) {
+        generationTask?.cancel()
+        stage = .loading
         let config = configStore.load()
-        let steering = steering
 
         generationTask = Task { [weak self] in
             guard let self else { return }
@@ -49,7 +102,7 @@ final class RewordSession: ObservableObject {
                 let systemPrompt = PromptBuilder.systemPrompt(
                     rules: config.rules,
                     basePrompt: config.basePrompt,
-                    steering: steering
+                    steering: instruction?.isEmpty == true ? nil : instruction
                 )
                 let reworded = try await service.reword(
                     provider: config.provider,
@@ -62,12 +115,12 @@ final class RewordSession: ObservableObject {
                 guard !Task.isCancelled else { return }
                 self.result = reworded
                 self.modelLabel = "\(config.provider.displayName) - \(model)"
-                self.isLoading = false
+                self.stage = .result
             } catch {
                 guard !Task.isCancelled else { return }
-                self.errorMessage = (error as? RewordError)?.errorDescription
+                let message = (error as? RewordError)?.errorDescription
                     ?? error.localizedDescription
-                self.isLoading = false
+                self.stage = .failed(message)
             }
         }
     }
@@ -82,13 +135,7 @@ final class RewordSession: ObservableObject {
 
     func replaceSelection() {
         guard !result.isEmpty else { return }
-        let text = result
-        onClose?()
-        // Give the panel a moment to close so focus settles back
-        // on the host app before we touch its selection.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            TextReplacer.replaceSelection(with: text)
-        }
+        onReplace?(result)
     }
 
     func cancel() {

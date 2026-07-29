@@ -38,6 +38,10 @@ the least costly model your provider offers.
   hotkey-only.
 - **Services menu**: right-click selected text > Services > *Reword with RewordMe* - this path
   needs no Accessibility permission at all.
+- **Writing-Tools-style popup**: a menu-first panel beside the selection - a "describe your
+  change" field, Proofread and Rewrite actions, and Friendly / Professional / Concise presets.
+  Nothing is sent to the model until you pick an action, so the auto-popup costs nothing.
+- **Replace animation**: on Replace, the panel shrinks into the text it just rewrote.
 - **Floating, non-activating popup**: shows the rewrite without stealing focus from the app you
   are writing in, so your selection stays alive underneath.
 - **Frosted UI**: the popup is a borderless, semi-transparent frosted sheet (no window chrome,
@@ -110,8 +114,9 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
      The server address is configurable (defaults to `http://localhost:11434`).
 2. Select text in any app.
 3. Press **Option+Command+R** (or right-click > Services > *Reword with RewordMe*).
-4. In the popup: **Regenerate** for another take, type a steering line and press Return to guide
-   the next take, **Replace** to swap the selection, **Copy** to take it with you. Esc closes.
+4. In the popup: pick **Proofread**, **Rewrite**, a tone preset, or type your own instruction
+   ("make it sound less angry") and press Return. Then **Again** for another take, **Replace**
+   to swap the selection, **Copy** to take it with you. Esc closes.
 
 ## Configuration
 

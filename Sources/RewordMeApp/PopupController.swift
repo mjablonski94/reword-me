@@ -17,12 +17,20 @@ final class RewordPanel: NSPanel {
 final class PopupController {
     private var panel: RewordPanel?
     private var session: RewordSession?
+    private var anchor: CGRect?
+    private var fallbackPoint: NSPoint = .zero
+    private var resizeObserver: NSObjectProtocol?
 
     func present(text: String, near bounds: CGRect?) {
         dismiss()
+        anchor = bounds
+        fallbackPoint = NSEvent.mouseLocation
 
         let session = RewordSession(original: text)
         session.onClose = { [weak self] in self?.dismiss() }
+        session.onReplace = { [weak self] replacement in
+            self?.replaceWithAnimation(replacement)
+        }
         self.session = session
 
         let view = PopupView(session: session)
@@ -52,15 +60,51 @@ final class PopupController {
         panel.contentViewController = hosting
         self.panel = panel
 
-        position(panel, near: bounds)
+        reposition()
+        // Content height changes with state (loading -> result), so keep
+        // the panel glued to the selection on every resize.
+        resizeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResizeNotification,
+            object: panel,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reposition() }
+        }
+
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.18
             panel.animator().alphaValue = 1
         }
+        // Menu-first: nothing is generated until the user picks an action.
+    }
 
-        session.generate()
+    /// The replace animation: the panel shrinks and fades into the text
+    /// it is about to replace, then the replacement lands.
+    private func replaceWithAnimation(_ text: String) {
+        guard let panel else {
+            TextReplacer.replaceSelection(with: text)
+            return
+        }
+        let frame = panel.frame
+        let target: NSRect
+        if let anchor {
+            target = NSRect(x: anchor.midX - 20, y: anchor.midY - 12, width: 40, height: 24)
+        } else {
+            target = NSRect(x: frame.midX - 20, y: frame.midY - 12, width: 40, height: 24)
+        }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.22
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().alphaValue = 0
+            panel.animator().setFrame(target, display: false)
+        }, completionHandler: {
+            DispatchQueue.main.async { [weak self] in
+                self?.dismiss()
+                TextReplacer.replaceSelection(with: text)
+            }
+        })
     }
 
     func presentNoSelectionHint() {
@@ -68,28 +112,54 @@ final class PopupController {
     }
 
     func dismiss() {
+        if let resizeObserver {
+            NotificationCenter.default.removeObserver(resizeObserver)
+            self.resizeObserver = nil
+        }
         session?.cancel()
         session = nil
         panel?.close()
         panel = nil
     }
 
-    /// Below the selection when we know where it is, at the mouse otherwise.
-    private func position(_ panel: NSPanel, near bounds: CGRect?) {
-        let panelSize = panel.frame.size
-        var origin: NSPoint
-        if let bounds {
-            origin = NSPoint(x: bounds.minX, y: bounds.minY - panelSize.height - 8)
-        } else {
-            let mouse = NSEvent.mouseLocation
-            origin = NSPoint(x: mouse.x - panelSize.width / 2, y: mouse.y - panelSize.height - 16)
+    /// Writing-Tools-style placement: beside the selection (left first,
+    /// then right), top-aligned with it; below or above as fallbacks -
+    /// never on top of the selected text, and always fully on screen.
+    private func reposition() {
+        guard let panel else { return }
+        let size = panel.frame.size
+        let gap: CGFloat = 12
+        let margin: CGFloat = 8
+
+        let reference = anchor ?? CGRect(
+            x: fallbackPoint.x - size.width / 2,
+            y: fallbackPoint.y,
+            width: 0,
+            height: 0
+        )
+        let referenceCenter = NSPoint(x: reference.midX, y: reference.midY)
+        guard let visible = (screenContaining(referenceCenter) ?? NSScreen.main)?.visibleFrame else {
+            return
         }
 
-        if let screen = screenContaining(origin) ?? NSScreen.main {
-            let visible = screen.visibleFrame
-            origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - panelSize.width - 8)
-            origin.y = min(max(origin.y, visible.minY + 8), visible.maxY - panelSize.height - 8)
+        var origin: NSPoint
+        let leftX = reference.minX - gap - size.width
+        let rightX = reference.maxX + gap
+        let belowY = reference.minY - gap - size.height
+        let sideY = reference.maxY - size.height // top-aligned with the selection
+
+        if anchor != nil, leftX >= visible.minX + margin {
+            origin = NSPoint(x: leftX, y: sideY)
+        } else if anchor != nil, rightX + size.width <= visible.maxX - margin {
+            origin = NSPoint(x: rightX, y: sideY)
+        } else if belowY >= visible.minY + margin {
+            origin = NSPoint(x: reference.minX, y: belowY)
+        } else {
+            origin = NSPoint(x: reference.minX, y: reference.maxY + gap)
         }
+
+        origin.x = min(max(origin.x, visible.minX + margin), visible.maxX - size.width - margin)
+        origin.y = min(max(origin.y, visible.minY + margin), visible.maxY - size.height - margin)
         panel.setFrameOrigin(origin)
     }
 
