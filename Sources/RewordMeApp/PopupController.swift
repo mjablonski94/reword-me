@@ -34,10 +34,13 @@ final class PopupController {
             backing: .buffered,
             defer: false
         )
-        // The glass sheet draws its own shape; the panel itself is invisible.
+        // The frosted sheet draws its own shape and shadow; the panel itself
+        // is invisible. AppKit's window shadow must stay off - on a
+        // transparent borderless panel it renders as a dark outline around
+        // the full window bounds.
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
