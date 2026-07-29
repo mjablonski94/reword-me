@@ -19,12 +19,9 @@ func png(px: Int) -> Data {
         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     )!
 
-    // Tile with a diagonal purple -> indigo gradient.
-    let tile = CGRect(x: dim * 0.06, y: dim * 0.06, width: dim * 0.88, height: dim * 0.88)
-    let tilePath = CGPath(roundedRect: tile, cornerWidth: dim * 0.22, cornerHeight: dim * 0.22, transform: nil)
-    context.saveGState()
-    context.addPath(tilePath)
-    context.clip()
+    // Full-bleed diagonal purple -> indigo gradient. The canvas must be
+    // filled edge to edge: macOS 26 masks icons into its own squircle and
+    // composites anything transparent onto a white backdrop.
     let gradient = CGGradient(
         colorsSpace: CGColorSpaceCreateDeviceRGB(),
         colors: [
@@ -35,11 +32,10 @@ func png(px: Int) -> Data {
     )!
     context.drawLinearGradient(
         gradient,
-        start: CGPoint(x: tile.minX, y: tile.maxY),
-        end: CGPoint(x: tile.maxX, y: tile.minY),
+        start: CGPoint(x: 0, y: dim),
+        end: CGPoint(x: dim, y: 0),
         options: []
     )
-    context.restoreGState()
 
     let center = CGPoint(x: dim / 2, y: dim / 2)
     let ringRadius = dim * 0.315

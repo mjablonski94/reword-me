@@ -15,7 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupHotkey()
         setupServicesProvider()
-        AccessibilityPermission.promptIfNeeded()
+        // Deliberately no Accessibility prompt here: the grant is explained
+        // and requested from the tray menu or on the first hotkey press.
     }
 
     /// The menu bar is never shown (accessory app), but Cmd+C/V/X/A and
@@ -63,6 +64,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
+        menu.delegate = self
+        statusItem.menu = menu
+    }
+
+    /// Rebuilt on every open so the Accessibility hint appears and
+    /// disappears with the actual grant.
+    private func rebuildMenu(_ menu: NSMenu) {
+        menu.removeAllItems()
+
+        if !AccessibilityPermission.isTrusted {
+            let grantItem = NSMenuItem(
+                title: "Grant Accessibility Access...",
+                action: #selector(showAccessibilityOnboarding),
+                keyEquivalent: ""
+            )
+            grantItem.image = NSImage(
+                systemSymbolName: "exclamationmark.triangle.fill",
+                accessibilityDescription: "Warning"
+            )
+            grantItem.target = self
+            menu.addItem(grantItem)
+            menu.addItem(.separator())
+        }
+
         let rewordItem = NSMenuItem(
             title: "Reword Selection",
             action: #selector(rewordSelection),
@@ -85,7 +110,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
-        statusItem.menu = menu
+    }
+
+    @objc private func showAccessibilityOnboarding() {
+        AccessibilityPermission.showOnboarding()
     }
 
     // MARK: - Triggers
@@ -106,6 +134,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func rewordSelection() {
+        guard AccessibilityPermission.isTrusted else {
+            AccessibilityPermission.showOnboarding()
+            return
+        }
         SelectionReader.readSelection { [weak self] text, bounds in
             guard let self else { return }
             guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -123,5 +155,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsWindowController = SettingsWindowController()
         }
         settingsWindowController?.show()
+    }
+}
+
+extension AppDelegate: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        rebuildMenu(menu)
     }
 }
