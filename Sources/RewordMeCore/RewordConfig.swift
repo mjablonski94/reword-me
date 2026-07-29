@@ -25,7 +25,7 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         rules: [RewriteRule] = [],
         basePrompt: String = "",
         ollamaHost: String = OllamaEndpoint.defaultHost,
-        triggerMode: TriggerMode = .hotkey
+        triggerMode: TriggerMode = .selection
     ) {
         self.provider = provider
         self.model = model
@@ -46,7 +46,7 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         ollamaHost = try container.decodeIfPresent(String.self, forKey: .ollamaHost)
             ?? OllamaEndpoint.defaultHost
         triggerMode = try container.decodeIfPresent(TriggerMode.self, forKey: .triggerMode)
-            ?? .hotkey
+            ?? .selection
     }
 
     /// Endpoint override for providers whose server address is user

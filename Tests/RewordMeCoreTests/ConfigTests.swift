@@ -12,7 +12,7 @@ final class ConfigTests: XCTestCase {
             ],
             basePrompt: "Keep my voice.",
             ollamaHost: "http://192.168.1.20:11434",
-            triggerMode: .selection
+            triggerMode: .hotkey
         )
         let data = try JSONEncoder().encode(config)
         let decoded = try JSONDecoder().decode(RewordConfig.self, from: data)
@@ -24,7 +24,7 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(decoded, .default)
         XCTAssertEqual(decoded.provider, .anthropic)
         XCTAssertNil(decoded.model)
-        XCTAssertEqual(decoded.triggerMode, .hotkey, "hotkey stays the default trigger")
+        XCTAssertEqual(decoded.triggerMode, .selection, "auto-popup is the default trigger")
     }
 
     func testEveryProviderHasAnAPIKeyConsoleLink() {

@@ -33,8 +33,9 @@ the least costly model your provider offers.
 - **Menu-bar only** (no Dock icon). Works over any app: Mail, Slack, browsers, editors.
 - **Global hotkey**: select text anywhere, press **Option+Command+R**, the popup appears at the
   selection.
-- **Optional auto-popup**: switch the trigger in Settings > General and the popup appears the
-  moment you finish selecting text with the mouse, PopClip-style (off by default).
+- **Auto-popup by default**: the popup appears the moment you finish selecting text with the
+  mouse, PopClip-style. Prefer it quieter? Switch the trigger in Settings > General to
+  hotkey-only.
 - **Services menu**: right-click selected text > Services > *Reword with RewordMe* - this path
   needs no Accessibility permission at all.
 - **Floating, non-activating popup**: shows the rewrite without stealing focus from the app you

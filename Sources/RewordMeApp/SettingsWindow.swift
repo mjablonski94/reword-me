@@ -200,8 +200,8 @@ struct GeneralSettingsView: View {
         Form {
             Section("Trigger") {
                 Picker("Show the popup", selection: $model.config.triggerMode) {
-                    Text("When pressing Option+Command+R").tag(TriggerMode.hotkey)
                     Text("Automatically on text selection").tag(TriggerMode.selection)
+                    Text("Only when pressing Option+Command+R").tag(TriggerMode.hotkey)
                 }
                 .pickerStyle(.radioGroup)
                 if model.config.triggerMode == .selection {
