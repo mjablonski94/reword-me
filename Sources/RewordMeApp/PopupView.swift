@@ -20,9 +20,6 @@ struct PopupView: View {
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
-        .compositingGroup()
-        .shadow(color: .black.opacity(0.25), radius: 24, y: 10)
-        .padding(30) // room for the soft shadow inside the borderless panel
     }
 
     // MARK: - Header
