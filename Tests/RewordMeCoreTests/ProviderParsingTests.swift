@@ -202,6 +202,25 @@ final class ProviderParsingTests: XCTestCase {
         XCTAssertEqual(try GeminiAPI.parseReword(Data(json.utf8)), "Rewritten.")
     }
 
+    // MARK: - Errors
+
+    func testEveryErrorHasAReadableDescription() {
+        let errors: [RewordError] = [
+            .missingAPIKey, .invalidAPIKey,
+            .rateLimited(retryAfterSeconds: 30), .rateLimited(retryAfterSeconds: nil),
+            .refused("nope"), .refused(nil),
+            .apiError(status: 500, message: "boom"),
+            .emptyResponse, .invalidResponse, .noModelAvailable
+        ]
+        for error in errors {
+            let description = error.errorDescription ?? ""
+            XCTAssertFalse(description.isEmpty, "\(error) has no description")
+        }
+        XCTAssertTrue(
+            RewordError.rateLimited(retryAfterSeconds: 30).errorDescription!.contains("30")
+        )
+    }
+
     // MARK: - Shared error envelope
 
     func testErrorMessageExtraction() {

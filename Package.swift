@@ -9,13 +9,17 @@ let package = Package(
     ],
     targets: [
         .target(name: "RewordMeCore"),
+        .target(
+            name: "RewordMeAppSupport",
+            dependencies: ["RewordMeCore"]
+        ),
         .executableTarget(
             name: "RewordMeApp",
-            dependencies: ["RewordMeCore"]
+            dependencies: ["RewordMeCore", "RewordMeAppSupport"]
         ),
         .testTarget(
             name: "RewordMeCoreTests",
-            dependencies: ["RewordMeCore"]
+            dependencies: ["RewordMeCore", "RewordMeAppSupport"]
         )
     ],
     swiftLanguageModes: [.v5]

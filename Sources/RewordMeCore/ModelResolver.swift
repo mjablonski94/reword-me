@@ -1,18 +1,27 @@
 import Foundation
-import RewordMeCore
+
+/// Anything that can list a provider's models - RewordService in the app,
+/// a stub in tests.
+public protocol ModelListing: Sendable {
+    func listModels(provider: ProviderKind, apiKey: String, endpoint: URL?) async throws -> [ModelInfo]
+}
+
+extension RewordService: ModelListing {}
 
 /// Resolves the model to use for a request. An explicit model in the
 /// config wins; otherwise the provider's model list is fetched once and
 /// the least costly model is cached for the rest of the session.
-actor ModelResolver {
-    static let shared = ModelResolver()
+public actor ModelResolver {
+    public static let shared = ModelResolver()
 
     private var cache: [ProviderKind: String] = [:]
 
-    func model(
+    public init() {}
+
+    public func model(
         for config: RewordConfig,
         apiKey: String,
-        service: RewordService
+        service: any ModelListing
     ) async throws -> String {
         if let explicit = config.model, !explicit.isEmpty {
             return explicit
@@ -32,7 +41,7 @@ actor ModelResolver {
         return pick.id
     }
 
-    func invalidate() {
+    public func invalidate() {
         cache.removeAll()
     }
 }

@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import RewordMeAppSupport
 
 /// Reads the selected text from whatever app is frontmost.
 /// Accessibility API first (clean, no clipboard involved); a synthesized
