@@ -68,8 +68,15 @@ struct ProviderSettingsView: View {
                     )
                     .font(.caption)
                     Spacer()
+                    if model.keySavedFeedback {
+                        Label("Saved", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .transition(.opacity)
+                    }
                     Button("Save Key") { model.saveAPIKey() }
+                        .disabled(model.apiKey.isEmpty)
                 }
+                .animation(.easeInOut(duration: 0.2), value: model.keySavedFeedback)
                 Text("Stored in your login Keychain, never in plain files.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

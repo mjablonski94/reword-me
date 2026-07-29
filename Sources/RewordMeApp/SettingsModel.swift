@@ -22,12 +22,14 @@ final class SettingsModel: ObservableObject {
     @Published var availableModels: [ModelInfo] = []
     @Published var isLoadingModels = false
     @Published var modelsError: String?
+    @Published var keySavedFeedback = false
     @Published var launchAtLogin: Bool {
         didSet { updateLaunchAtLogin() }
     }
 
     private let configStore = ConfigStore()
     private let service = RewordService()
+    private var feedbackTask: Task<Void, Never>?
 
     init() {
         let loaded = ConfigStore().load()
@@ -41,6 +43,14 @@ final class SettingsModel: ObservableObject {
         Task { await ModelResolver.shared.invalidate() }
         availableModels = []
         modelsError = nil
+
+        keySavedFeedback = true
+        feedbackTask?.cancel()
+        feedbackTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            self?.keySavedFeedback = false
+        }
     }
 
     func loadModels() {
