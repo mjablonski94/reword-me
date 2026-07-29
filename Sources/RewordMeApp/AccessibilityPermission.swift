@@ -20,24 +20,11 @@ enum AccessibilityPermission {
     static func showOnboarding() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "Let RewordMe read your selection"
-        alert.informativeText = """
-        To grab the text you select and to replace it in place, RewordMe \
-        needs macOS Accessibility access.
-
-        Grant it in System Settings > Privacy & Security > Accessibility by \
-        turning on RewordMe.
-
-        Already enabled in the list? Then macOS is remembering a previous \
-        build of RewordMe - remove the entry with the minus button and add \
-        the current app again.
-
-        Prefer not to? You can still right-click selected text and use \
-        Services > Reword with RewordMe - that path needs no permission.
-        """
+        alert.messageText = Loc.axTitle
+        alert.informativeText = Loc.axBody
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Open System Settings")
-        alert.addButton(withTitle: "Not Now")
+        alert.addButton(withTitle: Loc.openSystemSettings)
+        alert.addButton(withTitle: Loc.axNotNow)
         if alert.runModal() == .alertFirstButtonReturn {
             // Registers the app in the Accessibility list, then opens it.
             let options = [

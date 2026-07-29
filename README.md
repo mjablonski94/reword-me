@@ -13,6 +13,7 @@ the least costly model your provider offers.
 
 - Repository: https://github.com/mjablonski94/reword-me
 - Platform: macOS 14 (Sonoma) and later
+- Localized into 11 languages: English, French, Polish, German, Spanish, Portuguese, Italian, Ukrainian, Simplified Chinese, Japanese, Korean
 - Language: Swift 6 (SwiftUI + AppKit)
 
 ---

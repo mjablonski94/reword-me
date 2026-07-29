@@ -1,0 +1,88 @@
+"menu.grantAccess" = "アクセシビリティのアクセスを許可...";
+"menu.reword" = "選択テキストをリライト";
+"menu.settings" = "設定...";
+"menu.buyCoffee" = "コーヒーをおごる";
+"menu.quit" = "RewordMe を終了";
+
+"popup.describePlaceholder" = "変更内容を入力";
+"popup.proofread" = "校正";
+"popup.rewrite" = "リライト";
+"popup.friendly" = "フレンドリー";
+"popup.professional" = "プロフェッショナル";
+"popup.concise" = "簡潔";
+"popup.rewording" = "リライト中...";
+"popup.cancel" = "キャンセル";
+"popup.again" = "もう一度";
+"popup.copy" = "コピー";
+"popup.replace" = "置き換え";
+"popup.tryAgain" = "再試行";
+"popup.errorTitle" = "問題が発生しました";
+"popup.noSelection" = "テキストが選択されていません。テキストを選択してから %@ を押してください。";
+
+"settings.windowTitle" = "RewordMe 設定";
+"tab.provider" = "プロバイダ";
+"tab.rewriting" = "リライト";
+"tab.general" = "一般";
+
+"provider.section" = "プロバイダ";
+"provider.apiKeySection" = "API キー";
+"provider.getKey" = "API キーは %@ で取得できます";
+"provider.saveKey" = "キーを保存";
+"provider.saved" = "保存済み";
+"provider.keychainCaption" = "キーはログインキーチェーンにのみ保存され、平文ファイルには保存されません。macOS が RewordMe のキーチェーンへのアクセスを確認してきたら、それは Mac がキーを保護している証拠です -「常に許可」を選んでください。";
+"provider.modelSection" = "モデル";
+"provider.modelLabel" = "モデル";
+"provider.automatic" = "自動（最も低コスト）";
+"provider.automaticHint" = "自動では現在 %@ が選ばれます";
+"provider.noModels" = "プロバイダから利用可能なモデルが返されませんでした。";
+"provider.loadModels" = "モデルを読み込む";
+
+"ollama.section" = "ローカルサーバ";
+"ollama.blurb" = "Ollama はあなたの Mac 上で動きます - API キー不要、無料で、テキストがマシンの外に出ることはありません。";
+"ollama.serverLabel" = "サーバ";
+"ollama.caption" = "デフォルトは %@ です - Ollama が別の場所で待ち受けている場合のみ変更してください（OLLAMA_HOST、Docker のポートマッピング、別のマシン）。\nインストール後にモデルを取得してください。例:  ollama pull llama3.2";
+"ollama.getLink" = "Ollama は %@ で入手できます";
+
+"rules.section" = "やること・やらないこと";
+"rules.footer" = "有効なルールはリライトのたびに送信されます。時々しか使わないルールは削除せずオフにしてください。";
+"rules.add" = "ルールを追加";
+"rules.placeholder" = "例: 感嘆符は使わない";
+"rules.do" = "する";
+"rules.dont" = "しない";
+"base.section" = "ベースプロンプト";
+"base.footer" = "自由形式の恒常的な指示。例:「私はネイティブではありません。文法は直しても口調は残してください。」";
+
+"shortcut.section" = "ショートカット";
+"shortcut.label" = "選択テキストをリライト";
+"shortcut.recording" = "キーを押してください...";
+"shortcut.hintIdle" = "ショートカットをクリックすると変更できます。";
+"shortcut.hintRecording" = "新しい組み合わせを押してください - Command、Option、Control のいずれかが必要です。Esc でキャンセル。";
+"shortcut.services" = "サービスメニューからも使えます: 選択テキストを右クリックし、サービス > Reword with RewordMe を選択。";
+
+"general.startup" = "起動";
+"general.launchAtLogin" = "ログイン時に起動";
+"general.permissions" = "権限";
+"general.accessibility" = "アクセシビリティ";
+"general.granted" = "許可済み";
+"general.openSystemSettings" = "システム設定を開く";
+"general.accessibilityCaption" = "選択テキストの読み取りとその場での置き換えに必要です。ない場合はサービスメニューとコピーのみ使えます。";
+"general.support" = "サポート";
+"general.buyCoffee" = "コーヒーをおごる";
+
+"keychain.alertTitle" = "キーは macOS キーチェーンに保存されます";
+"keychain.alertBody" = "RewordMe は API キーを、Safari がパスワードを保存するのと同じログインキーチェーンにのみ保存します。\n\n後で macOS が「RewordMeApp はキーチェーンに保存されている機密情報を使用しようとしています」のような表示でパスワードを求めることがあります。これはキーチェーンがキーを保護しているのであって、キーが Mac の外に出るわけではありません。「常に許可」を選べば再度尋ねられません。\n\nソースからビルドした場合はビルドごとに再署名されるため、macOS は毎回新しいアプリとみなして再度確認します。";
+"keychain.gotIt" = "了解";
+
+"ax.title" = "RewordMe に選択テキストの読み取りを許可";
+"ax.body" = "選択したテキストを取得してその場で置き換えるには、RewordMe に macOS のアクセシビリティアクセスが必要です。\n\nシステム設定 > プライバシーとセキュリティ > アクセシビリティ で RewordMe をオンにして許可してください。\n\nリストで既にオンになっていますか？それは macOS が以前のビルドを記憶しているためです - マイナスボタンで項目を削除し、現在のアプリを追加し直してください。\n\n許可したくない場合も、選択テキストを右クリックして サービス > Reword with RewordMe を使えます - この方法に権限は不要です。";
+"ax.notNow" = "後で";
+
+"error.missingKey" = "API キーが設定されていません。設定で追加してください。";
+"error.invalidKey" = "プロバイダが API キーを拒否しました。設定で確認してください。";
+"error.rateLimitedRetry" = "レート制限に達しました。%d 秒後に再試行してください。";
+"error.rateLimited" = "レート制限に達しました。しばらくして再試行してください。";
+"error.refused" = "プロバイダがこのテキストのリライトを拒否しました。";
+"error.api" = "プロバイダエラー（%d）: %@";
+"error.empty" = "プロバイダから空の応答が返されました。";
+"error.invalidResponse" = "プロバイダの応答を読み取れませんでした。";
+"error.noModel" = "このプロバイダで利用可能なモデルが見つかりませんでした。";

@@ -20,6 +20,20 @@
     <string>AppIcon</string>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>fr</string>
+        <string>pl</string>
+        <string>de</string>
+        <string>es</string>
+        <string>pt</string>
+        <string>it</string>
+        <string>uk</string>
+        <string>zh-Hans</string>
+        <string>ja</string>
+        <string>ko</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>

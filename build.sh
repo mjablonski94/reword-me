@@ -15,6 +15,7 @@ mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 cp "$BIN/RewordMeApp" "$CONTENTS/MacOS/RewordMeApp"
 cp Info.plist "$CONTENTS/Info.plist"
 [ -f AppIcon.icns ] && cp AppIcon.icns "$CONTENTS/Resources/AppIcon.icns"
+[ -d Localizations ] && cp -R Localizations/*.lproj "$CONTENTS/Resources/" 2>/dev/null || true
 
 # Ad-hoc sign by default: launches without a provisioning profile. An Apple Development cert
 # needs a provisioning profile (spawn fails with error 163 without one), so only sign with a

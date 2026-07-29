@@ -91,7 +91,7 @@ struct PopupView: View {
             Image(systemName: "cursorarrow.and.square.on.square.dashed")
                 .font(.system(size: 22))
                 .foregroundStyle(.secondary)
-            Text("No text selected. Select some text, then press \(ConfigStore().load().hotkey.display).")
+            Text(Loc.noSelection(ConfigStore().load().hotkey.display))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -135,7 +135,7 @@ struct PopupView: View {
                         endPoint: .bottom
                     )
                 )
-            TextField("Describe your change", text: $session.steering)
+            TextField(Loc.describePlaceholder, text: $session.steering)
                 .textFieldStyle(.plain)
                 .focused($steeringFocused)
                 .onSubmit { session.reword() }
@@ -198,10 +198,10 @@ struct PopupView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.small)
-            Text("Rewording...")
+            Text(Loc.rewording)
                 .font(.callout)
                 .foregroundStyle(.secondary)
-            Button("Cancel") { session.backToMenu() }
+            Button(Loc.cancel) { session.backToMenu() }
                 .glassButtonStyle()
                 .controlSize(.small)
         }
@@ -231,16 +231,16 @@ struct PopupView: View {
                 Button {
                     session.regenerate()
                 } label: {
-                    Label("Again", systemImage: "arrow.clockwise")
+                    Label(Loc.again, systemImage: "arrow.clockwise")
                 }
                 .glassButtonStyle()
 
                 Spacer()
 
-                Button("Copy") { session.copyResult() }
+                Button(Loc.copy) { session.copyResult() }
                     .glassButtonStyle()
 
-                Button("Replace") { session.replaceSelection() }
+                Button(Loc.replace) { session.replaceSelection() }
                     .glassButtonStyle(prominent: true)
                     .keyboardShortcut(.defaultAction)
             }
@@ -252,7 +252,7 @@ struct PopupView: View {
 
     private func errorView(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Something went wrong", systemImage: "exclamationmark.triangle.fill")
+            Label(Loc.errorTitle, systemImage: "exclamationmark.triangle.fill")
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(.orange)
             Text(message)
@@ -261,7 +261,7 @@ struct PopupView: View {
                 .textSelection(.enabled)
             HStack {
                 Spacer()
-                Button("Try Again") { session.regenerate() }
+                Button(Loc.tryAgain) { session.regenerate() }
                     .glassButtonStyle()
             }
         }

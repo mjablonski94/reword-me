@@ -1,0 +1,88 @@
+"menu.grantAccess" = "Bedienungshilfen-Zugriff erlauben...";
+"menu.reword" = "Auswahl umformulieren";
+"menu.settings" = "Einstellungen...";
+"menu.buyCoffee" = "Spendier mir einen Kaffee";
+"menu.quit" = "RewordMe beenden";
+
+"popup.describePlaceholder" = "Beschreibe deine Änderung";
+"popup.proofread" = "Korrektur";
+"popup.rewrite" = "Umformulieren";
+"popup.friendly" = "Freundlich";
+"popup.professional" = "Professionell";
+"popup.concise" = "Prägnant";
+"popup.rewording" = "Formuliere um...";
+"popup.cancel" = "Abbrechen";
+"popup.again" = "Nochmal";
+"popup.copy" = "Kopieren";
+"popup.replace" = "Ersetzen";
+"popup.tryAgain" = "Erneut versuchen";
+"popup.errorTitle" = "Etwas ist schiefgelaufen";
+"popup.noSelection" = "Kein Text ausgewählt. Wähle Text aus und drücke dann %@.";
+
+"settings.windowTitle" = "RewordMe-Einstellungen";
+"tab.provider" = "Anbieter";
+"tab.rewriting" = "Umformulieren";
+"tab.general" = "Allgemein";
+
+"provider.section" = "Anbieter";
+"provider.apiKeySection" = "API-Schlüssel";
+"provider.getKey" = "API-Schlüssel erhältst du auf %@";
+"provider.saveKey" = "Schlüssel sichern";
+"provider.saved" = "Gesichert";
+"provider.keychainCaption" = "Wird im Anmelde-Schlüsselbund gespeichert, nie in einfachen Dateien. Fragt macOS, ob RewordMe auf den Schlüsselbund zugreifen darf, schützt dein Mac gerade den Schlüssel - wähle „Immer erlauben“.";
+"provider.modelSection" = "Modell";
+"provider.modelLabel" = "Modell";
+"provider.automatic" = "Automatisch (günstigstes)";
+"provider.automaticHint" = "Automatisch ist derzeit %@";
+"provider.noModels" = "Der Anbieter hat keine nutzbaren Modelle zurückgegeben.";
+"provider.loadModels" = "Modelle laden";
+
+"ollama.section" = "Lokaler Server";
+"ollama.blurb" = "Ollama läuft auf deinem Mac - kein API-Schlüssel, keine Kosten, und der Text verlässt nie deinen Rechner.";
+"ollama.serverLabel" = "Server";
+"ollama.caption" = "Standard ist %@ - ändere es nur, wenn Ollama woanders lauscht (OLLAMA_HOST, Docker-Portweiterleitung, anderer Rechner).\nInstalliere es und lade dann ein Modell, z. B.:  ollama pull llama3.2";
+"ollama.getLink" = "Ollama gibt es auf %@";
+
+"rules.section" = "Regeln (Do's und Don'ts)";
+"rules.footer" = "Jede aktivierte Regel wird mit jeder Umformulierung mitgesendet. Schalte Regeln aus statt sie zu löschen, wenn sie nur manchmal gelten.";
+"rules.add" = "Regel hinzufügen";
+"rules.placeholder" = "z. B. Nie Ausrufezeichen verwenden";
+"rules.do" = "Tu";
+"rules.dont" = "Lass";
+"base.section" = "Basis-Prompt";
+"base.footer" = "Freie ständige Anweisungen, z. B. „Ich bin kein Muttersprachler; korrigiere die Grammatik, aber behalte meine Stimme.“";
+
+"shortcut.section" = "Kurzbefehl";
+"shortcut.label" = "Auswahl umformulieren";
+"shortcut.recording" = "Tasten drücken...";
+"shortcut.hintIdle" = "Klicke auf den Kurzbefehl, um ihn zu ändern.";
+"shortcut.hintRecording" = "Drücke jetzt die neue Kombination - sie braucht Command, Option oder Control. Esc bricht ab.";
+"shortcut.services" = "Auch über das Dienste-Menü verfügbar: Rechtsklick auf ausgewählten Text, dann Dienste > Reword with RewordMe.";
+
+"general.startup" = "Start";
+"general.launchAtLogin" = "Beim Anmelden starten";
+"general.permissions" = "Berechtigungen";
+"general.accessibility" = "Bedienungshilfen";
+"general.granted" = "Erteilt";
+"general.openSystemSettings" = "Systemeinstellungen öffnen";
+"general.accessibilityCaption" = "Nötig, um den ausgewählten Text zu lesen und direkt zu ersetzen. Ohne funktionieren nur das Dienste-Menü und Kopieren.";
+"general.support" = "Unterstützung";
+"general.buyCoffee" = "Spendier mir einen Kaffee";
+
+"keychain.alertTitle" = "Dein Schlüssel wandert in den macOS-Schlüsselbund";
+"keychain.alertBody" = "RewordMe speichert API-Schlüssel ausschließlich in deinem Anmelde-Schlüsselbund, dort wo auch Safari Passwörter ablegt.\n\nmacOS fragt später eventuell nach deinem Passwort, etwa mit „RewordMeApp möchte vertrauliche Informationen aus dem Schlüsselbund verwenden“. Das ist der Schlüsselbund, der deinen Schlüssel schützt - der Schlüssel verlässt deinen Mac nicht. Wähle „Immer erlauben“, damit die Frage nicht wiederkommt.\n\nAus dem Quellcode gebaute Versionen werden bei jedem Build neu signiert, daher behandelt macOS jeden Build wie eine neue App und fragt erneut.";
+"keychain.gotIt" = "Verstanden";
+
+"ax.title" = "Lass RewordMe deine Auswahl lesen";
+"ax.body" = "Um den ausgewählten Text zu holen und direkt zu ersetzen, braucht RewordMe den Bedienungshilfen-Zugriff von macOS.\n\nErlaube ihn in Systemeinstellungen > Datenschutz & Sicherheit > Bedienungshilfen, indem du RewordMe aktivierst.\n\nSteht es schon aktiviert in der Liste? Dann erinnert sich macOS an einen früheren Build von RewordMe - entferne den Eintrag mit der Minus-Taste und füge die aktuelle App erneut hinzu.\n\nLieber nicht? Du kannst ausgewählten Text weiterhin per Rechtsklick über Dienste > Reword with RewordMe umformulieren - dieser Weg braucht keine Berechtigung.";
+"ax.notNow" = "Später";
+
+"error.missingKey" = "Kein API-Schlüssel konfiguriert. Füge einen in den Einstellungen hinzu.";
+"error.invalidKey" = "Der Anbieter hat den API-Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.";
+"error.rateLimitedRetry" = "Ratenlimit erreicht. Versuche es in %ds erneut.";
+"error.rateLimited" = "Ratenlimit erreicht. Versuche es gleich erneut.";
+"error.refused" = "Der Anbieter hat die Umformulierung dieses Textes abgelehnt.";
+"error.api" = "Anbieterfehler (%d): %@";
+"error.empty" = "Der Anbieter hat eine leere Antwort zurückgegeben.";
+"error.invalidResponse" = "Die Antwort des Anbieters konnte nicht gelesen werden.";
+"error.noModel" = "Kein nutzbares Modell für diesen Anbieter gefunden.";

@@ -1,0 +1,88 @@
+"menu.grantAccess" = "Przyznaj dostęp do Dostępności...";
+"menu.reword" = "Przeredaguj zaznaczenie";
+"menu.settings" = "Ustawienia...";
+"menu.buyCoffee" = "Postaw mi kawę";
+"menu.quit" = "Zakończ RewordMe";
+
+"popup.describePlaceholder" = "Opisz swoją zmianę";
+"popup.proofread" = "Korekta";
+"popup.rewrite" = "Przeredaguj";
+"popup.friendly" = "Przyjazny";
+"popup.professional" = "Profesjonalny";
+"popup.concise" = "Zwięzły";
+"popup.rewording" = "Przeredagowuję...";
+"popup.cancel" = "Anuluj";
+"popup.again" = "Jeszcze raz";
+"popup.copy" = "Kopiuj";
+"popup.replace" = "Zastąp";
+"popup.tryAgain" = "Spróbuj ponownie";
+"popup.errorTitle" = "Coś poszło nie tak";
+"popup.noSelection" = "Brak zaznaczonego tekstu. Zaznacz tekst, a następnie naciśnij %@.";
+
+"settings.windowTitle" = "Ustawienia RewordMe";
+"tab.provider" = "Dostawca";
+"tab.rewriting" = "Redagowanie";
+"tab.general" = "Ogólne";
+
+"provider.section" = "Dostawca";
+"provider.apiKeySection" = "Klucz API";
+"provider.getKey" = "Uzyskaj klucz API na %@";
+"provider.saveKey" = "Zapisz klucz";
+"provider.saved" = "Zapisano";
+"provider.keychainCaption" = "Przechowywany w pęku kluczy logowania, nigdy w zwykłych plikach. Jeśli macOS zapyta, czy RewordMe może uzyskać dostęp do pęku kluczy, to Twój Mac chroni klucz - wybierz „Zawsze zezwalaj”.";
+"provider.modelSection" = "Model";
+"provider.modelLabel" = "Model";
+"provider.automatic" = "Automatycznie (najtańszy)";
+"provider.automaticHint" = "Automatycznie wybierany jest obecnie %@";
+"provider.noModels" = "Dostawca nie zwrócił żadnych użytecznych modeli.";
+"provider.loadModels" = "Wczytaj modele";
+
+"ollama.section" = "Serwer lokalny";
+"ollama.blurb" = "Ollama działa na Twoim Macu - bez klucza API, bez kosztów, a tekst nigdy nie opuszcza Twojego komputera.";
+"ollama.serverLabel" = "Serwer";
+"ollama.caption" = "Domyślnie %@ - zmień tylko wtedy, gdy Ollama nasłuchuje gdzie indziej (OLLAMA_HOST, mapowanie portów Dockera, inna maszyna).\nZainstaluj, a następnie pobierz model, np.:  ollama pull llama3.2";
+"ollama.getLink" = "Pobierz Ollama na %@";
+
+"rules.section" = "Nakazy i zakazy";
+"rules.footer" = "Każda włączona reguła jest wysyłana z każdym przeredagowaniem. Wyłączaj reguły zamiast je usuwać, gdy mają zastosowanie tylko czasami.";
+"rules.add" = "Dodaj regułę";
+"rules.placeholder" = "np. Nigdy nie używaj wykrzykników";
+"rules.do" = "Rób";
+"rules.dont" = "Nie rób";
+"base.section" = "Prompt bazowy";
+"base.footer" = "Dowolne stałe instrukcje, np. „Nie jestem native speakerem; poprawiaj gramatykę, ale zachowaj mój styl.”";
+
+"shortcut.section" = "Skrót";
+"shortcut.label" = "Przeredaguj zaznaczenie";
+"shortcut.recording" = "Naciśnij klawisze...";
+"shortcut.hintIdle" = "Kliknij skrót, aby go zmienić.";
+"shortcut.hintRecording" = "Naciśnij teraz nową kombinację - musi zawierać Command, Option lub Control. Esc anuluje.";
+"shortcut.services" = "Dostępne także z menu Usługi: kliknij zaznaczony tekst prawym przyciskiem, a następnie Usługi > Reword with RewordMe.";
+
+"general.startup" = "Uruchamianie";
+"general.launchAtLogin" = "Uruchamiaj przy logowaniu";
+"general.permissions" = "Uprawnienia";
+"general.accessibility" = "Dostępność";
+"general.granted" = "Przyznano";
+"general.openSystemSettings" = "Otwórz Ustawienia systemowe";
+"general.accessibilityCaption" = "Potrzebne do odczytania zaznaczonego tekstu i zastąpienia go w miejscu. Bez tego działają tylko menu Usługi i Kopiuj.";
+"general.support" = "Wsparcie";
+"general.buyCoffee" = "Postaw mi kawę";
+
+"keychain.alertTitle" = "Twój klucz trafia do pęku kluczy macOS";
+"keychain.alertBody" = "RewordMe przechowuje klucze API wyłącznie w pęku kluczy logowania, tam gdzie Safari trzyma hasła.\n\nmacOS może później poprosić o hasło komunikatem w rodzaju „RewordMeApp chce użyć poufnych informacji przechowywanych w pęku kluczy”. To pęk kluczy chroni Twój klucz, a nie klucz opuszczający Twojego Maca. Wybierz „Zawsze zezwalaj”, aby przestał pytać.\n\nKompilacje ze źródeł są podpisywane na nowo przy każdej przebudowie, więc macOS traktuje każdą przebudowę jak nową aplikację i pyta ponownie.";
+"keychain.gotIt" = "Rozumiem";
+
+"ax.title" = "Pozwól RewordMe czytać Twoje zaznaczenie";
+"ax.body" = "Aby pobrać zaznaczony tekst i zastąpić go w miejscu, RewordMe potrzebuje dostępu do Dostępności macOS.\n\nPrzyznaj go w Ustawieniach systemowych > Prywatność i ochrona > Dostępność, włączając RewordMe.\n\nJuż włączone na liście? macOS pamięta poprzednią kompilację RewordMe - usuń wpis przyciskiem minus i dodaj bieżącą aplikację ponownie.\n\nWolisz nie przyznawać? Nadal możesz kliknąć zaznaczony tekst prawym przyciskiem i użyć Usługi > Reword with RewordMe - ta ścieżka nie wymaga uprawnień.";
+"ax.notNow" = "Nie teraz";
+
+"error.missingKey" = "Nie skonfigurowano klucza API. Dodaj go w Ustawieniach.";
+"error.invalidKey" = "Dostawca odrzucił klucz API. Sprawdź go w Ustawieniach.";
+"error.rateLimitedRetry" = "Osiągnięto limit zapytań. Spróbuj ponownie za %ds.";
+"error.rateLimited" = "Osiągnięto limit zapytań. Spróbuj ponownie za chwilę.";
+"error.refused" = "Dostawca odmówił przeredagowania tego tekstu.";
+"error.api" = "Błąd dostawcy (%d): %@";
+"error.empty" = "Dostawca zwrócił pustą odpowiedź.";
+"error.invalidResponse" = "Nie udało się odczytać odpowiedzi dostawcy.";
+"error.noModel" = "Nie znaleziono użytecznego modelu dla tego dostawcy.";

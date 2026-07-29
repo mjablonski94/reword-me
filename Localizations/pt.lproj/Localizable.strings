@@ -1,0 +1,88 @@
+"menu.grantAccess" = "Conceder acesso de Acessibilidade...";
+"menu.reword" = "Reformular seleção";
+"menu.settings" = "Ajustes...";
+"menu.buyCoffee" = "Pague-me um café";
+"menu.quit" = "Encerrar RewordMe";
+
+"popup.describePlaceholder" = "Descreva sua alteração";
+"popup.proofread" = "Revisar";
+"popup.rewrite" = "Reformular";
+"popup.friendly" = "Amigável";
+"popup.professional" = "Profissional";
+"popup.concise" = "Conciso";
+"popup.rewording" = "Reformulando...";
+"popup.cancel" = "Cancelar";
+"popup.again" = "De novo";
+"popup.copy" = "Copiar";
+"popup.replace" = "Substituir";
+"popup.tryAgain" = "Tentar novamente";
+"popup.errorTitle" = "Algo deu errado";
+"popup.noSelection" = "Nenhum texto selecionado. Selecione um texto e pressione %@.";
+
+"settings.windowTitle" = "Ajustes do RewordMe";
+"tab.provider" = "Provedor";
+"tab.rewriting" = "Reescrita";
+"tab.general" = "Geral";
+
+"provider.section" = "Provedor";
+"provider.apiKeySection" = "Chave de API";
+"provider.getKey" = "Obtenha uma chave de API em %@";
+"provider.saveKey" = "Salvar chave";
+"provider.saved" = "Salva";
+"provider.keychainCaption" = "Guardada nas suas Chaves de início de sessão, nunca em arquivos comuns. Se o macOS perguntar se o RewordMe pode acessar as Chaves, é o seu Mac protegendo a chave - escolha \"Sempre Permitir\".";
+"provider.modelSection" = "Modelo";
+"provider.modelLabel" = "Modelo";
+"provider.automatic" = "Automático (mais barato)";
+"provider.automaticHint" = "Automático corresponde atualmente a %@";
+"provider.noModels" = "O provedor não retornou modelos utilizáveis.";
+"provider.loadModels" = "Carregar modelos";
+
+"ollama.section" = "Servidor local";
+"ollama.blurb" = "O Ollama roda no seu Mac - sem chave de API, sem custo, e o texto nunca sai da sua máquina.";
+"ollama.serverLabel" = "Servidor";
+"ollama.caption" = "O padrão é %@ - mude apenas se o Ollama escutar em outro lugar (OLLAMA_HOST, mapeamento de porta do Docker, outra máquina).\nInstale e depois baixe um modelo, p. ex.:  ollama pull llama3.2";
+"ollama.getLink" = "Obtenha o Ollama em %@";
+
+"rules.section" = "O que fazer e o que evitar";
+"rules.footer" = "Cada regra ativada é enviada com cada reformulação. Desative regras em vez de apagá-las quando elas só se aplicam às vezes.";
+"rules.add" = "Adicionar regra";
+"rules.placeholder" = "p. ex. Nunca use pontos de exclamação";
+"rules.do" = "Faça";
+"rules.dont" = "Evite";
+"base.section" = "Prompt base";
+"base.footer" = "Instruções permanentes livres, p. ex. \"Não sou falante nativo; corrija a gramática mas mantenha a minha voz.\"";
+
+"shortcut.section" = "Atalho";
+"shortcut.label" = "Reformular seleção";
+"shortcut.recording" = "Pressione as teclas...";
+"shortcut.hintIdle" = "Clique no atalho para alterá-lo.";
+"shortcut.hintRecording" = "Pressione agora a nova combinação - ela precisa incluir Comando, Opção ou Controle. Esc cancela.";
+"shortcut.services" = "Também disponível no menu Serviços: clique com o botão direito no texto selecionado e escolha Serviços > Reword with RewordMe.";
+
+"general.startup" = "Início";
+"general.launchAtLogin" = "Abrir ao iniciar sessão";
+"general.permissions" = "Permissões";
+"general.accessibility" = "Acessibilidade";
+"general.granted" = "Concedido";
+"general.openSystemSettings" = "Abrir Ajustes do Sistema";
+"general.accessibilityCaption" = "Necessário para ler o texto selecionado e substituí-lo no lugar. Sem ele, apenas o menu Serviços e Copiar funcionam.";
+"general.support" = "Apoio";
+"general.buyCoffee" = "Pague-me um café";
+
+"keychain.alertTitle" = "Sua chave vai para as Chaves do macOS";
+"keychain.alertBody" = "O RewordMe guarda chaves de API apenas nas suas Chaves de início de sessão, o mesmo lugar onde o Safari guarda senhas.\n\nO macOS pode depois pedir sua senha com um aviso como \"RewordMeApp quer usar suas informações confidenciais guardadas nas chaves\". São as Chaves protegendo a sua chave, não a chave saindo do seu Mac. Escolha \"Sempre Permitir\" para que não pergunte de novo.\n\nCompilações feitas do código-fonte são reassinadas a cada compilação, então o macOS trata cada uma como um app novo e pergunta mais uma vez.";
+"keychain.gotIt" = "Entendi";
+
+"ax.title" = "Deixe o RewordMe ler sua seleção";
+"ax.body" = "Para pegar o texto selecionado e substituí-lo no lugar, o RewordMe precisa do acesso de Acessibilidade do macOS.\n\nConceda em Ajustes do Sistema > Privacidade e Segurança > Acessibilidade, ativando o RewordMe.\n\nJá aparece ativado na lista? Então o macOS está lembrando de uma compilação anterior do RewordMe - remova a entrada com o botão de menos e adicione o app atual novamente.\n\nPrefere não conceder? Você ainda pode clicar com o botão direito no texto selecionado e usar Serviços > Reword with RewordMe - esse caminho não precisa de permissão.";
+"ax.notNow" = "Agora não";
+
+"error.missingKey" = "Nenhuma chave de API configurada. Adicione uma nos Ajustes.";
+"error.invalidKey" = "O provedor rejeitou a chave de API. Verifique-a nos Ajustes.";
+"error.rateLimitedRetry" = "Limite de requisições atingido. Tente novamente em %ds.";
+"error.rateLimited" = "Limite de requisições atingido. Tente novamente em instantes.";
+"error.refused" = "O provedor se recusou a reformular este texto.";
+"error.api" = "Erro do provedor (%d): %@";
+"error.empty" = "O provedor retornou uma resposta vazia.";
+"error.invalidResponse" = "Não foi possível ler a resposta do provedor.";
+"error.noModel" = "Nenhum modelo utilizável encontrado para este provedor.";

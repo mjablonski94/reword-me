@@ -80,10 +80,10 @@ final class SettingsModel: ObservableObject {
                 )
                 self.availableModels = models.sorted { $0.id < $1.id }
                 if models.isEmpty {
-                    self.modelsError = "The provider returned no usable models."
+                    self.modelsError = Loc.noModels
                 }
             } catch {
-                self.modelsError = (error as? RewordError)?.errorDescription
+                self.modelsError = (error as? RewordError).map(Loc.message(for:))
                     ?? error.localizedDescription
             }
             self.isLoadingModels = false
@@ -95,7 +95,7 @@ final class SettingsModel: ObservableObject {
         guard let pick = ModelSelection.defaultModel(for: config.provider, from: availableModels) else {
             return ""
         }
-        return "Automatic currently resolves to \(pick.id)"
+        return Loc.automaticHint(pick.id)
     }
 
     // MARK: - Rules
@@ -118,21 +118,10 @@ final class SettingsModel: ObservableObject {
         defaults.set(true, forKey: flag)
 
         let alert = NSAlert()
-        alert.messageText = "Your key goes into the macOS Keychain"
-        alert.informativeText = """
-        RewordMe stores API keys only in your login Keychain, the same place \
-        Safari keeps passwords.
-
-        macOS may later ask for your password with a prompt like "RewordMeApp \
-        wants to use your confidential information stored in the keychain". \
-        That is the Keychain guarding your key, not the key leaving your Mac. \
-        Choose "Always Allow" to stop it from asking again.
-
-        Builds made from source are re-signed on every rebuild, so macOS \
-        treats each rebuild as a new app and asks once more.
-        """
+        alert.messageText = Loc.keychainAlertTitle
+        alert.informativeText = Loc.keychainAlertBody
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Got It")
+        alert.addButton(withTitle: Loc.gotIt)
         alert.runModal()
     }
 

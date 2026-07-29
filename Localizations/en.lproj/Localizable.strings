@@ -1,0 +1,88 @@
+"menu.grantAccess" = "Grant Accessibility Access...";
+"menu.reword" = "Reword Selection";
+"menu.settings" = "Settings...";
+"menu.buyCoffee" = "Buy Me a Coffee";
+"menu.quit" = "Quit RewordMe";
+
+"popup.describePlaceholder" = "Describe your change";
+"popup.proofread" = "Proofread";
+"popup.rewrite" = "Rewrite";
+"popup.friendly" = "Friendly";
+"popup.professional" = "Professional";
+"popup.concise" = "Concise";
+"popup.rewording" = "Rewording...";
+"popup.cancel" = "Cancel";
+"popup.again" = "Again";
+"popup.copy" = "Copy";
+"popup.replace" = "Replace";
+"popup.tryAgain" = "Try Again";
+"popup.errorTitle" = "Something went wrong";
+"popup.noSelection" = "No text selected. Select some text, then press %@.";
+
+"settings.windowTitle" = "RewordMe Settings";
+"tab.provider" = "Provider";
+"tab.rewriting" = "Rewriting";
+"tab.general" = "General";
+
+"provider.section" = "Provider";
+"provider.apiKeySection" = "API key";
+"provider.getKey" = "Get an API key at %@";
+"provider.saveKey" = "Save Key";
+"provider.saved" = "Saved";
+"provider.keychainCaption" = "Stored in your login Keychain, never in plain files. If macOS asks whether RewordMe may access the Keychain, that is your Mac guarding the key - choose Always Allow.";
+"provider.modelSection" = "Model";
+"provider.modelLabel" = "Model";
+"provider.automatic" = "Automatic (least costly)";
+"provider.automaticHint" = "Automatic currently resolves to %@";
+"provider.noModels" = "The provider returned no usable models.";
+"provider.loadModels" = "Load Models";
+
+"ollama.section" = "Local server";
+"ollama.blurb" = "Ollama runs on your Mac - no API key, no cost, and the text never leaves your machine.";
+"ollama.serverLabel" = "Server";
+"ollama.caption" = "Default is %@ - change it only if Ollama listens elsewhere (OLLAMA_HOST, Docker port mapping, another machine).\nInstall it, then pull a model, e.g.:  ollama pull llama3.2";
+"ollama.getLink" = "Get Ollama at %@";
+
+"rules.section" = "Do's and don'ts";
+"rules.footer" = "Each enabled rule is sent with every rewrite. Toggle rules off instead of deleting them when they only sometimes apply.";
+"rules.add" = "Add Rule";
+"rules.placeholder" = "e.g. Never use exclamation marks";
+"rules.do" = "Do";
+"rules.dont" = "Don't";
+"base.section" = "Base prompt";
+"base.footer" = "Freeform standing instructions, e.g. \"I am a non-native speaker; fix grammar but keep my voice.\"";
+
+"shortcut.section" = "Shortcut";
+"shortcut.label" = "Reword selection";
+"shortcut.recording" = "Press keys...";
+"shortcut.hintIdle" = "Click the shortcut to change it.";
+"shortcut.hintRecording" = "Press the new combination now - it needs Command, Option or Control. Esc cancels.";
+"shortcut.services" = "Also available from the Services menu: right-click selected text, then Services > Reword with RewordMe.";
+
+"general.startup" = "Startup";
+"general.launchAtLogin" = "Launch at login";
+"general.permissions" = "Permissions";
+"general.accessibility" = "Accessibility";
+"general.granted" = "Granted";
+"general.openSystemSettings" = "Open System Settings";
+"general.accessibilityCaption" = "Needed to read the selected text and to replace it in place. Without it, only the Services menu and Copy work.";
+"general.support" = "Support";
+"general.buyCoffee" = "Buy me a coffee";
+
+"keychain.alertTitle" = "Your key goes into the macOS Keychain";
+"keychain.alertBody" = "RewordMe stores API keys only in your login Keychain, the same place Safari keeps passwords.\n\nmacOS may later ask for your password with a prompt like \"RewordMeApp wants to use your confidential information stored in the keychain\". That is the Keychain guarding your key, not the key leaving your Mac. Choose \"Always Allow\" to stop it from asking again.\n\nBuilds made from source are re-signed on every rebuild, so macOS treats each rebuild as a new app and asks once more.";
+"keychain.gotIt" = "Got It";
+
+"ax.title" = "Let RewordMe read your selection";
+"ax.body" = "To grab the text you select and to replace it in place, RewordMe needs macOS Accessibility access.\n\nGrant it in System Settings > Privacy & Security > Accessibility by turning on RewordMe.\n\nAlready enabled in the list? Then macOS is remembering a previous build of RewordMe - remove the entry with the minus button and add the current app again.\n\nPrefer not to? You can still right-click selected text and use Services > Reword with RewordMe - that path needs no permission.";
+"ax.notNow" = "Not Now";
+
+"error.missingKey" = "No API key configured. Add one in Settings.";
+"error.invalidKey" = "The API key was rejected by the provider. Check it in Settings.";
+"error.rateLimitedRetry" = "Rate limit reached. Try again in %ds.";
+"error.rateLimited" = "Rate limit reached. Try again in a moment.";
+"error.refused" = "The provider declined to rewrite this text.";
+"error.api" = "Provider error (%d): %@";
+"error.empty" = "The provider returned an empty response.";
+"error.invalidResponse" = "Could not read the provider's response.";
+"error.noModel" = "No usable model found for this provider.";

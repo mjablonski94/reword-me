@@ -75,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !AccessibilityPermission.isTrusted {
             let grantItem = NSMenuItem(
-                title: "Grant Accessibility Access...",
+                title: Loc.menuGrantAccess,
                 action: #selector(showAccessibilityOnboarding),
                 keyEquivalent: ""
             )
@@ -90,7 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let hotkey = ConfigStore().load().hotkey
         let rewordItem = NSMenuItem(
-            title: "Reword Selection",
+            title: Loc.menuReword,
             action: #selector(rewordSelection),
             keyEquivalent: hotkey.character
         )
@@ -99,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(rewordItem)
         menu.addItem(.separator())
         let settingsItem = NSMenuItem(
-            title: "Settings...",
+            title: Loc.menuSettings,
             action: #selector(openSettings),
             keyEquivalent: ","
         )
@@ -107,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(settingsItem)
         menu.addItem(.separator())
         let coffeeItem = NSMenuItem(
-            title: "Buy Me a Coffee",
+            title: Loc.menuBuyCoffee,
             action: #selector(openBuyMeACoffee),
             keyEquivalent: ""
         )
@@ -118,7 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coffeeItem.target = self
         menu.addItem(coffeeItem)
         menu.addItem(NSMenuItem(
-            title: "Quit RewordMe",
+            title: Loc.menuQuit,
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))

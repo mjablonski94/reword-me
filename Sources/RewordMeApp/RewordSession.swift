@@ -22,24 +22,26 @@ final class RewordSession: ObservableObject {
         let instruction: String
     }
 
+    // Preset titles are localized; the instructions sent to the model stay
+    // English - the core prompt preserves the text's own language anyway.
     static let proofread = Preset(
-        title: "Proofread",
+        title: Loc.proofread,
         icon: "text.magnifyingglass",
         instruction: "Only fix grammar, spelling and punctuation. Keep the wording and tone unchanged otherwise."
     )
 
     static let rewrite = Preset(
-        title: "Rewrite",
+        title: Loc.rewrite,
         icon: "arrow.trianglehead.2.clockwise.rotate.90",
         instruction: ""
     )
 
     static let tonePresets: [Preset] = [
-        Preset(title: "Friendly", icon: "face.smiling",
+        Preset(title: Loc.friendly, icon: "face.smiling",
                instruction: "Make it warmer and more friendly."),
-        Preset(title: "Professional", icon: "briefcase",
+        Preset(title: Loc.professional, icon: "briefcase",
                instruction: "Make it more professional and polished."),
-        Preset(title: "Concise", icon: "text.badge.minus",
+        Preset(title: Loc.concise, icon: "text.badge.minus",
                instruction: "Make it more concise without losing meaning.")
     ]
 
@@ -118,7 +120,7 @@ final class RewordSession: ObservableObject {
                 self.stage = .result
             } catch {
                 guard !Task.isCancelled else { return }
-                let message = (error as? RewordError)?.errorDescription
+                let message = (error as? RewordError).map(Loc.message(for:))
                     ?? error.localizedDescription
                 self.stage = .failed(message)
             }

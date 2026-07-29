@@ -14,7 +14,7 @@ final class SettingsWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "RewordMe Settings"
+        window.title = Loc.settingsTitle
         window.contentViewController = NSHostingController(rootView: SettingsView(model: model))
         window.isReleasedWhenClosed = false
         window.center()
@@ -33,11 +33,11 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             ProviderSettingsView(model: model)
-                .tabItem { Label("Provider", systemImage: "key") }
+                .tabItem { Label(Loc.tabProvider, systemImage: "key") }
             RewritingSettingsView(model: model)
-                .tabItem { Label("Rewriting", systemImage: "pencil.line") }
+                .tabItem { Label(Loc.tabRewriting, systemImage: "pencil.line") }
             GeneralSettingsView(model: model)
-                .tabItem { Label("General", systemImage: "gearshape") }
+                .tabItem { Label(Loc.tabGeneral, systemImage: "gearshape") }
         }
         .frame(width: 560, height: 480)
     }
@@ -50,8 +50,8 @@ struct ProviderSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Provider") {
-                Picker("Provider", selection: $model.config.provider) {
+            Section(Loc.providerSection) {
+                Picker(Loc.providerSection, selection: $model.config.provider) {
                     ForEach(ProviderKind.allCases) { kind in
                         Text(kind.displayName).tag(kind)
                     }
@@ -60,47 +60,47 @@ struct ProviderSettingsView: View {
             }
 
             if model.config.provider.requiresAPIKey {
-                Section("API key") {
+                Section(Loc.apiKeySection) {
                     SecureField(model.config.provider.keyPlaceholder, text: $model.apiKey)
                     HStack {
                         Link(
-                            "Get an API key at \(model.config.provider.apiKeyConsoleName)",
+                            Loc.getKey(model.config.provider.apiKeyConsoleName),
                             destination: model.config.provider.apiKeyConsoleURL
                         )
                         .font(.caption)
                         Spacer()
                         if model.keySavedFeedback {
-                            Label("Saved", systemImage: "checkmark.circle.fill")
+                            Label(Loc.saved, systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                                 .transition(.opacity)
                         }
-                        Button("Save Key") { model.saveAPIKey() }
+                        Button(Loc.saveKey) { model.saveAPIKey() }
                             .disabled(model.apiKey.isEmpty)
                     }
                     .animation(.easeInOut(duration: 0.2), value: model.keySavedFeedback)
-                    Text("Stored in your login Keychain, never in plain files. If macOS asks whether RewordMe may access the Keychain, that is your Mac guarding the key - choose Always Allow.")
+                    Text(Loc.keychainCaption)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             } else {
-                Section("Local server") {
-                    Text("Ollama runs on your Mac - no API key, no cost, and the text never leaves your machine.")
+                Section(Loc.ollamaSection) {
+                    Text(Loc.ollamaBlurb)
                         .font(.callout)
-                    TextField("Server", text: $model.config.ollamaHost, prompt: Text(OllamaEndpoint.defaultHost))
-                    Text("Default is \(OllamaEndpoint.defaultHost) - change it only if Ollama listens elsewhere (OLLAMA_HOST, Docker port mapping, another machine).\nInstall it, then pull a model, e.g.:  ollama pull llama3.2")
+                    TextField(Loc.ollamaServer, text: $model.config.ollamaHost, prompt: Text(OllamaEndpoint.defaultHost))
+                    Text(Loc.ollamaCaption(OllamaEndpoint.defaultHost))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Link(
-                        "Get Ollama at \(model.config.provider.apiKeyConsoleName)",
+                        Loc.getOllama(model.config.provider.apiKeyConsoleName),
                         destination: model.config.provider.apiKeyConsoleURL
                     )
                     .font(.caption)
                 }
             }
 
-            Section("Model") {
-                Picker("Model", selection: $model.config.model) {
-                    Text("Automatic (least costly)").tag(String?.none)
+            Section(Loc.modelSection) {
+                Picker(Loc.modelLabel, selection: $model.config.model) {
+                    Text(Loc.automaticModel).tag(String?.none)
                     ForEach(model.availableModels) { modelInfo in
                         Text(modelInfo.id).tag(String?.some(modelInfo.id))
                     }
@@ -123,7 +123,7 @@ struct ProviderSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Load Models") { model.loadModels() }
+                    Button(Loc.loadModels) { model.loadModels() }
                         .disabled(
                             (model.config.provider.requiresAPIKey && model.apiKey.isEmpty)
                                 || model.isLoadingModels
@@ -149,12 +149,12 @@ struct RewritingSettingsView: View {
                             .labelsHidden()
                         Picker("", selection: $rule.kind) {
                             ForEach(RuleKind.allCases, id: \.self) { kind in
-                                Text(kind.label).tag(kind)
+                                Text(kind == .doRule ? Loc.ruleDo : Loc.ruleDont).tag(kind)
                             }
                         }
                         .labelsHidden()
                         .frame(width: 80)
-                        TextField("e.g. Never use exclamation marks", text: $rule.text)
+                        TextField(Loc.rulePlaceholder, text: $rule.text)
                         Button {
                             model.removeRule(rule)
                         } label: {
@@ -166,12 +166,12 @@ struct RewritingSettingsView: View {
                 Button {
                     model.addRule()
                 } label: {
-                    Label("Add Rule", systemImage: "plus")
+                    Label(Loc.addRule, systemImage: "plus")
                 }
             } header: {
-                Text("Do's and don'ts")
+                Text(Loc.rulesSection)
             } footer: {
-                Text("Each enabled rule is sent with every rewrite. Toggle rules off instead of deleting them when they only sometimes apply.")
+                Text(Loc.rulesFooter)
             }
 
             Section {
@@ -179,9 +179,9 @@ struct RewritingSettingsView: View {
                     .font(.body)
                     .frame(minHeight: 120)
             } header: {
-                Text("Base prompt")
+                Text(Loc.basePromptSection)
             } footer: {
-                Text("Freeform standing instructions, e.g. \"I am a non-native speaker; fix grammar but keep my voice.\"")
+                Text(Loc.basePromptFooter)
             }
         }
         .formStyle(.grouped)
@@ -199,9 +199,9 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Shortcut") {
+            Section(Loc.shortcutSection) {
                 HStack {
-                    Text("Reword selection")
+                    Text(Loc.shortcutLabel)
                     Spacer()
                     Button {
                         if recorder.isRecording {
@@ -212,44 +212,42 @@ struct GeneralSettingsView: View {
                             }
                         }
                     } label: {
-                        Text(recorder.isRecording ? "Press keys..." : model.config.hotkey.display)
+                        Text(recorder.isRecording ? Loc.shortcutRecording : model.config.hotkey.display)
                             .font(.body.monospaced())
                             .frame(minWidth: 110)
                     }
                 }
-                Text(recorder.isRecording
-                    ? "Press the new combination now - it needs Command, Option or Control. Esc cancels."
-                    : "Click the shortcut to change it.")
+                Text(recorder.isRecording ? Loc.shortcutHintRecording : Loc.shortcutHintIdle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("Also available from the Services menu: right-click selected text, then Services > Reword with RewordMe.")
+                Text(Loc.servicesHint)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Startup") {
-                Toggle("Launch at login", isOn: $model.launchAtLogin)
+            Section(Loc.startupSection) {
+                Toggle(Loc.launchAtLogin, isOn: $model.launchAtLogin)
             }
 
-            Section("Permissions") {
-                LabeledContent("Accessibility") {
+            Section(Loc.permissionsSection) {
+                LabeledContent(Loc.accessibility) {
                     if accessibilityTrusted {
-                        Label("Granted", systemImage: "checkmark.circle.fill")
+                        Label(Loc.granted, systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     } else {
-                        Button("Open System Settings") {
+                        Button(Loc.openSystemSettings) {
                             AccessibilityPermission.openSystemSettings()
                         }
                     }
                 }
-                Text("Needed to read the selected text and to replace it in place. Without it, only the Services menu and Copy work.")
+                Text(Loc.accessibilityCaption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Support") {
+            Section(Loc.supportSection) {
                 Link(
-                    "Buy me a coffee",
+                    Loc.buyCoffee,
                     destination: URL(string: "https://buymeacoffee.com/kofcio94f")!
                 )
             }
