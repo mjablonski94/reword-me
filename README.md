@@ -41,7 +41,7 @@ the least costly model your provider offers.
 - **Global hotkey**: select text anywhere, press **Option+Command+R**, the popup appears at the
   selection.
 - **Auto-popup by default**: select text with the mouse and, once the selection has survived
-  unchanged for 2 seconds, the popup fades in PopClip-style. Whitespace, punctuation runs and
+  unchanged for a second, the popup fades in PopClip-style. Whitespace, punctuation runs and
   other selection noise never trigger it. Prefer it quieter? Switch the trigger in
   Settings > General to hotkey-only.
 - **Services menu**: right-click selected text > Services > *Reword with RewordMe* - this path

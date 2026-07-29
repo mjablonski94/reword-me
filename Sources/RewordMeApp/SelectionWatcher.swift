@@ -15,7 +15,7 @@ final class SelectionWatcher {
     var onSelection: ((String, CGRect?) -> Void)?
 
     /// How long a selection must stay unchanged before the popup shows.
-    private let confirmationDelay: TimeInterval = 2
+    private let confirmationDelay: TimeInterval = 1
 
     private var monitor: Any?
     private var lastTriggeredText: String?
