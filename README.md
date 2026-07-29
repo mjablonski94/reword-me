@@ -46,8 +46,9 @@ the least costly model your provider offers.
   *"Keep it under two sentences"*) sent with every rewrite.
 - **Base prompt**: freeform standing instructions (*"I am a non-native speaker; fix grammar but
   keep my voice."*).
-- **Multi-provider**: Claude, ChatGPT, Gemini, Mistral, Grok (xAI) or DeepSeek - just paste one
-  API key. Keys are stored in the login Keychain, never in plain files.
+- **Multi-provider**: Claude, ChatGPT, Gemini, Mistral, Grok (xAI), DeepSeek - just paste one
+  API key (stored in the login Keychain, never in plain files) - or **Ollama** for fully local,
+  free rewrites where the text never leaves your machine.
 - **Model choice**: pick any model the provider lists, or leave it on **Automatic**, which
   resolves to the least costly tier (Haiku / nano / Flash-Lite / Ministral / grok-mini /
   deepseek-chat) so everyday rewrites stay cheap.
@@ -102,6 +103,8 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
    - Mistral: https://console.mistral.ai/api-keys (free tier available)
    - Grok (xAI): https://console.x.ai
    - DeepSeek: https://platform.deepseek.com/api_keys
+   - Ollama: no key at all - install from https://ollama.com, `ollama pull llama3.2`, done.
+     The server address is configurable (defaults to `http://localhost:11434`).
 2. Select text in any app.
 3. Press **Option+Command+R** (or right-click > Services > *Reword with RewordMe*).
 4. In the popup: **Regenerate** for another take, type a steering line and press Return to guide
@@ -184,11 +187,16 @@ the provider's `retry-after` hint when present.
   Consider a cheaper model tier (Automatic already picks the cheapest).
 - **Accessibility grant disappears after rebuilding from source** - expected with ad-hoc signing;
   re-grant once.
+- **macOS asks for my password to access the Keychain** - that is the Keychain protecting your
+  stored API key: the prompt comes from macOS, and the key never leaves your Mac. Choose
+  "Always Allow" and it will not ask again. Builds from source are re-signed on every rebuild,
+  so macOS treats each rebuild as a new app and asks once more; a Developer ID build asks once.
 
 ## Privacy
 
-- The selected text is sent **only** to the provider you configured (Anthropic, OpenAI or
-  Google), over HTTPS, with your own API key. There is no middleman, no telemetry, no analytics.
+- The selected text is sent **only** to the provider you configured, over HTTPS, with your own
+  API key. There is no middleman, no telemetry, no analytics. With **Ollama** the text never
+  leaves your machine at all.
 - API keys are stored in the macOS login Keychain and sent only in request headers - never in
   URLs, never on disk in plain text.
 - The clipboard is used only as a fallback and is restored to its previous contents immediately.

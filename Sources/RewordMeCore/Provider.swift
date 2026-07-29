@@ -8,6 +8,7 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
     case mistral
     case xai
     case deepseek
+    case ollama
 
     public var id: String { rawValue }
 
@@ -19,7 +20,13 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .mistral: return "Mistral"
         case .xai: return "Grok (xAI)"
         case .deepseek: return "DeepSeek"
+        case .ollama: return "Ollama (local)"
         }
+    }
+
+    /// Ollama runs on the user's machine and needs no key at all.
+    public var requiresAPIKey: Bool {
+        self != .ollama
     }
 
     public var keyPlaceholder: String {
@@ -30,6 +37,7 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .mistral: return "API key from console.mistral.ai"
         case .xai: return "xai-..."
         case .deepseek: return "sk-..."
+        case .ollama: return ""
         }
     }
 
@@ -42,6 +50,7 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .mistral: return URL(string: "https://console.mistral.ai/api-keys")!
         case .xai: return URL(string: "https://console.x.ai")!
         case .deepseek: return URL(string: "https://platform.deepseek.com/api_keys")!
+        case .ollama: return URL(string: "https://ollama.com/download")!
         }
     }
 
@@ -53,11 +62,13 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .mistral: return "console.mistral.ai"
         case .xai: return "console.x.ai"
         case .deepseek: return "platform.deepseek.com"
+        case .ollama: return "ollama.com"
         }
     }
 
-    /// Base URL for providers that speak the OpenAI chat-completions
-    /// dialect; nil for providers with their own wire format.
+    /// Default base URL for providers that speak the OpenAI
+    /// chat-completions dialect; nil for providers with their own wire
+    /// format. Ollama's is only a default - the host is configurable.
     public var openAICompatibleBaseURL: URL? {
         switch self {
         case .anthropic, .gemini: return nil
@@ -65,6 +76,7 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
         case .mistral: return URL(string: "https://api.mistral.ai/v1")!
         case .xai: return URL(string: "https://api.x.ai/v1")!
         case .deepseek: return URL(string: "https://api.deepseek.com/v1")!
+        case .ollama: return OllamaEndpoint.baseURL(host: OllamaEndpoint.defaultHost)
         }
     }
 
@@ -90,7 +102,25 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable, Identifiable 
             return !lower.contains("image")
         case .deepseek:
             return true
+        case .ollama:
+            return !lower.contains("embed")
         }
+    }
+}
+
+/// Ollama's server address is user-configurable (OLLAMA_HOST, Docker port
+/// mappings, another machine on the LAN). This normalizes whatever the
+/// user typed into a usable OpenAI-compatible base URL.
+public enum OllamaEndpoint {
+    public static let defaultHost = "http://localhost:11434"
+
+    public static func baseURL(host: String) -> URL? {
+        var trimmed = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { trimmed = defaultHost }
+        if !trimmed.contains("://") { trimmed = "http://" + trimmed }
+        while trimmed.hasSuffix("/") { trimmed.removeLast() }
+        if !trimmed.hasSuffix("/v1") { trimmed += "/v1" }
+        return URL(string: trimmed)
     }
 }
 

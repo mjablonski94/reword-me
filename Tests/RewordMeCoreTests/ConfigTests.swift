@@ -10,7 +10,8 @@ final class ConfigTests: XCTestCase {
                 RewriteRule(kind: .dontRule, text: "No emoji", isEnabled: false),
                 RewriteRule(kind: .doRule, text: "Be concise")
             ],
-            basePrompt: "Keep my voice."
+            basePrompt: "Keep my voice.",
+            ollamaHost: "http://192.168.1.20:11434"
         )
         let data = try JSONEncoder().encode(config)
         let decoded = try JSONDecoder().decode(RewordConfig.self, from: data)

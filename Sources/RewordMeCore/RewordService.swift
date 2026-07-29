@@ -9,8 +9,12 @@ public struct RewordService: Sendable {
         self.session = session
     }
 
-    public func listModels(provider: ProviderKind, apiKey: String) async throws -> [ModelInfo] {
-        let key = try validated(apiKey)
+    public func listModels(
+        provider: ProviderKind,
+        apiKey: String,
+        endpoint: URL? = nil
+    ) async throws -> [ModelInfo] {
+        let key = try validated(apiKey, for: provider)
         let request: URLRequest
         switch provider {
         case .anthropic:
@@ -19,7 +23,7 @@ public struct RewordService: Sendable {
             request = GeminiAPI.modelsRequest(apiKey: key)
         default:
             request = OpenAICompatibleAPI.modelsRequest(
-                baseURL: provider.openAICompatibleBaseURL!, apiKey: key
+                baseURL: endpoint ?? provider.openAICompatibleBaseURL!, apiKey: key
             )
         }
         let data = try await perform(request)
@@ -35,9 +39,10 @@ public struct RewordService: Sendable {
         apiKey: String,
         model: String,
         systemPrompt: String,
-        text: String
+        text: String,
+        endpoint: URL? = nil
     ) async throws -> String {
-        let key = try validated(apiKey)
+        let key = try validated(apiKey, for: provider)
         let request: URLRequest
         switch provider {
         case .anthropic:
@@ -50,7 +55,7 @@ public struct RewordService: Sendable {
             )
         default:
             request = try OpenAICompatibleAPI.rewordRequest(
-                baseURL: provider.openAICompatibleBaseURL!,
+                baseURL: endpoint ?? provider.openAICompatibleBaseURL!,
                 apiKey: key,
                 model: model,
                 systemPrompt: systemPrompt,
@@ -65,7 +70,11 @@ public struct RewordService: Sendable {
         }
     }
 
-    private func validated(_ apiKey: String) throws -> String {
+    private func validated(_ apiKey: String, for provider: ProviderKind) throws -> String {
+        guard provider.requiresAPIKey else {
+            // Ollama ignores auth; a placeholder keeps the header well-formed.
+            return "ollama"
+        }
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw RewordError.missingAPIKey }
         return trimmed

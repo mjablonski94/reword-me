@@ -24,10 +24,12 @@ enum OpenAICompatibleAPI {
         guard let response = try? JSONDecoder().decode(Response.self, from: data) else {
             throw RewordError.invalidResponse
         }
+        // Server order is preserved - Ollama lists most recently used
+        // models first and the automatic pick relies on that; UIs sort
+        // for display themselves.
         return response.data
             .map(\.id)
             .filter(includeModel)
-            .sorted()
             .map { ModelInfo(id: $0) }
     }
 

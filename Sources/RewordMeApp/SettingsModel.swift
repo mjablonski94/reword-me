@@ -15,6 +15,11 @@ final class SettingsModel: ObservableObject {
                 availableModels = []
                 modelsError = nil
             }
+            if oldValue.ollamaHost != config.ollamaHost {
+                Task { await ModelResolver.shared.invalidate() }
+                availableModels = []
+                modelsError = nil
+            }
         }
     }
 
@@ -39,6 +44,7 @@ final class SettingsModel: ObservableObject {
     }
 
     func saveAPIKey() {
+        explainKeychainPromptOnce()
         KeychainStore.setAPIKey(apiKey, for: config.provider)
         Task { await ModelResolver.shared.invalidate() }
         availableModels = []
@@ -58,10 +64,13 @@ final class SettingsModel: ObservableObject {
         modelsError = nil
         let provider = config.provider
         let key = apiKey
+        let endpoint = config.endpointOverride
         Task { [weak self] in
             guard let self else { return }
             do {
-                let models = try await service.listModels(provider: provider, apiKey: key)
+                let models = try await service.listModels(
+                    provider: provider, apiKey: key, endpoint: endpoint
+                )
                 self.availableModels = models.sorted { $0.id < $1.id }
                 if models.isEmpty {
                     self.modelsError = "The provider returned no usable models."
@@ -90,6 +99,34 @@ final class SettingsModel: ObservableObject {
 
     func removeRule(_ rule: RewriteRule) {
         config.rules.removeAll { $0.id == rule.id }
+    }
+
+    /// Shown once, before the first key ever lands in the Keychain, so the
+    /// system's later "RewordMe wants to access your keychain" password
+    /// prompt is expected instead of alarming.
+    private func explainKeychainPromptOnce() {
+        let defaults = UserDefaults.standard
+        let flag = "keychainPromptExplained"
+        guard !defaults.bool(forKey: flag) else { return }
+        defaults.set(true, forKey: flag)
+
+        let alert = NSAlert()
+        alert.messageText = "Your key goes into the macOS Keychain"
+        alert.informativeText = """
+        RewordMe stores API keys only in your login Keychain, the same place \
+        Safari keeps passwords.
+
+        macOS may later ask for your password with a prompt like "RewordMeApp \
+        wants to use your confidential information stored in the keychain". \
+        That is the Keychain guarding your key, not the key leaving your Mac. \
+        Choose "Always Allow" to stop it from asking again.
+
+        Builds made from source are re-signed on every rebuild, so macOS \
+        treats each rebuild as a new app and asks once more.
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Got It")
+        alert.runModal()
     }
 
     private func updateLaunchAtLogin() {

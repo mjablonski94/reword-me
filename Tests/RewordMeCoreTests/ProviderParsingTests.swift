@@ -93,7 +93,39 @@ final class ProviderParsingTests: XCTestCase {
         XCTAssertFalse(xai.includesModel("grok-2-image-1212"))
     }
 
-    func testOpenAICompatibleParseModelsAppliesFilter() throws {
+    func testOllamaModelFilterExcludesEmbeddings() {
+        let ollama = ProviderKind.ollama
+        XCTAssertTrue(ollama.includesModel("llama3.2:latest"))
+        XCTAssertFalse(ollama.includesModel("nomic-embed-text:latest"))
+    }
+
+    func testOllamaEndpointNormalization() {
+        XCTAssertEqual(
+            OllamaEndpoint.baseURL(host: "http://localhost:11434")?.absoluteString,
+            "http://localhost:11434/v1"
+        )
+        XCTAssertEqual(
+            OllamaEndpoint.baseURL(host: "192.168.1.20:11434/")?.absoluteString,
+            "http://192.168.1.20:11434/v1"
+        )
+        XCTAssertEqual(
+            OllamaEndpoint.baseURL(host: "  ")?.absoluteString,
+            "http://localhost:11434/v1"
+        )
+        XCTAssertEqual(
+            OllamaEndpoint.baseURL(host: "http://my-server:8080/v1")?.absoluteString,
+            "http://my-server:8080/v1"
+        )
+    }
+
+    func testOllamaRequiresNoAPIKey() {
+        XCTAssertFalse(ProviderKind.ollama.requiresAPIKey)
+        for provider in ProviderKind.allCases where provider != .ollama {
+            XCTAssertTrue(provider.requiresAPIKey)
+        }
+    }
+
+    func testOpenAICompatibleParseModelsFiltersAndPreservesServerOrder() throws {
         let json = """
         {"data":[{"id":"gpt-4o-mini","object":"model"},
                  {"id":"whisper-1","object":"model"},
@@ -103,7 +135,8 @@ final class ProviderParsingTests: XCTestCase {
             Data(json.utf8),
             includeModel: ProviderKind.openai.includesModel
         )
-        XCTAssertEqual(models.map(\.id), ["gpt-4o", "gpt-4o-mini"])
+        // Server order is preserved (Ollama's automatic pick depends on it).
+        XCTAssertEqual(models.map(\.id), ["gpt-4o-mini", "gpt-4o"])
     }
 
     func testOpenAICompatibleParseReword() throws {

@@ -7,17 +7,21 @@ public struct RewordConfig: Codable, Equatable, Sendable {
     public var model: String?
     public var rules: [RewriteRule]
     public var basePrompt: String
+    /// Where the local Ollama server listens; only used by the ollama provider.
+    public var ollamaHost: String
 
     public init(
         provider: ProviderKind = .anthropic,
         model: String? = nil,
         rules: [RewriteRule] = [],
-        basePrompt: String = ""
+        basePrompt: String = "",
+        ollamaHost: String = OllamaEndpoint.defaultHost
     ) {
         self.provider = provider
         self.model = model
         self.rules = rules
         self.basePrompt = basePrompt
+        self.ollamaHost = ollamaHost
     }
 
     public static let `default` = RewordConfig()
@@ -28,6 +32,14 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         model = try container.decodeIfPresent(String.self, forKey: .model)
         rules = try container.decodeIfPresent([RewriteRule].self, forKey: .rules) ?? []
         basePrompt = try container.decodeIfPresent(String.self, forKey: .basePrompt) ?? ""
+        ollamaHost = try container.decodeIfPresent(String.self, forKey: .ollamaHost)
+            ?? OllamaEndpoint.defaultHost
+    }
+
+    /// Endpoint override for providers whose server address is user
+    /// configurable; nil means "use the provider's default".
+    public var endpointOverride: URL? {
+        provider == .ollama ? OllamaEndpoint.baseURL(host: ollamaHost) : nil
     }
 }
 

@@ -5,6 +5,9 @@ import Foundation
 public enum ModelSelection {
     public static func defaultModel(for kind: ProviderKind, from models: [ModelInfo]) -> ModelInfo? {
         guard !models.isEmpty else { return nil }
+        // Local models are all free; Ollama lists the most recently
+        // pulled/updated model first, which is the best default.
+        if kind == .ollama { return models.first }
         let lowestTier = models.map { costTier(kind: kind, id: $0.id) }.min()!
         let candidates = models.filter { costTier(kind: kind, id: $0.id) == lowestTier }
         let stable = candidates.filter { !isPreview($0.id) }
@@ -45,6 +48,8 @@ public enum ModelSelection {
         case .deepseek:
             if lower.contains("chat") { return 0 }
             return 1
+        case .ollama:
+            return 0 // local models cost nothing
         }
     }
 

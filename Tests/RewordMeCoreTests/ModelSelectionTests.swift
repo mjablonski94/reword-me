@@ -79,6 +79,16 @@ final class ModelSelectionTests: XCTestCase {
         XCTAssertEqual(pick?.id, "deepseek-chat")
     }
 
+    func testOllamaPicksFirstListedModel() {
+        // Ollama lists most recently pulled/updated first - keep that order.
+        let models = [
+            ModelInfo(id: "qwen2.5:7b"),
+            ModelInfo(id: "llama3.2:latest")
+        ]
+        let pick = ModelSelection.defaultModel(for: .ollama, from: models)
+        XCTAssertEqual(pick?.id, "qwen2.5:7b")
+    }
+
     func testEmptyListReturnsNil() {
         XCTAssertNil(ModelSelection.defaultModel(for: .anthropic, from: []))
     }

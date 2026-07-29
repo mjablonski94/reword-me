@@ -59,27 +59,43 @@ struct ProviderSettingsView: View {
                 .pickerStyle(.menu)
             }
 
-            Section("API key") {
-                SecureField(model.config.provider.keyPlaceholder, text: $model.apiKey)
-                HStack {
+            if model.config.provider.requiresAPIKey {
+                Section("API key") {
+                    SecureField(model.config.provider.keyPlaceholder, text: $model.apiKey)
+                    HStack {
+                        Link(
+                            "Get an API key at \(model.config.provider.apiKeyConsoleName)",
+                            destination: model.config.provider.apiKeyConsoleURL
+                        )
+                        .font(.caption)
+                        Spacer()
+                        if model.keySavedFeedback {
+                            Label("Saved", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .transition(.opacity)
+                        }
+                        Button("Save Key") { model.saveAPIKey() }
+                            .disabled(model.apiKey.isEmpty)
+                    }
+                    .animation(.easeInOut(duration: 0.2), value: model.keySavedFeedback)
+                    Text("Stored in your login Keychain, never in plain files. If macOS asks whether RewordMe may access the Keychain, that is your Mac guarding the key - choose Always Allow.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Section("Local server") {
+                    Text("Ollama runs on your Mac - no API key, no cost, and the text never leaves your machine.")
+                        .font(.callout)
+                    TextField("Server", text: $model.config.ollamaHost, prompt: Text(OllamaEndpoint.defaultHost))
+                    Text("Default is \(OllamaEndpoint.defaultHost) - change it only if Ollama listens elsewhere (OLLAMA_HOST, Docker port mapping, another machine).\nInstall it, then pull a model, e.g.:  ollama pull llama3.2")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     Link(
-                        "Get an API key at \(model.config.provider.apiKeyConsoleName)",
+                        "Get Ollama at \(model.config.provider.apiKeyConsoleName)",
                         destination: model.config.provider.apiKeyConsoleURL
                     )
                     .font(.caption)
-                    Spacer()
-                    if model.keySavedFeedback {
-                        Label("Saved", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .transition(.opacity)
-                    }
-                    Button("Save Key") { model.saveAPIKey() }
-                        .disabled(model.apiKey.isEmpty)
                 }
-                .animation(.easeInOut(duration: 0.2), value: model.keySavedFeedback)
-                Text("Stored in your login Keychain, never in plain files.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section("Model") {
@@ -108,7 +124,10 @@ struct ProviderSettingsView: View {
                     }
                     Spacer()
                     Button("Load Models") { model.loadModels() }
-                        .disabled(model.apiKey.isEmpty || model.isLoadingModels)
+                        .disabled(
+                            (model.config.provider.requiresAPIKey && model.apiKey.isEmpty)
+                                || model.isLoadingModels
+                        )
                 }
             }
         }

@@ -34,8 +34,14 @@ final class RewordSession: ObservableObject {
         generationTask = Task { [weak self] in
             guard let self else { return }
             do {
-                guard let apiKey = KeychainStore.apiKey(for: config.provider) else {
-                    throw RewordError.missingAPIKey
+                let apiKey: String
+                if config.provider.requiresAPIKey {
+                    guard let stored = KeychainStore.apiKey(for: config.provider) else {
+                        throw RewordError.missingAPIKey
+                    }
+                    apiKey = stored
+                } else {
+                    apiKey = ""
                 }
                 let model = try await ModelResolver.shared.model(
                     for: config, apiKey: apiKey, service: service
@@ -50,7 +56,8 @@ final class RewordSession: ObservableObject {
                     apiKey: apiKey,
                     model: model,
                     systemPrompt: systemPrompt,
-                    text: original
+                    text: original,
+                    endpoint: config.endpointOverride
                 )
                 guard !Task.isCancelled else { return }
                 self.result = reworded

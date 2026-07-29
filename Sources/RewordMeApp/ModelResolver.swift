@@ -20,7 +20,11 @@ actor ModelResolver {
         if let cached = cache[config.provider] {
             return cached
         }
-        let models = try await service.listModels(provider: config.provider, apiKey: apiKey)
+        let models = try await service.listModels(
+            provider: config.provider,
+            apiKey: apiKey,
+            endpoint: config.endpointOverride
+        )
         guard let pick = ModelSelection.defaultModel(for: config.provider, from: models) else {
             throw RewordError.noModelAvailable
         }
