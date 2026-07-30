@@ -18,8 +18,22 @@ the least costly model your provider offers.
 
 ---
 
+## Demo
+
+![RewordMe rewriting a messy draft and replacing it in place](docs/media/demo.gif)
+
+*A rough release announcement in TextEdit: select, reword with Gemini, steer the tone, Replace -
+the rewritten text lands exactly where the selection was. Sped up 3.5x -
+[watch the full-quality video](docs/media/demo.mp4) (54 s).*
+
+<img src="docs/media/popup.png" width="420" alt="The RewordMe popup: describe field, Proofread and Rewrite actions, tone presets">
+
+---
+
 ## Table of contents
 
+- [Demo](#demo)
+- [Why RewordMe and not the built-in Writing Tools?](#why-rewordme-and-not-the-built-in-writing-tools)
 - [Features](#features)
 - [How it works](#how-it-works)
 - [Install](#install)
@@ -33,6 +47,34 @@ the least costly model your provider offers.
 - [Privacy](#privacy)
 - [Support](#support)
 - [License](#license)
+
+---
+
+## Why RewordMe and not the built-in Writing Tools?
+
+macOS ships Writing Tools with Apple Intelligence, and it is fine for a quick proofread. RewordMe
+exists because "fine" stops being enough the moment you care about *which* model rewrites your
+words and *how*:
+
+- **You pick the brain.** Writing Tools is one fixed Apple model. RewordMe speaks to Claude,
+  ChatGPT, Gemini, Mistral, Grok, DeepSeek - whichever quality tier, writing style or language
+  strength you prefer, on your own key. Automatic mode keeps it on the provider's cheapest model,
+  so a rewrite costs fractions of a cent; swap to a frontier model for the emails that matter.
+- **It knows your style, permanently.** Your do's and don'ts (*"never use exclamation marks"*,
+  *"keep my greetings in Polish"*) and your base prompt (*"I am a non-native speaker; fix grammar
+  but keep my voice"*) ride along with **every** rewrite. Writing Tools starts from zero every
+  time; RewordMe is personalized once and stays that way.
+- **You can steer, not just accept.** Type *"make it sound less corporate"*, press Return, judge,
+  press Again. Writing Tools gives you a handful of fixed buttons; RewordMe gives you those *and*
+  an open instruction line.
+- **Fully local when you want it.** Point it at Ollama on localhost (or any host you choose) and
+  rewrites are free, offline, and the text never leaves your machine - a privacy dial Writing
+  Tools simply does not have. Either way there is no account, no telemetry, no middleman server.
+- **It runs everywhere.** Any Mac on macOS 14+, Intel included - no Apple-Intelligence-capable
+  hardware required. And when an app hides its text from the system (Electron apps, web content),
+  RewordMe falls back to a clipboard dance and still works.
+- **It fits your hands.** Editable global shortcut, Services-menu entry that needs zero
+  permissions, 11 UI languages, open source under MIT - small enough to read in an evening.
 
 ---
 
@@ -124,6 +166,10 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
    to swap the selection, **Copy** to take it with you. Esc closes.
 
 ## Configuration
+
+| Provider | Rewriting | General |
+|---|---|---|
+| <img src="docs/media/settings-provider.png" alt="Provider tab: provider dropdown, API key, model picker"> | <img src="docs/media/settings-rewriting.png" alt="Rewriting tab: do/don't rules and base prompt"> | <img src="docs/media/settings-general.png" alt="General tab: editable shortcut, launch at login, permissions"> |
 
 Settings live in three tabs:
 
