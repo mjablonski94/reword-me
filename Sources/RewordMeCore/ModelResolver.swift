@@ -12,8 +12,6 @@ extension RewordService: ModelListing {}
 /// config wins; otherwise the provider's model list is fetched once and
 /// the least costly model is cached for the rest of the session.
 public actor ModelResolver {
-    public static let shared = ModelResolver()
-
     private var cache: [ProviderKind: String] = [:]
 
     public init() {}

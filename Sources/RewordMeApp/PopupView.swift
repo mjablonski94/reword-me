@@ -4,7 +4,7 @@ import SwiftUI
 /// Writing-Tools-style panel: a describe field with an intelligence glow,
 /// two big actions, tone presets - and the result view after generating.
 struct PopupView: View {
-    @ObservedObject var session: RewordSession
+    @ObservedObject var viewModel: RewordViewModel
     @FocusState private var steeringFocused: Bool
 
     private let intelligenceGradient = AngularGradient(
@@ -16,7 +16,7 @@ struct PopupView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             stageContent
-                .animation(.spring(duration: 0.3), value: session.stage)
+                .animation(.spring(duration: 0.3), value: viewModel.stage)
         }
         .padding(14)
         .frame(width: 320)
@@ -30,9 +30,9 @@ struct PopupView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            if session.stage == .result || isFailed {
+            if viewModel.stage == .result || isFailed {
                 Button {
-                    session.backToMenu()
+                    viewModel.backToMenu()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 10, weight: .bold))
@@ -46,14 +46,14 @@ struct PopupView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            if session.stage == .result, !session.modelLabel.isEmpty {
-                Text(session.modelLabel)
+            if viewModel.stage == .result, !viewModel.modelLabel.isEmpty {
+                Text(viewModel.modelLabel)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
             Button {
-                session.onClose?()
+                viewModel.onClose?()
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
@@ -66,7 +66,7 @@ struct PopupView: View {
     }
 
     private var isFailed: Bool {
-        if case .failed = session.stage { return true }
+        if case .failed = viewModel.stage { return true }
         return false
     }
 
@@ -74,10 +74,10 @@ struct PopupView: View {
 
     @ViewBuilder
     private var stageContent: some View {
-        if session.original.isEmpty {
+        if viewModel.original.isEmpty {
             emptyHint
         } else {
-            switch session.stage {
+            switch viewModel.stage {
             case .menu: menu
             case .loading: loading
             case .result: resultView
@@ -91,7 +91,7 @@ struct PopupView: View {
             Image(systemName: "cursorarrow.and.square.on.square.dashed")
                 .font(.system(size: 22))
                 .foregroundStyle(.secondary)
-            Text(Loc.noSelection(ConfigStore().load().hotkey.display))
+            Text(Loc.noSelection(viewModel.hotkeyDisplay))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -106,18 +106,18 @@ struct PopupView: View {
             describeField
 
             HStack(spacing: 8) {
-                bigButton(RewordSession.proofread) {
-                    session.reword(instruction: RewordSession.proofread.instruction)
+                bigButton(RewordViewModel.proofread) {
+                    viewModel.reword(instruction: RewordViewModel.proofread.instruction)
                 }
-                bigButton(RewordSession.rewrite) {
-                    session.reword(instruction: nil)
+                bigButton(RewordViewModel.rewrite) {
+                    viewModel.reword(instruction: nil)
                 }
             }
 
             Divider()
 
             VStack(alignment: .leading, spacing: 2) {
-                ForEach(RewordSession.tonePresets) { preset in
+                ForEach(RewordViewModel.tonePresets) { preset in
                     presetRow(preset)
                 }
             }
@@ -135,10 +135,10 @@ struct PopupView: View {
                         endPoint: .bottom
                     )
                 )
-            TextField(Loc.describePlaceholder, text: $session.steering)
+            TextField(Loc.describePlaceholder, text: $viewModel.steering)
                 .textFieldStyle(.plain)
                 .focused($steeringFocused)
-                .onSubmit { session.reword() }
+                .onSubmit { viewModel.reword() }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -153,7 +153,7 @@ struct PopupView: View {
         .animation(.easeOut(duration: 0.15), value: steeringFocused)
     }
 
-    private func bigButton(_ preset: RewordSession.Preset, action: @escaping () -> Void) -> some View {
+    private func bigButton(_ preset: RewordViewModel.Preset, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 5) {
                 Image(systemName: preset.icon)
@@ -172,9 +172,9 @@ struct PopupView: View {
         .buttonStyle(.plain)
     }
 
-    private func presetRow(_ preset: RewordSession.Preset) -> some View {
+    private func presetRow(_ preset: RewordViewModel.Preset) -> some View {
         Button {
-            session.reword(instruction: preset.instruction)
+            viewModel.reword(instruction: preset.instruction)
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: preset.icon)
@@ -201,7 +201,7 @@ struct PopupView: View {
             Text(Loc.rewording)
                 .font(.callout)
                 .foregroundStyle(.secondary)
-            Button(Loc.cancel) { session.backToMenu() }
+            Button(Loc.cancel) { viewModel.backToMenu() }
                 .glassButtonStyle()
                 .controlSize(.small)
         }
@@ -214,7 +214,7 @@ struct PopupView: View {
     private var resultView: some View {
         VStack(alignment: .leading, spacing: 10) {
             ScrollView {
-                Text(session.result)
+                Text(viewModel.result)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
@@ -229,7 +229,7 @@ struct PopupView: View {
 
             HStack(spacing: 8) {
                 Button {
-                    session.regenerate()
+                    viewModel.regenerate()
                 } label: {
                     Label(Loc.again, systemImage: "arrow.clockwise")
                 }
@@ -237,10 +237,10 @@ struct PopupView: View {
 
                 Spacer()
 
-                Button(Loc.copy) { session.copyResult() }
+                Button(Loc.copy) { viewModel.copyResult() }
                     .glassButtonStyle()
 
-                Button(Loc.replace) { session.replaceSelection() }
+                Button(Loc.replace) { viewModel.replaceSelection() }
                     .glassButtonStyle(prominent: true)
                     .keyboardShortcut(.defaultAction)
             }
@@ -261,7 +261,7 @@ struct PopupView: View {
                 .textSelection(.enabled)
             HStack {
                 Spacer()
-                Button(Loc.tryAgain) { session.regenerate() }
+                Button(Loc.tryAgain) { viewModel.regenerate() }
                     .glassButtonStyle()
             }
         }

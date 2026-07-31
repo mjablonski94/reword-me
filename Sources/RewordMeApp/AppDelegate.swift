@@ -4,9 +4,10 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let dependencies = AppDependencies()
     private var statusItem: NSStatusItem!
     private let hotkeyManager = HotkeyManager()
-    private let popupController = PopupController()
+    private lazy var popupController = PopupController(dependencies: dependencies)
     private var servicesProvider: ServicesProvider!
     private var settingsWindowController: SettingsWindowController?
 
@@ -73,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rebuildMenu(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        if !AccessibilityPermission.isTrusted {
+        if !dependencies.accessibility.isTrusted {
             let grantItem = NSMenuItem(
                 title: Loc.menuGrantAccess,
                 action: #selector(showAccessibilityOnboarding),
@@ -88,7 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(.separator())
         }
 
-        let hotkey = ConfigStore().load().hotkey
+        let hotkey = dependencies.configStore.load().hotkey
         let rewordItem = NSMenuItem(
             title: Loc.menuReword,
             action: #selector(rewordSelection),
@@ -129,7 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAccessibilityOnboarding() {
-        AccessibilityPermission.showOnboarding()
+        dependencies.accessibility.showOnboarding()
     }
 
     // MARK: - Triggers
@@ -151,7 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applyHotkey() {
-        hotkeyManager.apply(ConfigStore().load().hotkey)
+        hotkeyManager.apply(dependencies.configStore.load().hotkey)
     }
 
     private func setupServicesProvider() {
@@ -163,11 +164,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func rewordSelection() {
-        guard AccessibilityPermission.isTrusted else {
-            AccessibilityPermission.showOnboarding()
+        guard dependencies.accessibility.isTrusted else {
+            dependencies.accessibility.showOnboarding()
             return
         }
-        SelectionReader.readSelection { [weak self] text, bounds in
+        dependencies.selectionReader.readSelection { [weak self] text, bounds in
             guard let self else { return }
             guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 self.popupController.presentNoSelectionHint()
@@ -181,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openSettings() {
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController()
+            settingsWindowController = SettingsWindowController(dependencies: dependencies)
         }
         settingsWindowController?.show()
     }

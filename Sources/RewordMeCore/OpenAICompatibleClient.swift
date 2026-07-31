@@ -1,19 +1,29 @@
 import Foundation
 
-/// Raw HTTP bindings for the OpenAI chat-completions dialect, shared by
-/// OpenAI, Mistral, xAI and DeepSeek - only the base URL and the model
-/// filter differ per provider.
-enum OpenAICompatibleAPI {
-    static func modelsRequest(baseURL: URL, apiKey: String) -> URLRequest {
-        var request = URLRequest(url: baseURL.appendingPathComponent("models"))
+/// The OpenAI chat-completions dialect, shared by OpenAI, Mistral, xAI,
+/// DeepSeek and Ollama - only the base URL and the model filter differ.
+public struct OpenAICompatibleClient: ProviderClient {
+    public let kind: ProviderKind
+
+    public init(kind: ProviderKind) {
+        precondition(
+            kind.openAICompatibleBaseURL != nil,
+            "\(kind.rawValue) does not speak the OpenAI dialect"
+        )
+        self.kind = kind
+    }
+
+    private func baseURL(_ endpoint: URL?) -> URL {
+        endpoint ?? kind.openAICompatibleBaseURL!
+    }
+
+    public func modelsRequest(apiKey: String, endpoint: URL?) -> URLRequest {
+        var request = URLRequest(url: baseURL(endpoint).appendingPathComponent("models"))
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         return request
     }
 
-    static func parseModels(
-        _ data: Data,
-        includeModel: (String) -> Bool
-    ) throws -> [ModelInfo] {
+    public func parseModels(_ data: Data) throws -> [ModelInfo] {
         struct Response: Decodable {
             struct Model: Decodable {
                 let id: String
@@ -29,16 +39,16 @@ enum OpenAICompatibleAPI {
         // for display themselves.
         return response.data
             .map(\.id)
-            .filter(includeModel)
+            .filter(kind.includesModel)
             .map { ModelInfo(id: $0) }
     }
 
-    static func rewordRequest(
-        baseURL: URL,
+    public func rewordRequest(
         apiKey: String,
         model: String,
         systemPrompt: String,
-        text: String
+        text: String,
+        endpoint: URL?
     ) throws -> URLRequest {
         struct Body: Encodable {
             struct Message: Encodable {
@@ -56,7 +66,9 @@ enum OpenAICompatibleAPI {
                 Body.Message(role: "user", content: text)
             ]
         )
-        var request = URLRequest(url: baseURL.appendingPathComponent("chat/completions"))
+        var request = URLRequest(
+            url: baseURL(endpoint).appendingPathComponent("chat/completions")
+        )
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -64,7 +76,7 @@ enum OpenAICompatibleAPI {
         return request
     }
 
-    static func parseReword(_ data: Data) throws -> String {
+    public func parseReword(_ data: Data) throws -> String {
         struct Response: Decodable {
             struct Choice: Decodable {
                 struct Message: Decodable {

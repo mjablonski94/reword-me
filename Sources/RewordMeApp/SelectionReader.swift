@@ -2,13 +2,44 @@ import AppKit
 import ApplicationServices
 import RewordMeAppSupport
 
+/// Posts keyboard shortcuts to the frontmost app.
+protocol KeySynthesizing {
+    func postCommandShortcut(keyCode: CGKeyCode)
+}
+
+struct CGKeySynthesizer: KeySynthesizing {
+    /// Cmd+<key> (keycode 8 = C, 9 = V).
+    func postCommandShortcut(keyCode: CGKeyCode) {
+        let source = CGEventSource(stateID: .combinedSessionState)
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false) else {
+            return
+        }
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+    }
+}
+
 /// Reads the selected text from whatever app is frontmost.
+@MainActor
+protocol SelectionReading {
+    func readSelection(completion: @escaping @MainActor (String?, CGRect?) -> Void)
+}
+
 /// Accessibility API first (clean, no clipboard involved); a synthesized
 /// Cmd+C with clipboard save/restore as the fallback for apps that don't
 /// expose AXSelectedText (Electron apps, browser web content).
 @MainActor
-enum SelectionReader {
-    static func readSelection(completion: @escaping @MainActor (String?, CGRect?) -> Void) {
+final class AXSelectionReader: SelectionReading {
+    private let keySynthesizer: KeySynthesizing
+
+    init(keySynthesizer: KeySynthesizing = CGKeySynthesizer()) {
+        self.keySynthesizer = keySynthesizer
+    }
+
+    func readSelection(completion: @escaping @MainActor (String?, CGRect?) -> Void) {
         let axResult = selectionViaAccessibility()
         if let text = axResult.text, !text.isEmpty {
             completion(text, axResult.bounds)
@@ -21,7 +52,7 @@ enum SelectionReader {
 
     // MARK: - Accessibility path
 
-    static func selectionViaAccessibility() -> (text: String?, bounds: CGRect?) {
+    private func selectionViaAccessibility() -> (text: String?, bounds: CGRect?) {
         let systemWide = AXUIElementCreateSystemWide()
         var focusedRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
@@ -44,9 +75,9 @@ enum SelectionReader {
         return (text, selectionBounds(of: focused))
     }
 
-    /// Screen rectangle of the selected range, in AppKit (bottom-left origin)
-    /// coordinates, ready for window positioning.
-    private static func selectionBounds(of element: AXUIElement) -> CGRect? {
+    /// Screen rectangle of the selected range, in AppKit (bottom-left
+    /// origin) coordinates, ready for window positioning.
+    private func selectionBounds(of element: AXUIElement) -> CGRect? {
         var rangeRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
             element,
@@ -83,12 +114,12 @@ enum SelectionReader {
 
     // MARK: - Clipboard fallback
 
-    private static func selectionViaClipboard(completion: @escaping @MainActor (String?) -> Void) {
+    private func selectionViaClipboard(completion: @escaping @MainActor (String?) -> Void) {
         let pasteboard = NSPasteboard.general
         let snapshot = PasteboardSnapshot.capture()
         let changeCountBefore = pasteboard.changeCount
 
-        KeySynthesizer.postCommandShortcut(keyCode: 8) // Cmd+C
+        keySynthesizer.postCommandShortcut(keyCode: 8) // Cmd+C
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             let copied: String? = pasteboard.changeCount != changeCountBefore

@@ -11,7 +11,7 @@ final class ProviderParsingTests: XCTestCase {
           {"id":"claude-opus-5","display_name":"Claude Opus 5","created_at":"2026-05-01T00:00:00Z"}
         ],"has_more":false}
         """
-        let models = try AnthropicAPI.parseModels(Data(json.utf8))
+        let models = try AnthropicClient().parseModels(Data(json.utf8))
         XCTAssertEqual(models.map(\.id), ["claude-haiku-4-5", "claude-opus-5"])
         XCTAssertEqual(models[0].displayName, "Claude Haiku 4.5")
     }
@@ -21,7 +21,7 @@ final class ProviderParsingTests: XCTestCase {
         {"content":[{"type":"text","text":"Hello "},{"type":"text","text":"world."}],
          "stop_reason":"end_turn"}
         """
-        XCTAssertEqual(try AnthropicAPI.parseReword(Data(json.utf8)), "Hello world.")
+        XCTAssertEqual(try AnthropicClient().parseReword(Data(json.utf8)), "Hello world.")
     }
 
     func testAnthropicRefusalThrows() {
@@ -29,14 +29,14 @@ final class ProviderParsingTests: XCTestCase {
         {"content":[],"stop_reason":"refusal",
          "stop_details":{"type":"refusal","category":"cyber","explanation":"declined"}}
         """
-        XCTAssertThrowsError(try AnthropicAPI.parseReword(Data(json.utf8))) { error in
+        XCTAssertThrowsError(try AnthropicClient().parseReword(Data(json.utf8))) { error in
             XCTAssertEqual(error as? RewordError, .refused("declined"))
         }
     }
 
     func testAnthropicRewordRequestShape() throws {
-        let request = try AnthropicAPI.rewordRequest(
-            apiKey: "k", model: "claude-haiku-4-5", systemPrompt: "sys", text: "hi"
+        let request = try AnthropicClient().rewordRequest(
+            apiKey: "k", model: "claude-haiku-4-5", systemPrompt: "sys", text: "hi", endpoint: nil
         )
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertEqual(request.value(forHTTPHeaderField: "x-api-key"), "k")
@@ -52,13 +52,13 @@ final class ProviderParsingTests: XCTestCase {
     }
 
     func testAnthropicOutputBudgetScalesWithInputAndIsCapped() {
-        XCTAssertEqual(AnthropicAPI.outputTokenBudget(for: "short"), 1024)
+        XCTAssertEqual(AnthropicClient.outputTokenBudget(for: "short"), 1024)
         XCTAssertEqual(
-            AnthropicAPI.outputTokenBudget(for: String(repeating: "a", count: 2000)),
+            AnthropicClient.outputTokenBudget(for: String(repeating: "a", count: 2000)),
             2000
         )
         XCTAssertEqual(
-            AnthropicAPI.outputTokenBudget(for: String(repeating: "a", count: 100_000)),
+            AnthropicClient.outputTokenBudget(for: String(repeating: "a", count: 100_000)),
             8192
         )
     }
@@ -131,10 +131,7 @@ final class ProviderParsingTests: XCTestCase {
                  {"id":"whisper-1","object":"model"},
                  {"id":"gpt-4o","object":"model"}]}
         """
-        let models = try OpenAICompatibleAPI.parseModels(
-            Data(json.utf8),
-            includeModel: ProviderKind.openai.includesModel
-        )
+        let models = try OpenAICompatibleClient(kind: .openai).parseModels(Data(json.utf8))
         // Server order is preserved (Ollama's automatic pick depends on it).
         XCTAssertEqual(models.map(\.id), ["gpt-4o-mini", "gpt-4o"])
     }
@@ -143,14 +140,14 @@ final class ProviderParsingTests: XCTestCase {
         let json = """
         {"choices":[{"message":{"role":"assistant","content":"  Rewritten.  "}}]}
         """
-        XCTAssertEqual(try OpenAICompatibleAPI.parseReword(Data(json.utf8)), "Rewritten.")
+        XCTAssertEqual(try OpenAICompatibleClient(kind: .openai).parseReword(Data(json.utf8)), "Rewritten.")
     }
 
     func testOpenAICompatibleEmptyContentThrows() {
         let json = """
         {"choices":[{"message":{"role":"assistant","content":""}}]}
         """
-        XCTAssertThrowsError(try OpenAICompatibleAPI.parseReword(Data(json.utf8))) { error in
+        XCTAssertThrowsError(try OpenAICompatibleClient(kind: .openai).parseReword(Data(json.utf8))) { error in
             XCTAssertEqual(error as? RewordError, .emptyResponse)
         }
     }
@@ -158,12 +155,19 @@ final class ProviderParsingTests: XCTestCase {
     func testOpenAICompatibleRequestsTargetTheProviderBaseURL() throws {
         for provider in ProviderKind.allCases {
             guard let base = provider.openAICompatibleBaseURL else { continue }
-            let request = try OpenAICompatibleAPI.rewordRequest(
-                baseURL: base, apiKey: "k", model: "m", systemPrompt: "s", text: "t"
+            let request = try OpenAICompatibleClient(kind: provider).rewordRequest(
+                apiKey: "k", model: "m", systemPrompt: "s", text: "t", endpoint: nil
             )
             XCTAssertEqual(request.url?.host, base.host)
             XCTAssertTrue(request.url!.path.hasSuffix("chat/completions"))
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer k")
+        }
+    }
+
+    func testDefaultRegistryCoversEveryProviderKind() {
+        let registry = ProviderClientRegistry()
+        for kind in ProviderKind.allCases {
+            XCTAssertEqual(registry.client(for: kind).kind, kind)
         }
     }
 
@@ -178,18 +182,18 @@ final class ProviderParsingTests: XCTestCase {
            "supportedGenerationMethods":["embedContent"]}
         ]}
         """
-        let models = try GeminiAPI.parseModels(Data(json.utf8))
+        let models = try GeminiClient().parseModels(Data(json.utf8))
         XCTAssertEqual(models.map(\.id), ["gemini-2.5-flash-lite"])
         XCTAssertEqual(models[0].displayName, "Gemini 2.5 Flash-Lite")
     }
 
     func testGeminiKeyGoesInHeaderNotURL() throws {
-        let modelsRequest = GeminiAPI.modelsRequest(apiKey: "secret")
+        let modelsRequest = GeminiClient().modelsRequest(apiKey: "secret", endpoint: nil)
         XCTAssertEqual(modelsRequest.value(forHTTPHeaderField: "x-goog-api-key"), "secret")
         XCTAssertFalse(modelsRequest.url!.absoluteString.contains("secret"))
 
-        let rewordRequest = try GeminiAPI.rewordRequest(
-            apiKey: "secret", model: "gemini-2.5-flash-lite", systemPrompt: "s", text: "t"
+        let rewordRequest = try GeminiClient().rewordRequest(
+            apiKey: "secret", model: "gemini-2.5-flash-lite", systemPrompt: "s", text: "t", endpoint: nil
         )
         XCTAssertEqual(rewordRequest.value(forHTTPHeaderField: "x-goog-api-key"), "secret")
         XCTAssertFalse(rewordRequest.url!.absoluteString.contains("secret"))
@@ -199,7 +203,7 @@ final class ProviderParsingTests: XCTestCase {
         let json = """
         {"candidates":[{"content":{"role":"model","parts":[{"text":"Re"},{"text":"written."}]}}]}
         """
-        XCTAssertEqual(try GeminiAPI.parseReword(Data(json.utf8)), "Rewritten.")
+        XCTAssertEqual(try GeminiClient().parseReword(Data(json.utf8)), "Rewritten.")
     }
 
     // MARK: - Errors

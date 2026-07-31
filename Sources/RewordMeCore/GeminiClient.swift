@@ -1,13 +1,18 @@
 import Foundation
 
-/// Raw HTTP bindings for the Google Gemini API (generativelanguage.googleapis.com).
+/// The Google Gemini API (generativelanguage.googleapis.com).
 /// The key goes in the x-goog-api-key header, never in the URL.
-enum GeminiAPI {
+public struct GeminiClient: ProviderClient {
     static let baseURL = URL(string: "https://generativelanguage.googleapis.com/v1beta")!
 
-    static func modelsRequest(apiKey: String) -> URLRequest {
+    public let kind: ProviderKind = .gemini
+
+    public init() {}
+
+    public func modelsRequest(apiKey: String, endpoint: URL?) -> URLRequest {
+        let base = endpoint ?? Self.baseURL
         var components = URLComponents(
-            url: baseURL.appendingPathComponent("models"),
+            url: base.appendingPathComponent("models"),
             resolvingAgainstBaseURL: false
         )!
         components.queryItems = [URLQueryItem(name: "pageSize", value: "200")]
@@ -16,7 +21,7 @@ enum GeminiAPI {
         return request
     }
 
-    static func parseModels(_ data: Data) throws -> [ModelInfo] {
+    public func parseModels(_ data: Data) throws -> [ModelInfo] {
         struct Response: Decodable {
             struct Model: Decodable {
                 let name: String
@@ -39,11 +44,12 @@ enum GeminiAPI {
             }
     }
 
-    static func rewordRequest(
+    public func rewordRequest(
         apiKey: String,
         model: String,
         systemPrompt: String,
-        text: String
+        text: String,
+        endpoint: URL?
     ) throws -> URLRequest {
         struct Body: Encodable {
             struct Part: Encodable {
@@ -67,7 +73,8 @@ enum GeminiAPI {
             systemInstruction: Body.Content(role: nil, parts: [Body.Part(text: systemPrompt)]),
             contents: [Body.Content(role: "user", parts: [Body.Part(text: text)])]
         )
-        let url = baseURL.appendingPathComponent("models/\(model):generateContent")
+        let base = endpoint ?? Self.baseURL
+        let url = base.appendingPathComponent("models/\(model):generateContent")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
@@ -76,7 +83,7 @@ enum GeminiAPI {
         return request
     }
 
-    static func parseReword(_ data: Data) throws -> String {
+    public func parseReword(_ data: Data) throws -> String {
         struct Response: Decodable {
             struct Candidate: Decodable {
                 struct Content: Decodable {

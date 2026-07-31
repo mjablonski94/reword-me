@@ -3,43 +3,51 @@ import XCTest
 
 final class KeychainStoreTests: XCTestCase {
     /// A dedicated service name keeps test entries away from real keys.
-    private let service = "com.mjablonski.rewordme.tests"
+    private let store = KeychainAPIKeyStore(service: "com.mjablonski.rewordme.tests")
 
     override func tearDown() {
         for provider in ProviderKind.allCases {
-            KeychainStore.setAPIKey(nil, for: provider, service: service)
+            store.setAPIKey(nil, for: provider)
         }
         super.tearDown()
     }
 
     func testMissingKeyReadsAsNil() {
-        XCTAssertNil(KeychainStore.apiKey(for: .anthropic, service: service))
+        XCTAssertNil(store.apiKey(for: .anthropic))
     }
 
     func testRoundTripAndOverwrite() {
-        KeychainStore.setAPIKey("sk-first", for: .anthropic, service: service)
-        XCTAssertEqual(KeychainStore.apiKey(for: .anthropic, service: service), "sk-first")
+        store.setAPIKey("sk-first", for: .anthropic)
+        XCTAssertEqual(store.apiKey(for: .anthropic), "sk-first")
 
-        KeychainStore.setAPIKey("sk-second", for: .anthropic, service: service)
-        XCTAssertEqual(KeychainStore.apiKey(for: .anthropic, service: service), "sk-second")
+        store.setAPIKey("sk-second", for: .anthropic)
+        XCTAssertEqual(store.apiKey(for: .anthropic), "sk-second")
     }
 
     func testKeysAreIsolatedPerProvider() {
-        KeychainStore.setAPIKey("sk-claude", for: .anthropic, service: service)
-        KeychainStore.setAPIKey("sk-openai", for: .openai, service: service)
+        store.setAPIKey("sk-claude", for: .anthropic)
+        store.setAPIKey("sk-openai", for: .openai)
 
-        XCTAssertEqual(KeychainStore.apiKey(for: .anthropic, service: service), "sk-claude")
-        XCTAssertEqual(KeychainStore.apiKey(for: .openai, service: service), "sk-openai")
-        XCTAssertNil(KeychainStore.apiKey(for: .gemini, service: service))
+        XCTAssertEqual(store.apiKey(for: .anthropic), "sk-claude")
+        XCTAssertEqual(store.apiKey(for: .openai), "sk-openai")
+        XCTAssertNil(store.apiKey(for: .gemini))
     }
 
     func testNilOrBlankDeletesTheEntry() {
-        KeychainStore.setAPIKey("sk-key", for: .mistral, service: service)
-        KeychainStore.setAPIKey(nil, for: .mistral, service: service)
-        XCTAssertNil(KeychainStore.apiKey(for: .mistral, service: service))
+        store.setAPIKey("sk-key", for: .mistral)
+        store.setAPIKey(nil, for: .mistral)
+        XCTAssertNil(store.apiKey(for: .mistral))
 
-        KeychainStore.setAPIKey("sk-key", for: .mistral, service: service)
-        KeychainStore.setAPIKey("   ", for: .mistral, service: service)
-        XCTAssertNil(KeychainStore.apiKey(for: .mistral, service: service))
+        store.setAPIKey("sk-key", for: .mistral)
+        store.setAPIKey("   ", for: .mistral)
+        XCTAssertNil(store.apiKey(for: .mistral))
+    }
+
+    func testStoresAreIsolatedPerService() {
+        let other = KeychainAPIKeyStore(service: "com.mjablonski.rewordme.tests.other")
+        defer { other.setAPIKey(nil, for: .anthropic) }
+
+        store.setAPIKey("sk-main", for: .anthropic)
+        XCTAssertNil(other.apiKey(for: .anthropic))
     }
 }

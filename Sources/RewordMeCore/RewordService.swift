@@ -1,12 +1,17 @@
 import Foundation
 
-/// Performs the actual HTTP calls. Request building and parsing are
-/// delegated to the per-provider enums so they stay pure and testable.
+/// Performs the actual HTTP calls. The wire formats live in the injected
+/// provider clients; this type only owns transport and error mapping.
 public struct RewordService: Sendable {
     private let session: URLSession
+    private let registry: ProviderClientRegistry
 
-    public init(session: URLSession = .shared) {
+    public init(
+        session: URLSession = .shared,
+        registry: ProviderClientRegistry = ProviderClientRegistry()
+    ) {
         self.session = session
+        self.registry = registry
     }
 
     public func listModels(
@@ -15,23 +20,9 @@ public struct RewordService: Sendable {
         endpoint: URL? = nil
     ) async throws -> [ModelInfo] {
         let key = try validated(apiKey, for: provider)
-        let request: URLRequest
-        switch provider {
-        case .anthropic:
-            request = AnthropicAPI.modelsRequest(apiKey: key)
-        case .gemini:
-            request = GeminiAPI.modelsRequest(apiKey: key)
-        default:
-            request = OpenAICompatibleAPI.modelsRequest(
-                baseURL: endpoint ?? provider.openAICompatibleBaseURL!, apiKey: key
-            )
-        }
-        let data = try await perform(request)
-        switch provider {
-        case .anthropic: return try AnthropicAPI.parseModels(data)
-        case .gemini: return try GeminiAPI.parseModels(data)
-        default: return try OpenAICompatibleAPI.parseModels(data, includeModel: provider.includesModel)
-        }
+        let client = registry.client(for: provider)
+        let data = try await perform(client.modelsRequest(apiKey: key, endpoint: endpoint))
+        return try client.parseModels(data)
     }
 
     public func reword(
@@ -43,31 +34,16 @@ public struct RewordService: Sendable {
         endpoint: URL? = nil
     ) async throws -> String {
         let key = try validated(apiKey, for: provider)
-        let request: URLRequest
-        switch provider {
-        case .anthropic:
-            request = try AnthropicAPI.rewordRequest(
-                apiKey: key, model: model, systemPrompt: systemPrompt, text: text
-            )
-        case .gemini:
-            request = try GeminiAPI.rewordRequest(
-                apiKey: key, model: model, systemPrompt: systemPrompt, text: text
-            )
-        default:
-            request = try OpenAICompatibleAPI.rewordRequest(
-                baseURL: endpoint ?? provider.openAICompatibleBaseURL!,
-                apiKey: key,
-                model: model,
-                systemPrompt: systemPrompt,
-                text: text
-            )
-        }
+        let client = registry.client(for: provider)
+        let request = try client.rewordRequest(
+            apiKey: key,
+            model: model,
+            systemPrompt: systemPrompt,
+            text: text,
+            endpoint: endpoint
+        )
         let data = try await perform(request)
-        switch provider {
-        case .anthropic: return try AnthropicAPI.parseReword(data)
-        case .gemini: return try GeminiAPI.parseReword(data)
-        default: return try OpenAICompatibleAPI.parseReword(data)
-        }
+        return try client.parseReword(data)
     }
 
     private func validated(_ apiKey: String, for provider: ProviderKind) throws -> String {
@@ -102,7 +78,7 @@ public struct RewordService: Sendable {
     }
 
     /// Best-effort extraction of a human-readable message from any of the
-    /// three providers' error envelopes.
+    /// providers' error envelopes.
     static func errorMessage(from data: Data) -> String {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return String(data: data.prefix(200), encoding: .utf8) ?? "Unknown error"

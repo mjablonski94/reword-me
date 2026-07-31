@@ -1,24 +1,28 @@
 import Foundation
 
-/// Raw HTTP bindings for the Anthropic Messages API.
-/// Docs: POST /v1/messages, GET /v1/models (anthropic-version: 2023-06-01).
-enum AnthropicAPI {
+/// The Anthropic Messages API (anthropic-version: 2023-06-01).
+public struct AnthropicClient: ProviderClient {
     static let baseURL = URL(string: "https://api.anthropic.com/v1")!
     static let apiVersion = "2023-06-01"
 
-    static func modelsRequest(apiKey: String) -> URLRequest {
+    public let kind: ProviderKind = .anthropic
+
+    public init() {}
+
+    public func modelsRequest(apiKey: String, endpoint: URL?) -> URLRequest {
+        let base = endpoint ?? Self.baseURL
         var components = URLComponents(
-            url: baseURL.appendingPathComponent("models"),
+            url: base.appendingPathComponent("models"),
             resolvingAgainstBaseURL: false
         )!
         components.queryItems = [URLQueryItem(name: "limit", value: "100")]
         var request = URLRequest(url: components.url!)
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue(apiVersion, forHTTPHeaderField: "anthropic-version")
+        request.setValue(Self.apiVersion, forHTTPHeaderField: "anthropic-version")
         return request
     }
 
-    static func parseModels(_ data: Data) throws -> [ModelInfo] {
+    public func parseModels(_ data: Data) throws -> [ModelInfo] {
         struct Response: Decodable {
             struct Model: Decodable {
                 let id: String
@@ -38,11 +42,12 @@ enum AnthropicAPI {
         return response.data.map { ModelInfo(id: $0.id, displayName: $0.displayName) }
     }
 
-    static func rewordRequest(
+    public func rewordRequest(
         apiKey: String,
         model: String,
         systemPrompt: String,
-        text: String
+        text: String,
+        endpoint: URL?
     ) throws -> URLRequest {
         struct Body: Encodable {
             struct Message: Encodable {
@@ -64,20 +69,21 @@ enum AnthropicAPI {
         }
         let body = Body(
             model: model,
-            maxTokens: outputTokenBudget(for: text),
+            maxTokens: Self.outputTokenBudget(for: text),
             system: systemPrompt,
             messages: [Body.Message(role: "user", content: text)]
         )
-        var request = URLRequest(url: baseURL.appendingPathComponent("messages"))
+        let base = endpoint ?? Self.baseURL
+        var request = URLRequest(url: base.appendingPathComponent("messages"))
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue(apiVersion, forHTTPHeaderField: "anthropic-version")
+        request.setValue(Self.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(body)
         return request
     }
 
-    static func parseReword(_ data: Data) throws -> String {
+    public func parseReword(_ data: Data) throws -> String {
         struct Response: Decodable {
             struct Block: Decodable {
                 let type: String
@@ -113,7 +119,8 @@ enum AnthropicAPI {
         return text
     }
 
-    /// Generous cap for a rewrite: roughly the input length again, floored and capped.
+    /// Generous cap for a rewrite: roughly the input length again, floored
+    /// and capped. Pure math, so it stays a static function.
     static func outputTokenBudget(for text: String) -> Int {
         min(8192, max(1024, text.count))
     }

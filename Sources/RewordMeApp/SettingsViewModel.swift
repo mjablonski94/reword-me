@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import RewordMeCore
 import ServiceManagement
@@ -5,27 +6,25 @@ import SwiftUI
 
 extension Notification.Name {
     /// Posted after every config save so the app delegate can re-apply
-    /// behavior that lives outside the Settings window (trigger mode).
+    /// behavior that lives outside the Settings window (the hotkey).
     static let rewordConfigChanged = Notification.Name("RewordMeConfigChanged")
 }
 
-/// Backing model for the Settings window. Config changes save to disk
-/// immediately; API keys go straight to the Keychain.
+/// View model for the Settings window. Config changes save to disk
+/// immediately; API keys go straight to the injected key store.
 @MainActor
-final class SettingsModel: ObservableObject {
+final class SettingsViewModel: ObservableObject {
     @Published var config: RewordConfig {
         didSet {
             try? configStore.save(config)
             NotificationCenter.default.post(name: .rewordConfigChanged, object: nil)
             if oldValue.provider != config.provider {
-                apiKey = KeychainStore.apiKey(for: config.provider) ?? ""
+                apiKey = keyStore.apiKey(for: config.provider) ?? ""
                 availableModels = []
                 modelsError = nil
             }
             if oldValue.ollamaHost != config.ollamaHost {
-                Task { await ModelResolver.shared.invalidate() }
-                availableModels = []
-                modelsError = nil
+                invalidateResolvedModel()
             }
         }
     }
@@ -35,27 +34,38 @@ final class SettingsModel: ObservableObject {
     @Published var isLoadingModels = false
     @Published var modelsError: String?
     @Published var keySavedFeedback = false
+    @Published var accessibilityTrusted: Bool
     @Published var launchAtLogin: Bool {
         didSet { updateLaunchAtLogin() }
     }
 
-    private let configStore = ConfigStore()
-    private let service = RewordService()
+    private let configStore: ConfigStore
+    private let keyStore: any APIKeyStore
+    private let service: RewordService
+    private let modelResolver: ModelResolver
+    private let accessibility: any AccessibilityChecking
+    private let defaults: UserDefaults
     private var feedbackTask: Task<Void, Never>?
 
-    init() {
-        let loaded = ConfigStore().load()
+    init(dependencies: AppDependencies, defaults: UserDefaults = .standard) {
+        self.configStore = dependencies.configStore
+        self.keyStore = dependencies.keyStore
+        self.service = dependencies.rewordService
+        self.modelResolver = dependencies.modelResolver
+        self.accessibility = dependencies.accessibility
+        self.defaults = defaults
+
+        let loaded = dependencies.configStore.load()
         config = loaded
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        apiKey = KeychainStore.apiKey(for: loaded.provider) ?? ""
+        accessibilityTrusted = dependencies.accessibility.isTrusted
+        apiKey = keyStore.apiKey(for: loaded.provider) ?? ""
     }
 
     func saveAPIKey() {
         explainKeychainPromptOnce()
-        KeychainStore.setAPIKey(apiKey, for: config.provider)
-        Task { await ModelResolver.shared.invalidate() }
-        availableModels = []
-        modelsError = nil
+        keyStore.setAPIKey(apiKey, for: config.provider)
+        invalidateResolvedModel()
 
         keySavedFeedback = true
         feedbackTask?.cancel()
@@ -108,11 +118,28 @@ final class SettingsModel: ObservableObject {
         config.rules.removeAll { $0.id == rule.id }
     }
 
+    // MARK: - Accessibility
+
+    func refreshAccessibilityStatus() {
+        accessibilityTrusted = accessibility.isTrusted
+    }
+
+    func openAccessibilitySettings() {
+        accessibility.openSystemSettings()
+    }
+
+    // MARK: - Private
+
+    private func invalidateResolvedModel() {
+        Task { [modelResolver] in await modelResolver.invalidate() }
+        availableModels = []
+        modelsError = nil
+    }
+
     /// Shown once, before the first key ever lands in the Keychain, so the
     /// system's later "RewordMe wants to access your keychain" password
     /// prompt is expected instead of alarming.
     private func explainKeychainPromptOnce() {
-        let defaults = UserDefaults.standard
         let flag = "keychainPromptExplained"
         guard !defaults.bool(forKey: flag) else { return }
         defaults.set(true, forKey: flag)

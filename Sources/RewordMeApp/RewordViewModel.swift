@@ -3,11 +3,11 @@ import Foundation
 import RewordMeCore
 import SwiftUI
 
-/// State behind one popup. Menu-first, like Apple's Writing Tools:
+/// View model behind one popup. Menu-first, like Apple's Writing Tools:
 /// nothing is generated until the user picks an action, so the popup can
-/// appear on every selection without costing a single token.
+/// appear on every invocation without costing a single token.
 @MainActor
-final class RewordSession: ObservableObject {
+final class RewordViewModel: ObservableObject {
     enum Stage: Equatable {
         case menu
         case loading
@@ -46,6 +46,9 @@ final class RewordSession: ObservableObject {
     ]
 
     @Published var original: String
+    /// For the empty-selection hint; resolved once so the view never
+    /// touches the config store.
+    let hotkeyDisplay: String
     @Published var stage: Stage = .menu
     @Published var result: String = ""
     @Published var steering: String = ""
@@ -54,13 +57,20 @@ final class RewordSession: ObservableObject {
     var onClose: (() -> Void)?
     var onReplace: ((String) -> Void)?
 
-    private let service = RewordService()
-    private let configStore = ConfigStore()
+    private let configStore: ConfigStore
+    private let keyStore: any APIKeyStore
+    private let service: RewordService
+    private let modelResolver: ModelResolver
     private var generationTask: Task<Void, Never>?
     private var lastInstruction: String?
 
-    init(original: String) {
+    init(original: String, dependencies: AppDependencies) {
         self.original = original
+        self.configStore = dependencies.configStore
+        self.keyStore = dependencies.keyStore
+        self.service = dependencies.rewordService
+        self.modelResolver = dependencies.modelResolver
+        self.hotkeyDisplay = dependencies.configStore.load().hotkey.display
     }
 
     /// Runs a rewrite. An explicit preset instruction wins; otherwise
@@ -91,14 +101,14 @@ final class RewordSession: ObservableObject {
             do {
                 let apiKey: String
                 if config.provider.requiresAPIKey {
-                    guard let stored = KeychainStore.apiKey(for: config.provider) else {
+                    guard let stored = keyStore.apiKey(for: config.provider) else {
                         throw RewordError.missingAPIKey
                     }
                     apiKey = stored
                 } else {
                     apiKey = ""
                 }
-                let model = try await ModelResolver.shared.model(
+                let model = try await modelResolver.model(
                     for: config, apiKey: apiKey, service: service
                 )
                 let systemPrompt = PromptBuilder.systemPrompt(

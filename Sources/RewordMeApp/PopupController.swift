@@ -15,25 +15,30 @@ final class RewordPanel: NSPanel {
 
 @MainActor
 final class PopupController {
+    private let dependencies: AppDependencies
     private var panel: RewordPanel?
-    private var session: RewordSession?
+    private var viewModel: RewordViewModel?
     private var anchor: CGRect?
     private var fallbackPoint: NSPoint = .zero
     private var resizeObserver: NSObjectProtocol?
+
+    init(dependencies: AppDependencies) {
+        self.dependencies = dependencies
+    }
 
     func present(text: String, near bounds: CGRect?) {
         dismiss()
         anchor = bounds
         fallbackPoint = NSEvent.mouseLocation
 
-        let session = RewordSession(original: text)
-        session.onClose = { [weak self] in self?.dismiss() }
-        session.onReplace = { [weak self] replacement in
+        let viewModel = RewordViewModel(original: text, dependencies: dependencies)
+        viewModel.onClose = { [weak self] in self?.dismiss() }
+        viewModel.onReplace = { [weak self] replacement in
             self?.replaceWithAnimation(replacement)
         }
-        self.session = session
+        self.viewModel = viewModel
 
-        let view = PopupView(session: session)
+        let view = PopupView(viewModel: viewModel)
         let hosting = NSHostingController(rootView: view)
 
         let panel = RewordPanel(
@@ -84,7 +89,7 @@ final class PopupController {
     /// it is about to replace, then the replacement lands.
     private func replaceWithAnimation(_ text: String) {
         guard let panel else {
-            TextReplacer.replaceSelection(with: text)
+            dependencies.textReplacer.replaceSelection(with: text)
             return
         }
         let frame = panel.frame
@@ -101,8 +106,9 @@ final class PopupController {
             panel.animator().setFrame(target, display: false)
         }, completionHandler: {
             DispatchQueue.main.async { [weak self] in
-                self?.dismiss()
-                TextReplacer.replaceSelection(with: text)
+                guard let self else { return }
+                self.dismiss()
+                self.dependencies.textReplacer.replaceSelection(with: text)
             }
         })
     }
@@ -116,8 +122,8 @@ final class PopupController {
             NotificationCenter.default.removeObserver(resizeObserver)
             self.resizeObserver = nil
         }
-        session?.cancel()
-        session = nil
+        viewModel?.cancel()
+        viewModel = nil
         panel?.close()
         panel = nil
     }

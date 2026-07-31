@@ -6,8 +6,8 @@ import SwiftUI
 final class SettingsWindowController {
     private let window: NSWindow
 
-    init() {
-        let model = SettingsModel()
+    init(dependencies: AppDependencies) {
+        let model = SettingsViewModel(dependencies: dependencies)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 480),
             styleMask: [.titled, .closable, .miniaturizable],
@@ -28,7 +28,7 @@ final class SettingsWindowController {
 }
 
 struct SettingsView: View {
-    @ObservedObject var model: SettingsModel
+    @ObservedObject var model: SettingsViewModel
 
     var body: some View {
         TabView {
@@ -46,7 +46,7 @@ struct SettingsView: View {
 // MARK: - Provider tab
 
 struct ProviderSettingsView: View {
-    @ObservedObject var model: SettingsModel
+    @ObservedObject var model: SettingsViewModel
 
     var body: some View {
         Form {
@@ -138,7 +138,7 @@ struct ProviderSettingsView: View {
 // MARK: - Rewriting tab
 
 struct RewritingSettingsView: View {
-    @ObservedObject var model: SettingsModel
+    @ObservedObject var model: SettingsViewModel
 
     var body: some View {
         Form {
@@ -191,9 +191,8 @@ struct RewritingSettingsView: View {
 // MARK: - General tab
 
 struct GeneralSettingsView: View {
-    @ObservedObject var model: SettingsModel
+    @ObservedObject var model: SettingsViewModel
     @StateObject private var recorder = HotkeyRecorder()
-    @State private var accessibilityTrusted = AccessibilityPermission.isTrusted
 
     private let timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
@@ -231,12 +230,12 @@ struct GeneralSettingsView: View {
 
             Section(Loc.permissionsSection) {
                 LabeledContent(Loc.accessibility) {
-                    if accessibilityTrusted {
+                    if model.accessibilityTrusted {
                         Label(Loc.granted, systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     } else {
                         Button(Loc.openSystemSettings) {
-                            AccessibilityPermission.openSystemSettings()
+                            model.openAccessibilitySettings()
                         }
                     }
                 }
@@ -254,7 +253,7 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .onReceive(timer) { _ in
-            accessibilityTrusted = AccessibilityPermission.isTrusted
+            model.refreshAccessibilityStatus()
         }
     }
 }

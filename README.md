@@ -196,18 +196,27 @@ The system prompt is assembled per request as:
 
 ## Architecture
 
+MVVM with constructor injection throughout: views observe view models, view models receive
+services through initializers, and `AppDependencies` (the composition root in the app delegate)
+is the only place anything is constructed. Side-effectful services hide behind protocols
+(`ProviderClient`, `APIKeyStore`, `SelectionReading`, `TextReplacing`, `AccessibilityChecking`);
+pure functions (prompt assembly, model-tier selection) stay as plain static functions.
+
 ```
 Sources/
 ├── RewordMeCore/            pure logic, fully unit-tested, no AppKit
 │   ├── Provider.swift       provider kinds, model info, typed errors
-│   ├── AnthropicAPI.swift   request building + response parsing (Messages API)
-│   ├── OpenAICompatibleAPI.swift  the chat-completions dialect: OpenAI, Mistral, xAI, DeepSeek
-│   ├── GeminiAPI.swift      request building + response parsing (generateContent)
+│   ├── ProviderClient.swift the per-provider wire-format protocol + registry
+│   ├── AnthropicClient.swift    Messages API
+│   ├── OpenAICompatibleClient.swift  chat-completions dialect: OpenAI, Mistral, xAI, DeepSeek, Ollama
+│   ├── GeminiClient.swift   generateContent API
+│   ├── KeychainAPIKeyStore.swift  APIKeyStore protocol + Keychain implementation
+│   ├── ModelResolver.swift  caches the automatic model pick per provider
 │   ├── ModelSelection.swift least-costly default model heuristic
 │   ├── PromptBuilder.swift  core + rules + base prompt + steering assembly
 │   ├── RewordConfig.swift   Codable settings + JSON store
-│   └── RewordService.swift  URLSession calls, HTTP error mapping (401/429/5xx)
-└── RewordMeApp/             the menu-bar app
+│   └── RewordService.swift  URLSession transport, HTTP error mapping (401/429/5xx)
+└── RewordMeApp/             the menu-bar app (MVVM)
     ├── AppDelegate.swift    status item, wiring
     ├── HotkeyManager.swift  Carbon global hotkey
     ├── SelectionReader.swift  AX selection + Cmd+C fallback with clipboard restore
