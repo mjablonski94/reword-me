@@ -4,3 +4,9 @@ AppIcon.iconset/
 *.zip
 *.dmg
 .DS_Store
+
+# Gradle / KMP
+.gradle/
+build/
+local.properties
+.kotlin/
