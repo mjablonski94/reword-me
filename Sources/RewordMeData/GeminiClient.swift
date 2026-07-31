@@ -1,4 +1,5 @@
 import Foundation
+import RewordMeModels
 
 /// The Google Gemini API (generativelanguage.googleapis.com).
 /// The key goes in the x-goog-api-key header, never in the URL.

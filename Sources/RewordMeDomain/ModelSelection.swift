@@ -1,4 +1,5 @@
 import Foundation
+import RewordMeModels
 
 /// Picks the default model for a provider: the least costly tier,
 /// preferring stable releases, newest first.

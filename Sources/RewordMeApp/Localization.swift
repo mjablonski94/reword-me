@@ -1,5 +1,5 @@
 import Foundation
-import RewordMeCore
+import RewordMeModels
 
 /// Localized UI strings, resolved from the app bundle's
 /// <lang>.lproj/Localizable.strings. The product name "RewordMe" and the

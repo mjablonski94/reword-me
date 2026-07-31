@@ -1,5 +1,6 @@
 import XCTest
-@testable import RewordMeCore
+import RewordMeModels
+@testable import RewordMeData
 
 final class KeychainStoreTests: XCTestCase {
     /// A dedicated service name keeps test entries away from real keys.

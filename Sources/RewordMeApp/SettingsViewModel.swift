@@ -1,6 +1,9 @@
 import AppKit
 import Foundation
-import RewordMeCore
+import RewordMeData
+import RewordMeDomain
+import RewordMeModels
+import RewordMePlatform
 import ServiceManagement
 import SwiftUI
 

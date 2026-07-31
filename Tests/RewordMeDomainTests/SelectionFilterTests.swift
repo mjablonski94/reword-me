@@ -1,5 +1,5 @@
 import XCTest
-@testable import RewordMeCore
+@testable import RewordMeDomain
 
 final class SelectionFilterTests: XCTestCase {
     func testMeaningfulTextPasses() {

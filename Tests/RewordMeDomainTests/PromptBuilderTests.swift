@@ -1,5 +1,6 @@
 import XCTest
-@testable import RewordMeCore
+import RewordMeModels
+@testable import RewordMeDomain
 
 final class PromptBuilderTests: XCTestCase {
     func testCoreOnlyWhenNothingElseConfigured() {

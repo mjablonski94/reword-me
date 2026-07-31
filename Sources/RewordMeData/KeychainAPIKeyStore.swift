@@ -1,12 +1,7 @@
 import Foundation
+import RewordMeDomain
+import RewordMeModels
 import Security
-
-/// Where API keys live. Injected so view models never touch the Keychain
-/// directly and tests can substitute an in-memory store.
-public protocol APIKeyStore: Sendable {
-    func apiKey(for provider: ProviderKind) -> String?
-    func setAPIKey(_ key: String?, for provider: ProviderKind)
-}
 
 /// The real store: one login-Keychain entry per provider. Nothing
 /// sensitive ever touches the JSON config or UserDefaults.

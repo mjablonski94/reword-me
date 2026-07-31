@@ -1,6 +1,6 @@
 import AppKit
 import XCTest
-@testable import RewordMeAppSupport
+@testable import RewordMePlatform
 
 final class PasteboardSnapshotTests: XCTestCase {
     /// A private named pasteboard so tests never touch the user's clipboard.

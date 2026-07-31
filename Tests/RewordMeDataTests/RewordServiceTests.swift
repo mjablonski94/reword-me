@@ -1,5 +1,6 @@
 import XCTest
-@testable import RewordMeCore
+import RewordMeModels
+@testable import RewordMeData
 
 /// Intercepts every request the service makes, so HTTP behavior is tested
 /// without the network.

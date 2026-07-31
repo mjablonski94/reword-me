@@ -1,4 +1,5 @@
 import Foundation
+import RewordMeModels
 
 /// The Anthropic Messages API (anthropic-version: 2023-06-01).
 public struct AnthropicClient: ProviderClient {

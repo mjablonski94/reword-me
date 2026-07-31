@@ -1,31 +1,5 @@
 import Foundation
-
-public enum RuleKind: String, Codable, Sendable, CaseIterable {
-    case doRule = "do"
-    case dontRule = "dont"
-
-    public var label: String {
-        switch self {
-        case .doRule: return "Do"
-        case .dontRule: return "Don't"
-        }
-    }
-}
-
-/// A user-defined do/don't rule, toggleable per rule.
-public struct RewriteRule: Codable, Equatable, Sendable, Identifiable, Hashable {
-    public var id: UUID
-    public var kind: RuleKind
-    public var text: String
-    public var isEnabled: Bool
-
-    public init(id: UUID = UUID(), kind: RuleKind, text: String, isEnabled: Bool = true) {
-        self.id = id
-        self.kind = kind
-        self.text = text
-        self.isEnabled = isEnabled
-    }
-}
+import RewordMeModels
 
 /// Assembles the system prompt from four layers:
 /// 1. the fixed core instruction, 2. enabled do/don't rules,

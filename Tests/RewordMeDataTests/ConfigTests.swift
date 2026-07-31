@@ -1,5 +1,6 @@
 import XCTest
-@testable import RewordMeCore
+import RewordMeModels
+@testable import RewordMeData
 
 final class ConfigTests: XCTestCase {
     func testRoundTrip() throws {

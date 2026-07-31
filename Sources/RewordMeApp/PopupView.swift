@@ -1,4 +1,3 @@
-import RewordMeCore
 import SwiftUI
 
 /// Writing-Tools-style panel: a describe field with an intelligence glow,

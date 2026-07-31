@@ -1,5 +1,7 @@
 import AppKit
-import RewordMeCore
+import RewordMeData
+import RewordMeModels
+import RewordMePlatform
 import SwiftUI
 
 @MainActor
@@ -130,7 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAccessibilityOnboarding() {
-        dependencies.accessibility.showOnboarding()
+        AccessibilityOnboarding(accessibility: dependencies.accessibility).show()
     }
 
     // MARK: - Triggers
@@ -165,7 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func rewordSelection() {
         guard dependencies.accessibility.isTrusted else {
-            dependencies.accessibility.showOnboarding()
+            AccessibilityOnboarding(accessibility: dependencies.accessibility).show()
             return
         }
         dependencies.selectionReader.readSelection { [weak self] text, bounds in

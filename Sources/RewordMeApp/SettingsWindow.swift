@@ -1,5 +1,6 @@
 import AppKit
-import RewordMeCore
+import RewordMeModels
+import RewordMePlatform
 import SwiftUI
 
 @MainActor

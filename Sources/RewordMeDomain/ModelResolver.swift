@@ -1,12 +1,5 @@
 import Foundation
-
-/// Anything that can list a provider's models - RewordService in the app,
-/// a stub in tests.
-public protocol ModelListing: Sendable {
-    func listModels(provider: ProviderKind, apiKey: String, endpoint: URL?) async throws -> [ModelInfo]
-}
-
-extension RewordService: ModelListing {}
+import RewordMeModels
 
 /// Resolves the model to use for a request. An explicit model in the
 /// config wins; otherwise the provider's model list is fetched once and

@@ -1,4 +1,5 @@
 import Foundation
+import RewordMeModels
 
 /// One provider's wire format: how to build requests and read responses.
 /// Instances are stateless values; RewordService picks the right one

@@ -1,15 +1,16 @@
 import AppKit
 import ApplicationServices
-import RewordMeAppSupport
 
 /// Posts keyboard shortcuts to the frontmost app.
-protocol KeySynthesizing {
+public protocol KeySynthesizing {
     func postCommandShortcut(keyCode: CGKeyCode)
 }
 
-struct CGKeySynthesizer: KeySynthesizing {
+public struct CGKeySynthesizer: KeySynthesizing {
+    public init() {}
+
     /// Cmd+<key> (keycode 8 = C, 9 = V).
-    func postCommandShortcut(keyCode: CGKeyCode) {
+    public func postCommandShortcut(keyCode: CGKeyCode) {
         let source = CGEventSource(stateID: .combinedSessionState)
         guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false) else {
@@ -24,7 +25,7 @@ struct CGKeySynthesizer: KeySynthesizing {
 
 /// Reads the selected text from whatever app is frontmost.
 @MainActor
-protocol SelectionReading {
+public protocol SelectionReading {
     func readSelection(completion: @escaping @MainActor (String?, CGRect?) -> Void)
 }
 
@@ -32,14 +33,14 @@ protocol SelectionReading {
 /// Cmd+C with clipboard save/restore as the fallback for apps that don't
 /// expose AXSelectedText (Electron apps, browser web content).
 @MainActor
-final class AXSelectionReader: SelectionReading {
+public final class AXSelectionReader: SelectionReading {
     private let keySynthesizer: KeySynthesizing
 
-    init(keySynthesizer: KeySynthesizing = CGKeySynthesizer()) {
+    public init(keySynthesizer: KeySynthesizing = CGKeySynthesizer()) {
         self.keySynthesizer = keySynthesizer
     }
 
-    func readSelection(completion: @escaping @MainActor (String?, CGRect?) -> Void) {
+    public func readSelection(completion: @escaping @MainActor (String?, CGRect?) -> Void) {
         let axResult = selectionViaAccessibility()
         if let text = axResult.text, !text.isEmpty {
             completion(text, axResult.bounds)

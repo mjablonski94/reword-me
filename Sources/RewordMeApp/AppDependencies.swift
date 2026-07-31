@@ -1,5 +1,7 @@
 import Foundation
-import RewordMeCore
+import RewordMeData
+import RewordMeDomain
+import RewordMePlatform
 
 /// The composition root: every service is built exactly once, here, and
 /// handed down through initializers. Nothing below this level reaches for

@@ -196,47 +196,57 @@ The system prompt is assembled per request as:
 
 ## Architecture
 
-MVVM with constructor injection throughout: views observe view models, view models receive
-services through initializers, and `AppDependencies` (the composition root in the app delegate)
-is the only place anything is constructed. Side-effectful services hide behind protocols
-(`ProviderClient`, `APIKeyStore`, `SelectionReading`, `TextReplacing`, `AccessibilityChecking`);
-pure functions (prompt assembly, model-tier selection) stay as plain static functions.
+Layered clean architecture in separate SPM modules, with dependencies pointing inward only
+(mirroring a modularized Gradle project): **Models <- Domain <- Data**, a **Platform** module for
+macOS capabilities, and the executable as presentation plus the composition root. MVVM with
+constructor injection: views observe view models, view models receive services through
+initializers, and `AppDependencies` is the only place anything gets constructed. Side-effectful
+services hide behind protocols (`ProviderClient`, `APIKeyStore`, `ModelListing`,
+`SelectionReading`, `TextReplacing`, `AccessibilityChecking`); pure functions (prompt assembly,
+model-tier selection) stay as plain static functions.
 
 ```
 Sources/
-├── RewordMeCore/            pure logic, fully unit-tested, no AppKit
-│   ├── Provider.swift       provider kinds, model info, typed errors
-│   ├── ProviderClient.swift the per-provider wire-format protocol + registry
-│   ├── AnthropicClient.swift    Messages API
-│   ├── OpenAICompatibleClient.swift  chat-completions dialect: OpenAI, Mistral, xAI, DeepSeek, Ollama
-│   ├── GeminiClient.swift   generateContent API
-│   ├── KeychainAPIKeyStore.swift  APIKeyStore protocol + Keychain implementation
-│   ├── ModelResolver.swift  caches the automatic model pick per provider
-│   ├── ModelSelection.swift least-costly default model heuristic
+├── RewordMeModels/          pure value types - no IO, no AppKit
+│   ├── Provider.swift       provider kinds + metadata, model info, typed errors
+│   ├── RewriteRule.swift    do/don't rule model
+│   └── RewordConfig.swift   settings model + hotkey config + Ollama endpoint
+├── RewordMeDomain/          business rules + ports (depends on Models only)
+│   ├── Ports.swift          ModelListing, APIKeyStore - implemented by outer layers
 │   ├── PromptBuilder.swift  core + rules + base prompt + steering assembly
-│   ├── RewordConfig.swift   Codable settings + JSON store
-│   └── RewordService.swift  URLSession transport, HTTP error mapping (401/429/5xx)
-└── RewordMeApp/             the menu-bar app (MVVM)
-    ├── AppDelegate.swift    status item, wiring
-    ├── HotkeyManager.swift  Carbon global hotkey
-    ├── SelectionReader.swift  AX selection + Cmd+C fallback with clipboard restore
-    ├── TextReplacer.swift   AX replace + Cmd+V fallback with clipboard restore
-    ├── PopupController.swift  non-activating NSPanel, positioning
-    ├── PopupView.swift      SwiftUI popup UI
-    ├── RewordSession.swift  popup state + generation flow
-    ├── SettingsWindow.swift Provider / Rewriting / General tabs
-    ├── SettingsModel.swift  settings state, model listing, launch at login
-    ├── KeychainStore.swift  API keys in the login Keychain
-    ├── ModelResolver.swift  caches the automatic model pick per provider
-    ├── ServicesProvider.swift  Services-menu entry
-    └── AccessibilityPermission.swift
+│   ├── ModelSelection.swift least-costly default model heuristic
+│   ├── ModelResolver.swift  caches the automatic model pick per provider
+│   └── SelectionFilter.swift  meaningful-selection gate
+├── RewordMeData/            IO implementations (depends on Models + Domain)
+│   ├── ProviderClient.swift the per-provider wire-format protocol + registry
+│   ├── AnthropicClient.swift / GeminiClient.swift / OpenAICompatibleClient.swift
+│   ├── RewordService.swift  URLSession transport, HTTP error mapping (401/429/5xx)
+│   ├── KeychainAPIKeyStore.swift  APIKeyStore implementation
+│   └── ConfigStore.swift    JSON persistence in Application Support
+├── RewordMePlatform/        macOS capabilities (depends on Models only)
+│   ├── SelectionReader.swift  SelectionReading protocol + AX/clipboard implementation
+│   ├── TextReplacer.swift   TextReplacing protocol + AX/paste implementation
+│   ├── HotkeyManager.swift  Carbon hotkey registration + recorder
+│   ├── AccessibilityPermission.swift  AccessibilityChecking protocol + system implementation
+│   └── PasteboardSnapshot.swift  clipboard save/restore
+└── RewordMeApp/             presentation + composition root (MVVM)
+    ├── AppDependencies.swift  composition root - all services built here, once
+    ├── AppDelegate.swift    status item, menu, wiring
+    ├── RewordViewModel.swift / PopupView.swift / PopupController.swift  the popup
+    ├── SettingsViewModel.swift / SettingsWindow.swift  the settings window
+    ├── AccessibilityOnboarding.swift  the permission explanation dialog
+    ├── Localization.swift   Loc - localized strings
+    ├── HotkeyManager wiring, ServicesProvider.swift, RewordMeMain.swift
+    └── ...
 ```
+
+Tests mirror the layers: `RewordMeDomainTests`, `RewordMeDataTests`, `RewordMePlatformTests`.
 
 ## Development
 
 ```bash
 swift build          # debug build
-swift test           # unit tests (RewordMeCore)
+swift test           # unit tests (Domain, Data, Platform test targets)
 ./build.sh           # release .app bundle, ad-hoc signed
 ./build.sh debug     # debug .app bundle
 ```

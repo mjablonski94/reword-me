@@ -1,4 +1,6 @@
 import Foundation
+import RewordMeDomain
+import RewordMeModels
 
 /// Performs the actual HTTP calls. The wire formats live in the injected
 /// provider clients; this type only owns transport and error mapping.
@@ -90,3 +92,5 @@ public struct RewordService: Sendable {
         return String(data: data.prefix(200), encoding: .utf8) ?? "Unknown error"
     }
 }
+
+extension RewordService: ModelListing {}

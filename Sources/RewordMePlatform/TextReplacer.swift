@@ -1,24 +1,23 @@
 import AppKit
 import ApplicationServices
-import RewordMeAppSupport
 
 /// Puts the reworded text back where the selection was.
 @MainActor
-protocol TextReplacing {
+public protocol TextReplacing {
     func replaceSelection(with text: String)
 }
 
 /// Sets AXSelectedText directly when the focused element allows it;
 /// otherwise pastes over the selection and restores the clipboard.
 @MainActor
-final class AXTextReplacer: TextReplacing {
+public final class AXTextReplacer: TextReplacing {
     private let keySynthesizer: KeySynthesizing
 
-    init(keySynthesizer: KeySynthesizing = CGKeySynthesizer()) {
+    public init(keySynthesizer: KeySynthesizing = CGKeySynthesizer()) {
         self.keySynthesizer = keySynthesizer
     }
 
-    func replaceSelection(with text: String) {
+    public func replaceSelection(with text: String) {
         if replaceViaAccessibility(text) { return }
         replaceViaPaste(text)
     }

@@ -1,18 +1,20 @@
 import AppKit
 import Carbon.HIToolbox
 import Foundation
-import RewordMeCore
+import RewordMeModels
 
 /// Registers the global reword hotkey via Carbon. RegisterEventHotKey
 /// needs no special permission and works in every app; re-applying with a
 /// new combination swaps the registration in place.
-final class HotkeyManager {
-    var onHotkey: (() -> Void)?
+public final class HotkeyManager {
+    public var onHotkey: (() -> Void)?
 
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
 
-    func apply(_ hotkey: HotkeyConfig) {
+    public init() {}
+
+    public func apply(_ hotkey: HotkeyConfig) {
         installHandlerIfNeeded()
         if let hotKeyRef {
             UnregisterEventHotKey(hotKeyRef)
@@ -61,7 +63,7 @@ final class HotkeyManager {
     }
 }
 
-extension HotkeyConfig {
+public extension HotkeyConfig {
     /// The Cocoa flags matching the stored Carbon mask, for menu items.
     var cocoaModifiers: NSEvent.ModifierFlags {
         var flags: NSEvent.ModifierFlags = []
@@ -77,13 +79,15 @@ extension HotkeyConfig {
 /// shortcut field in Settings. Esc cancels; a combination must include
 /// Command, Option or Control so plain typing can't become the hotkey.
 @MainActor
-final class HotkeyRecorder: ObservableObject {
-    @Published var isRecording = false
+public final class HotkeyRecorder: ObservableObject {
+    @Published public private(set) var isRecording = false
 
     private var monitor: Any?
     private var completion: ((HotkeyConfig) -> Void)?
 
-    func begin(_ completion: @escaping (HotkeyConfig) -> Void) {
+    public init() {}
+
+    public func begin(_ completion: @escaping (HotkeyConfig) -> Void) {
         cancel()
         self.completion = completion
         isRecording = true
@@ -93,7 +97,7 @@ final class HotkeyRecorder: ObservableObject {
         }
     }
 
-    func cancel() {
+    public func cancel() {
         if let monitor {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil

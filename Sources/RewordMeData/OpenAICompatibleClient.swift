@@ -1,4 +1,5 @@
 import Foundation
+import RewordMeModels
 
 /// The OpenAI chat-completions dialect, shared by OpenAI, Mistral, xAI,
 /// DeepSeek and Ollama - only the base URL and the model filter differ.
