@@ -42,12 +42,9 @@ class JsonConfigStore(
 }
 
 /**
- * Phase-1 key store: a JSON file next to the config, readable only by the
- * owner where the filesystem supports it.
- *
- * TODO(phase 2): move to the Windows Credential Manager (CredWriteW /
- * CredReadW via JNA) so keys get OS-level protection like the macOS app's
- * Keychain storage.
+ * Fallback key store for platforms without a system vault: a JSON file next to
+ * the config, readable only by the owner where the filesystem supports it. On
+ * Windows the Credential Manager is used instead and this file is migrated away.
  */
 class FileApiKeyStore(
     private val directory: Path = defaultConfigDirectory()
@@ -63,6 +60,11 @@ class FileApiKeyStore(
         Files.createDirectories(directory)
         Files.writeString(file, prettyJson.encodeToString(keysSerializer, keys))
         restrictToOwner()
+    }
+
+    /** Removes the file once its contents live somewhere safer. */
+    fun discard() {
+        runCatching { Files.deleteIfExists(file) }
     }
 
     private fun readAll(): Map<String, String> = runCatching {

@@ -1,19 +1,12 @@
 package dev.mjablonski.rewordme.app
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Canvas as ComposeCanvas
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.toPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
@@ -22,9 +15,10 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import dev.mjablonski.rewordme.domain.SelectionFilter
+import dev.mjablonski.rewordme.models.RewordConfig
 import dev.mjablonski.rewordme.platform.GlobalHotkey
+import dev.mjablonski.rewordme.platform.HotkeyResult
 import dev.mjablonski.rewordme.platform.WindowEffects
-import dev.mjablonski.rewordme.platform.isWindows
 import java.awt.Desktop
 import java.awt.MouseInfo
 import java.net.URI
@@ -66,6 +60,24 @@ fun main() = application {
         }
     }
 
+    val hotkey = remember { GlobalHotkey() }
+    val binder = remember {
+        object : HotkeyBinder {
+            override fun bind(config: RewordConfig): HotkeyStatus =
+                when (hotkey.register(config.hotkey) {
+                    scope.launch(Dispatchers.Swing) { triggerReword() }
+                }) {
+                    HotkeyResult.Registered -> HotkeyStatus.Active
+                    HotkeyResult.Conflict -> HotkeyStatus.Conflict
+                    HotkeyResult.Unsupported -> HotkeyStatus.Unsupported
+                    is HotkeyResult.Failed -> HotkeyStatus.Failed
+                }
+
+            override fun release() = hotkey.stop()
+        }
+    }
+    val settingsViewModel = remember { SettingsViewModel(dependencies, scope, binder) }
+
     LaunchedEffect(Unit) {
         viewModel.onClose = { popupVisible = false }
         viewModel.onReplace = { replacement ->
@@ -74,71 +86,55 @@ fun main() = application {
                 dependencies.textReplacer.replaceSelection(replacement)
             }
         }
-        val hotkey = GlobalHotkey()
-        hotkey.register(dependencies.configStore.load().hotkey) {
-            scope.launch(Dispatchers.Swing) { triggerReword() }
+        val status = binder.bind(dependencies.configStore.load())
+        settingsViewModel.reportHotkeyStatus(status)
+        // Without a working shortcut there is no way into the app, so open
+        // settings on the conflict rather than failing silently.
+        if (status == HotkeyStatus.Conflict || status == HotkeyStatus.Failed) {
+            settingsVisible = true
         }
     }
 
+    // 32px: the size Windows asks the tray for at 100% scaling.
+    val trayIcon = remember { AppIcon.render(32).toPainter() }
+    val windowIcon = remember { AppIcon.render(256).toPainter() }
+
     Tray(
-        icon = remember { trayIcon() },
+        icon = trayIcon,
         tooltip = "RewordMe",
         menu = {
-            Item("Reword Selection") { triggerReword() }
-            Item("Settings...") { settingsVisible = true }
+            Item(Strings["menu.reword"]) { triggerReword() }
+            Item(Strings["menu.settings"]) { settingsVisible = true }
             Separator()
-            Item("Buy Me a Coffee") {
+            Item(Strings["menu.buyCoffee"]) {
                 runCatching { Desktop.getDesktop().browse(URI("https://buymeacoffee.com/kofcio94f")) }
             }
-            Item("Quit RewordMe") { exitApplication() }
+            Item(Strings["menu.quit"]) { exitApplication() }
         }
     )
 
     // Pre-warmed popup: the window exists from launch and is only
     // shown/hidden, so the first hotkey press pays no composition cost.
-    Window(
-        onCloseRequest = { popupVisible = false },
-        visible = popupVisible,
+    PopupWindow(
+        viewModel = viewModel,
         state = popupState,
-        title = "RewordMe",
-        undecorated = true,
-        transparent = false,
-        resizable = false,
-        alwaysOnTop = true,
-        focusable = true
-    ) {
-        val acrylic = remember {
-            WindowEffects.applyPopupChrome(window, dark = true)
-        }
-        val fallback = if (acrylic) Color(0x66101018) else Color(0xF2181820)
-        androidx.compose.foundation.layout.Box(
-            Modifier.background(fallback, RoundedCornerShape(if (isWindows) 0.dp else 12.dp))
-        ) {
-            PopupContent(viewModel)
-        }
-    }
+        visible = popupVisible,
+        onCloseRequest = { popupVisible = false }
+    )
 
     if (settingsVisible) {
         Window(
             onCloseRequest = { settingsVisible = false },
-            title = "RewordMe Settings",
-            state = rememberWindowState(size = DpSize(520.dp, 420.dp))
+            title = Strings["settings.windowTitle"],
+            icon = windowIcon,
+            // macOS fixes the sheet at 560x480 of content; the extra 32 is the
+            // Windows title bar, which counts towards the frame here.
+            resizable = false,
+            state = rememberWindowState(size = DpSize(560.dp, 512.dp))
         ) {
-            SettingsContent(dependencies)
+            LaunchedEffect(Unit) { WindowEffects.applyWindowChrome(window, dark = true) }
+            SettingsContent(settingsViewModel)
         }
     }
 }
 
-/** Simple purple round tray glyph drawn in code (no asset pipeline yet). */
-private fun trayIcon(): BitmapPainter {
-    val size = 32
-    val bitmap = ImageBitmap(size, size)
-    val canvas = ComposeCanvas(bitmap)
-    val paint = Paint().apply { color = Color(0xFF8B7CF6) }
-    canvas.drawCircle(
-        androidx.compose.ui.geometry.Offset(size / 2f, size / 2f),
-        size / 2.4f,
-        paint
-    )
-    return BitmapPainter(bitmap)
-}

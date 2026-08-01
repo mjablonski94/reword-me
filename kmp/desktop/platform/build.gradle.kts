@@ -8,6 +8,7 @@ kotlin {
 
 dependencies {
     api(project(":core:models"))
+    api(project(":core:domain"))
     implementation(libs.jna)
     implementation(libs.jna.platform)
 }

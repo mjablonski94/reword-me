@@ -39,6 +39,27 @@ object WindowEffects {
         }.getOrDefault(false)
     }
 
+    /**
+     * Dark title bar and rounded corners for an ordinary decorated window.
+     * Without this the settings window wears a white Windows title bar above a
+     * dark body - the one seam that gives away that it is not the macOS sheet.
+     * The taskbar entry stays: settings is a window the user works in, unlike
+     * the popup.
+     */
+    fun applyWindowChrome(window: Window, dark: Boolean) {
+        if (!isWindows) return
+        runCatching {
+            val hwnd = WinDef.HWND(Native.getComponentPointer(window))
+            val dwm = Dwm.INSTANCE
+            dwm.DwmSetWindowAttribute(
+                hwnd, Dwm.DWMWA_USE_IMMERSIVE_DARK_MODE, IntByReference(if (dark) 1 else 0), 4
+            )
+            dwm.DwmSetWindowAttribute(
+                hwnd, Dwm.DWMWA_WINDOW_CORNER_PREFERENCE, IntByReference(Dwm.DWMWCP_ROUND), 4
+            )
+        }
+    }
+
     private fun hideFromTaskbar(hwnd: WinDef.HWND) {
         val user32 = com.sun.jna.platform.win32.User32.INSTANCE
         val style = user32.GetWindowLong(hwnd, GWL_EXSTYLE)
