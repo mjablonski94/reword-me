@@ -49,10 +49,10 @@ class WindowsSelectionReader : SelectionReading {
 
         // Slow apps can take several hundred ms to write the clipboard.
         var copied: String? = null
-        repeat(20) {
+        for (attempt in 0 until 20) {
             Thread.sleep(30)
             copied = ClipboardAccess.read()?.takeIf(String::isNotEmpty)
-            if (copied != null) return@repeat
+            if (copied != null) break
         }
         ClipboardAccess.write(previous)
         return copied
