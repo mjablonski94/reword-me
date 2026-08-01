@@ -32,6 +32,69 @@ internal interface Dwm : StdCallLibrary {
     }
 }
 
+/**
+ * Clipboard reads straight from Win32.
+ *
+ * AWT cannot be used here. Once this process has put anything on the clipboard
+ * it becomes the owner, and SunClipboard.getContents then answers from its own
+ * cached copy instead of asking Windows - so a copy made by another app is
+ * invisible until an ownership-lost event happens to be processed. The
+ * sequence number is the reliable "something changed" signal, and it also
+ * distinguishes a fresh copy from an unchanged clipboard that already held the
+ * same text.
+ */
+object Win32Clipboard {
+    private const val CF_UNICODETEXT = 13
+
+    val sequence: Int
+        get() = if (isWindows) ClipboardApi.INSTANCE.GetClipboardSequenceNumber() else 0
+
+    fun text(): String? {
+        if (!isWindows) return null
+        return runCatching {
+            // Whoever copied may still hold the clipboard open.
+            if (!ClipboardApi.INSTANCE.OpenClipboard(null)) return null
+            try {
+                val handle = ClipboardApi.INSTANCE.GetClipboardData(CF_UNICODETEXT) ?: return null
+                val locked = Kernel32Mem.INSTANCE.GlobalLock(handle) ?: return null
+                try {
+                    locked.getWideString(0)
+                } finally {
+                    Kernel32Mem.INSTANCE.GlobalUnlock(handle)
+                }
+            } finally {
+                ClipboardApi.INSTANCE.CloseClipboard()
+            }
+        }.getOrNull()
+    }
+}
+
+@Suppress("FunctionName")
+internal interface ClipboardApi : StdCallLibrary {
+    fun GetClipboardSequenceNumber(): Int
+    fun OpenClipboard(hwnd: WinDef.HWND?): Boolean
+    fun CloseClipboard(): Boolean
+    fun GetClipboardData(format: Int): com.sun.jna.Pointer?
+
+    companion object {
+        val INSTANCE: ClipboardApi by lazy {
+            Native.load("user32", ClipboardApi::class.java, W32APIOptions.DEFAULT_OPTIONS)
+        }
+    }
+}
+
+@Suppress("FunctionName")
+internal interface Kernel32Mem : StdCallLibrary {
+    fun GlobalLock(mem: com.sun.jna.Pointer): com.sun.jna.Pointer?
+    fun GlobalUnlock(mem: com.sun.jna.Pointer): Boolean
+
+    companion object {
+        val INSTANCE: Kernel32Mem by lazy {
+            Native.load("kernel32", Kernel32Mem::class.java, W32APIOptions.DEFAULT_OPTIONS)
+        }
+    }
+}
+
 /** Sends key combinations to whatever window is foreground. */
 object KeySynthesizer {
     const val VK_CONTROL = 0x11
@@ -41,38 +104,27 @@ object KeySynthesizer {
 
     fun sendCtrl(key: Int) {
         if (!isWindows) return
-        val inputs = arrayOf(
-            keyInput(VK_CONTROL, down = true),
-            keyInput(key, down = true),
-            keyInput(key, down = false),
-            keyInput(VK_CONTROL, down = false)
-        )
-        // SendInput needs a contiguous array built from one prototype.
-        val prototype = WinUser.INPUT()
-        val array = prototype.toArray(inputs.size)
-        inputs.forEachIndexed { index, source ->
-            val target = array[index] as WinUser.INPUT
-            target.type = source.type
-            target.input.setType("ki")
-            target.input.ki.wVk = source.input.ki.wVk
-            target.input.ki.dwFlags = source.input.ki.dwFlags
-            target.write()
-        }
-        User32.INSTANCE.SendInput(
-            WinDef.DWORD(array.size.toLong()),
-            array.map { it as WinUser.INPUT }.toTypedArray(),
-            array[0].size()
-        )
+        // One event per SendInput with a pause between. Sent as a single batch
+        // all four events carry the same timestamp, and apps that handle input
+        // asynchronously - the WinUI Notepad among them - drop a combination
+        // pressed and released that fast.
+        send(VK_CONTROL, down = true)
+        send(key, down = true)
+        send(key, down = false)
+        send(VK_CONTROL, down = false)
     }
 
-    private fun keyInput(vk: Int, down: Boolean): WinUser.INPUT {
+    private fun send(vk: Int, down: Boolean) {
         val input = WinUser.INPUT()
         input.type = WinDef.DWORD(WinUser.INPUT.INPUT_KEYBOARD.toLong())
         input.input.setType("ki")
         input.input.ki.wVk = WinDef.WORD(vk.toLong())
         input.input.ki.dwFlags = WinDef.DWORD(if (down) 0 else KEYEVENTF_KEYUP.toLong())
-        return input
+        User32.INSTANCE.SendInput(WinDef.DWORD(1), arrayOf(input), input.size())
+        Thread.sleep(KEY_GAP_MS)
     }
+
+    private const val KEY_GAP_MS = 30L
 }
 
 /** Remembers and restores which window had focus before the popup. */

@@ -7,6 +7,8 @@ import dev.mjablonski.rewordme.domain.ApiKeyStore
 import dev.mjablonski.rewordme.domain.ConfigStore
 import dev.mjablonski.rewordme.domain.ModelResolver
 import dev.mjablonski.rewordme.domain.Rewording
+import dev.mjablonski.rewordme.models.ProviderKind
+import dev.mjablonski.rewordme.platform.CredentialApiKeyStore
 import dev.mjablonski.rewordme.platform.DevSelectionReader
 import dev.mjablonski.rewordme.platform.DevTextReplacer
 import dev.mjablonski.rewordme.platform.ForegroundTracker
@@ -22,7 +24,7 @@ import dev.mjablonski.rewordme.platform.isWindows
  */
 class AppDependencies {
     val configStore: ConfigStore = JsonConfigStore()
-    val keyStore: ApiKeyStore = FileApiKeyStore()
+    val keyStore: ApiKeyStore = if (isWindows) vaultKeyStore() else FileApiKeyStore()
     val rewordService: Rewording = RewordService()
     val modelResolver = ModelResolver()
     val foreground = ForegroundTracker()
@@ -30,4 +32,22 @@ class AppDependencies {
         if (isWindows) WindowsSelectionReader() else DevSelectionReader()
     val textReplacer: TextReplacing =
         if (isWindows) WindowsTextReplacer(foreground) else DevTextReplacer()
+}
+
+/**
+ * Moves keys from the phase-1 plaintext file into the Credential Manager. The
+ * file survives a failed move, because losing the user's key is worse than
+ * leaving it on disk for one more launch.
+ */
+private fun vaultKeyStore(): ApiKeyStore {
+    val plaintext = FileApiKeyStore()
+    val credentials = CredentialApiKeyStore()
+    val moved = ProviderKind.entries.all { provider ->
+        val key = plaintext.apiKey(provider) ?: return@all true
+        credentials.setApiKey(provider, key)
+        credentials.apiKey(provider) == key
+    }
+    if (!moved) return plaintext
+    plaintext.discard()
+    return credentials
 }

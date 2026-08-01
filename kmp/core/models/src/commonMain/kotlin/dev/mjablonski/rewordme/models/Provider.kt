@@ -38,6 +38,28 @@ enum class ProviderKind(val id: String) {
             OLLAMA -> "https://ollama.com/download"
         }
 
+    /** Shown in the "get a key at ..." link instead of the full URL. */
+    val apiKeyConsoleName: String
+        get() = when (this) {
+            ANTHROPIC -> "platform.claude.com"
+            OPENAI -> "platform.openai.com"
+            GEMINI -> "aistudio.google.com"
+            MISTRAL -> "console.mistral.ai"
+            XAI -> "console.x.ai"
+            DEEPSEEK -> "platform.deepseek.com"
+            OLLAMA -> "ollama.com"
+        }
+
+    val keyPlaceholder: String
+        get() = when (this) {
+            ANTHROPIC -> "sk-ant-..."
+            OPENAI, DEEPSEEK -> "sk-..."
+            GEMINI -> "AIza..."
+            MISTRAL -> "API key from console.mistral.ai"
+            XAI -> "xai-..."
+            OLLAMA -> ""
+        }
+
     /** Base URL for providers speaking the OpenAI chat-completions dialect. */
     val openAiCompatibleBaseUrl: String?
         get() = when (this) {

@@ -38,8 +38,8 @@ private object ClipboardAccess {
 class WindowsSelectionReader : SelectionReading {
     override fun readSelection(): String? {
         if (!isWindows) return null
-        val previous = ClipboardAccess.read()
-        ClipboardAccess.write("")
+        val previous = Win32Clipboard.text()
+        val before = Win32Clipboard.sequence
 
         // The hotkey's own modifiers (Ctrl+Alt) are usually still held
         // when we get here; a Ctrl+C synthesized now reaches the app as
@@ -49,12 +49,15 @@ class WindowsSelectionReader : SelectionReading {
 
         // Slow apps can take several hundred ms to write the clipboard.
         var copied: String? = null
-        for (attempt in 0 until 20) {
-            Thread.sleep(30)
-            copied = ClipboardAccess.read()?.takeIf(String::isNotEmpty)
+        for (attempt in 0 until 30) {
+            Thread.sleep(25)
+            if (Win32Clipboard.sequence == before) continue
+            copied = Win32Clipboard.text()?.takeIf(String::isNotEmpty)
             if (copied != null) break
         }
-        ClipboardAccess.write(previous)
+        // Nothing was copied means the clipboard was never touched, and
+        // rewriting it would only steal ownership for no reason.
+        if (copied != null) ClipboardAccess.write(previous)
         return copied
     }
 
@@ -78,7 +81,7 @@ class WindowsSelectionReader : SelectionReading {
 class WindowsTextReplacer(private val foreground: ForegroundTracker) : TextReplacing {
     override fun replaceSelection(text: String) {
         if (!isWindows) return
-        val previous = ClipboardAccess.read()
+        val previous = Win32Clipboard.text()
         ClipboardAccess.write(text)
         foreground.restore()
         Thread.sleep(80)
