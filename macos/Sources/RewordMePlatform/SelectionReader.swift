@@ -120,14 +120,52 @@ public final class AXSelectionReader: SelectionReading {
         let snapshot = PasteboardSnapshot.capture()
         let changeCountBefore = pasteboard.changeCount
 
-        keySynthesizer.postCommandShortcut(keyCode: 8) // Cmd+C
+        // The hotkey's own modifiers are usually still physically held
+        // when we get here; a Cmd+C synthesized now reaches the app as
+        // Option+Cmd+C and copies nothing. Wait for release first.
+        waitForModifierRelease(attemptsLeft: 20) { [keySynthesizer] in
+            keySynthesizer.postCommandShortcut(keyCode: 8) // Cmd+C
+            self.pollForCopy(pasteboard: pasteboard, before: changeCountBefore, attemptsLeft: 20) { copied in
+                snapshot.restore()
+                completion(copied)
+            }
+        }
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            let copied: String? = pasteboard.changeCount != changeCountBefore
-                ? pasteboard.string(forType: .string)
-                : nil
-            snapshot.restore()
-            completion(copied)
+    private func waitForModifierRelease(attemptsLeft: Int, then: @escaping @MainActor () -> Void) {
+        let held = NSEvent.modifierFlags.intersection([.command, .option, .control, .shift])
+        guard !held.isEmpty, attemptsLeft > 0 else {
+            then()
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.waitForModifierRelease(attemptsLeft: attemptsLeft - 1, then: then)
+        }
+    }
+
+    /// Slow apps (browsers, Electron) can take several hundred ms to
+    /// write the clipboard - poll instead of a single fixed wait.
+    private func pollForCopy(
+        pasteboard: NSPasteboard,
+        before: Int,
+        attemptsLeft: Int,
+        completion: @escaping @MainActor (String?) -> Void
+    ) {
+        if pasteboard.changeCount != before {
+            completion(pasteboard.string(forType: .string))
+            return
+        }
+        guard attemptsLeft > 0 else {
+            completion(nil)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+            self.pollForCopy(
+                pasteboard: pasteboard,
+                before: before,
+                attemptsLeft: attemptsLeft - 1,
+                completion: completion
+            )
         }
     }
 }

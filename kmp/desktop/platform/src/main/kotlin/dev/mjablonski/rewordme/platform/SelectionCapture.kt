@@ -40,11 +40,34 @@ class WindowsSelectionReader : SelectionReading {
         if (!isWindows) return null
         val previous = ClipboardAccess.read()
         ClipboardAccess.write("")
+
+        // The hotkey's own modifiers (Ctrl+Alt) are usually still held
+        // when we get here; a Ctrl+C synthesized now reaches the app as
+        // Ctrl+Alt+C and copies nothing. Wait for release first.
+        waitForModifierRelease()
         KeySynthesizer.sendCtrl(KeySynthesizer.VK_C)
-        Thread.sleep(200)
-        val copied = ClipboardAccess.read()?.takeIf(String::isNotEmpty)
+
+        // Slow apps can take several hundred ms to write the clipboard.
+        var copied: String? = null
+        repeat(20) {
+            Thread.sleep(30)
+            copied = ClipboardAccess.read()?.takeIf(String::isNotEmpty)
+            if (copied != null) return@repeat
+        }
         ClipboardAccess.write(previous)
         return copied
+    }
+
+    private fun waitForModifierRelease() {
+        val user32 = com.sun.jna.platform.win32.User32.INSTANCE
+        val modifiers = intArrayOf(0x11, 0x12, 0x10, 0x5B) // Ctrl, Alt, Shift, Win
+        repeat(20) {
+            val held = modifiers.any { vk ->
+                (user32.GetAsyncKeyState(vk).toInt() and 0x8000) != 0
+            }
+            if (!held) return
+            Thread.sleep(50)
+        }
     }
 }
 
