@@ -221,7 +221,10 @@ private fun FormRow(label: String? = null, content: @Composable RowScope.() -> U
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 44.dp)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            // 1dp light on top: centring a line of text on its layout box sits
+            // the ink low, because the ascent above the caps is far deeper than
+            // the descent below the baseline.
+            .padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 7.dp)
     ) {
         if (label != null) {
             Text(label, color = Palette.text, fontSize = 13.sp)
@@ -239,7 +242,9 @@ private fun Caption(text: String, color: Color = Palette.secondary) {
         color = color,
         fontSize = 11.sp,
         lineHeight = 15.sp,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 10.dp)
     )
 }
 
@@ -269,12 +274,14 @@ private fun <T> PopUpButton(
     Box(modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            // Centred, so a button given a fixed width to keep a column aligned
+            // still carries its value in the middle rather than packed left.
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
             modifier = (if (fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .clip(controlShape)
                 .background(Palette.control)
                 .clickable { open = true }
-                .padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp)
+                .padding(horizontal = 9.dp, vertical = 5.dp)
         ) {
             Text(
                 label,
@@ -539,7 +546,10 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                     options = listOf<String?>(null) + viewModel.availableModels.map { it.id },
                     optionLabel = { it ?: Strings["provider.automatic"] },
                     onSelect = viewModel::selectModel,
-                    modifier = Modifier.weight(1f, fill = false)
+                    // Capped rather than weighted: a weight here would compete
+                    // with the row's spacer and stop the button hugging the
+                    // right edge, breaking the column the pickers line up in.
+                    modifier = Modifier.widthIn(max = 260.dp)
                 )
             }
         }
