@@ -43,6 +43,15 @@ val makeAppIcon by tasks.registering(JavaExec::class) {
     args(project.file("icons/AppIcon.ico").absolutePath)
 }
 
+/** Documentation screenshots of the real settings window, for the README. */
+val settingsShots by tasks.registering(JavaExec::class) {
+    group = "documentation"
+    description = "Captures the settings tabs from the real window into docs/media."
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass = "dev.mjablonski.rewordme.app.SettingsShotsKt"
+    args(rootProject.file("docs/media").absolutePath)
+}
+
 /** Cycles the real popup window through every stage to check frame sizing. */
 val probePopupWindow by tasks.registering(JavaExec::class) {
     group = "verification"
