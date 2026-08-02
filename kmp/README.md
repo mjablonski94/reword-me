@@ -37,6 +37,16 @@ Working:
 Still planned: UI Automation `TextPattern` (clipboard-free reads + a selection rectangle to
 place the popup against), Linux support, Android Process Text.
 
+## Settings
+
+| Provider | Rewriting | General |
+|---|---|---|
+| <img src="docs/media/settings-provider.png" alt="Provider tab: provider pop-up, API key, model picker"> | <img src="docs/media/settings-rewriting.png" alt="Rewriting tab: do/don't rules and base prompt"> | <img src="docs/media/settings-general.png" alt="General tab: editable shortcut, launch at login, support"> |
+
+Captured from the real window by `./gradlew :desktop:app:settingsShots`, which refuses to
+write a shot unless the pixels prove it is the settings window on the expected tab - a screen
+grab otherwise photographs whatever happens to be in front.
+
 ## Architecture
 
 Layered clean architecture, Gradle modules, dependencies pointing inward only:
@@ -67,6 +77,7 @@ Verification helpers, all writing into `desktop/app/build/`:
 ./gradlew :desktop:app:renderUi           # every screen rendered offscreen to PNGs
 ./gradlew :desktop:app:probePopupWindow   # drives the real window, prints the frame per stage
 ./gradlew :desktop:app:makeAppIcon        # regenerates the committed icons/AppIcon.ico
+./gradlew :desktop:app:settingsShots      # README screenshots from the real settings window
 ```
 
 `renderUi` measures content only. Anything about the window itself - frame sizing, the acrylic
