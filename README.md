@@ -15,7 +15,7 @@ Ollama. No accounts, no tracking.
 | Platform | Directory | Stack | Status |
 |---|---|---|---|
 | **macOS** | [`macos/`](macos/) | Swift 6, SwiftUI + AppKit | **Released** - v1.0, macOS 14+, 11 languages |
-| **Windows** | [`kmp/`](kmp/) | Kotlin Multiplatform, Compose Desktop | In development |
+| **Windows** | [`kmp/`](kmp/) | Kotlin Multiplatform, Compose Desktop | **Released** - v1.0, Windows 11, 11 languages |
 | Linux | [`kmp/`](kmp/) | same KMP codebase | Planned |
 | Android | [`kmp/`](kmp/) | same KMP codebase (Process Text) | Planned |
 
