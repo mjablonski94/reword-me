@@ -2,6 +2,7 @@ import Foundation
 import RewordMeData
 import RewordMeDomain
 import RewordMePlatform
+import ServiceManagement
 
 /// The composition root: every service is built exactly once, here, and
 /// handed down through initializers. Nothing below this level reaches for
@@ -32,5 +33,19 @@ final class AppDependencies {
         self.selectionReader = selectionReader ?? AXSelectionReader()
         self.textReplacer = textReplacer ?? AXTextReplacer()
         self.accessibility = accessibility ?? SystemAccessibilityPermission()
+
+        registerForStartupOnFirstRun()
+    }
+
+    /// A menu-bar app that is not running cannot answer its shortcut, so
+    /// RewordMe registers itself the first time it launches. The answer is
+    /// recorded, so a user who switches it back off is never overridden on the
+    /// next launch.
+    private func registerForStartupOnFirstRun() {
+        var config = configStore.load()
+        guard config.launchAtLogin == nil else { return }
+        try? SMAppService.mainApp.register()
+        config.launchAtLogin = SMAppService.mainApp.status == .enabled
+        try? configStore.save(config)
     }
 }

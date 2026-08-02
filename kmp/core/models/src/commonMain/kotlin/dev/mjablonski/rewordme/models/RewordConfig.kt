@@ -50,7 +50,13 @@ data class RewordConfig(
     val basePrompt: String = "",
     /** Where the local Ollama server listens; only used by the ollama provider. */
     val ollamaHost: String = OllamaEndpoint.DEFAULT_HOST,
-    val hotkey: HotkeyConfig = HotkeyConfig()
+    val hotkey: HotkeyConfig = HotkeyConfig(),
+    /**
+     * Null until the user has had a say. The app registers itself for startup
+     * on first run - a tray app that is not running cannot answer its shortcut
+     * - and records the answer here, so switching it off sticks.
+     */
+    val launchAtLogin: Boolean? = null
 ) {
     /** Endpoint override for providers with a configurable server address. */
     val endpointOverride: String?
