@@ -3,7 +3,9 @@
 The KMP sibling of the [macOS app](../macos/): Compose Multiplatform desktop app targeting
 **Windows first**, with Linux and Android (`ACTION_PROCESS_TEXT`) planned on the same core.
 
-## Status: phase 2 (Windows feature parity)
+## Status: 1.0, released for Windows
+
+Linux and Android remain planned on the same core.
 
 Working:
 - Tray icon with menu (Reword Selection, Settings, Buy Me a Coffee, Quit)
@@ -23,6 +25,9 @@ Working:
   grouped `Form` it mirrors - segmented tab picker on a toolbar strip, sections as cards of
   hairline-divided rows, label left and control right - down to the greys, which are sampled
   off the screenshots in `macos/docs/media`. The title bar is dark so the window has no seam
+- Launch at login is **on by default**: the app registers itself for startup on first run,
+  because a tray app that is not running cannot answer its shortcut. The answer is recorded
+  in `config.json`, so switching it off sticks. macOS does the same via `SMAppService`
 - API keys in Windows Credential Manager, migrated off the phase-1 plaintext file on first run
 - Localized into 10 languages besides English
 - App icon drawn in code, shared by the tray glyph, the window icon and the packaged `.ico`

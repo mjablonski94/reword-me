@@ -13,6 +13,7 @@ import dev.mjablonski.rewordme.platform.DevSelectionReader
 import dev.mjablonski.rewordme.platform.DevTextReplacer
 import dev.mjablonski.rewordme.platform.ForegroundTracker
 import dev.mjablonski.rewordme.platform.SelectionReading
+import dev.mjablonski.rewordme.platform.StartupRegistration
 import dev.mjablonski.rewordme.platform.TextReplacing
 import dev.mjablonski.rewordme.platform.WindowsSelectionReader
 import dev.mjablonski.rewordme.platform.WindowsTextReplacer
@@ -32,6 +33,24 @@ class AppDependencies {
         if (isWindows) WindowsSelectionReader() else DevSelectionReader()
     val textReplacer: TextReplacing =
         if (isWindows) WindowsTextReplacer(foreground) else DevTextReplacer()
+
+    init {
+        registerForStartupOnFirstRun()
+    }
+
+    /**
+     * A tray app that is not running cannot answer its shortcut, so RewordMe
+     * puts itself in the startup list the first time it launches. The answer is
+     * recorded, so a user who switches it back off is never overridden on the
+     * next launch. Does nothing in development, where the running command is
+     * the JDK launcher rather than the packaged app.
+     */
+    private fun registerForStartupOnFirstRun() {
+        val config = configStore.load()
+        if (config.launchAtLogin != null || !StartupRegistration.isSupported) return
+        StartupRegistration.isEnabled = true
+        configStore.save(config.copy(launchAtLogin = StartupRegistration.isEnabled))
+    }
 }
 
 /**

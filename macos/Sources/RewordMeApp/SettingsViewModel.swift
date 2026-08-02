@@ -165,5 +165,7 @@ final class SettingsViewModel: ObservableObject {
         } catch {
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
+        // Recorded so first-run registration never overrides an explicit "off".
+        config.launchAtLogin = launchAtLogin
     }
 }

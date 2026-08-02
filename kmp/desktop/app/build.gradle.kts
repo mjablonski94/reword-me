@@ -22,6 +22,7 @@ dependencies {
     implementation(compose.materialIconsExtended)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.swing)
+    testImplementation(libs.kotlin.test)
 }
 
 /** Offscreen render of every screen to PNGs, for reviewing layout changes. */
@@ -58,7 +59,9 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "RewordMe"
-            packageVersion = "0.1.0"
+            // Release 1.0. The trailing .0 is not optional: jpackage rejects
+            // anything but MAJOR.MINOR.BUILD for the Windows Exe and Msi.
+            packageVersion = "1.0.0"
             vendor = "Michal Jablonski"
 
             windows {

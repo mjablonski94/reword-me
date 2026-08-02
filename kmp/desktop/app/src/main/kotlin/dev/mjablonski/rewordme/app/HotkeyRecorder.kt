@@ -27,22 +27,44 @@ sealed interface RecorderOutcome {
  * shortcut fire constantly.
  */
 object HotkeyRecorder {
-    fun interpret(event: KeyEvent): RecorderOutcome {
-        if (event.type != KeyEventType.KeyDown) return RecorderOutcome.Ignored
-        if (event.key == Key.Escape) return RecorderOutcome.Cancelled
-        if (event.key in MODIFIER_KEYS) return RecorderOutcome.Ignored
+    /** Unpacks the Compose event; the decision itself lives in [decide]. */
+    fun interpret(event: KeyEvent): RecorderOutcome = decide(
+        isKeyDown = event.type == KeyEventType.KeyDown,
+        key = event.key,
+        ctrl = event.isCtrlPressed,
+        alt = event.isAltPressed,
+        shift = event.isShiftPressed,
+        meta = event.isMetaPressed
+    )
+
+    /**
+     * Kept free of Compose's KeyEvent so it can be tested directly: that type
+     * wraps an internal event with no public constructor, so a test could only
+     * reach this logic through a real focused window.
+     */
+    internal fun decide(
+        isKeyDown: Boolean,
+        key: Key,
+        ctrl: Boolean,
+        alt: Boolean,
+        shift: Boolean,
+        meta: Boolean
+    ): RecorderOutcome {
+        if (!isKeyDown) return RecorderOutcome.Ignored
+        if (key == Key.Escape) return RecorderOutcome.Cancelled
+        if (key in MODIFIER_KEYS) return RecorderOutcome.Ignored
 
         var modifiers = 0
-        if (event.isCtrlPressed) modifiers = modifiers or HotkeyConfig.MOD_CONTROL
-        if (event.isAltPressed) modifiers = modifiers or HotkeyConfig.MOD_ALT
-        if (event.isShiftPressed) modifiers = modifiers or HotkeyConfig.MOD_SHIFT
-        if (event.isMetaPressed) modifiers = modifiers or HotkeyConfig.MOD_WIN
+        if (ctrl) modifiers = modifiers or HotkeyConfig.MOD_CONTROL
+        if (alt) modifiers = modifiers or HotkeyConfig.MOD_ALT
+        if (shift) modifiers = modifiers or HotkeyConfig.MOD_SHIFT
+        if (meta) modifiers = modifiers or HotkeyConfig.MOD_WIN
 
         val anchored = modifiers and
             (HotkeyConfig.MOD_CONTROL or HotkeyConfig.MOD_ALT or HotkeyConfig.MOD_WIN)
         if (anchored == 0) return RecorderOutcome.Ignored
 
-        val bindable = bindable(event.key) ?: return RecorderOutcome.Ignored
+        val bindable = bindable(key) ?: return RecorderOutcome.Ignored
         return RecorderOutcome.Recorded(
             HotkeyConfig(
                 modifiers = modifiers,

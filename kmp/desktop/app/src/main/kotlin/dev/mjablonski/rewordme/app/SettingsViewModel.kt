@@ -3,7 +3,10 @@ package dev.mjablonski.rewordme.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dev.mjablonski.rewordme.domain.ApiKeyStore
+import dev.mjablonski.rewordme.domain.ConfigStore
 import dev.mjablonski.rewordme.domain.ModelSelection
+import dev.mjablonski.rewordme.domain.Rewording
 import dev.mjablonski.rewordme.models.HotkeyConfig
 import dev.mjablonski.rewordme.models.ModelInfo
 import dev.mjablonski.rewordme.models.ProviderKind
@@ -23,11 +26,31 @@ import kotlinx.coroutines.withContext
  * Cancel button, matching the macOS app.
  */
 class SettingsViewModel(
-    private val dependencies: AppDependencies,
+    private val configStore: ConfigStore,
+    private val keyStore: ApiKeyStore,
+    private val rewordService: Rewording,
     private val scope: CoroutineScope,
     private val hotkeys: HotkeyBinder
 ) {
-    var config by mutableStateOf(dependencies.configStore.load())
+    /**
+     * Convenience for the composition root. Tests build the primary
+     * constructor with fakes instead, so that nothing has to stand up
+     * AppDependencies - which would open the real config file and the real
+     * credential store.
+     */
+    constructor(
+        dependencies: AppDependencies,
+        scope: CoroutineScope,
+        hotkeys: HotkeyBinder
+    ) : this(
+        dependencies.configStore,
+        dependencies.keyStore,
+        dependencies.rewordService,
+        scope,
+        hotkeys
+    )
+
+    var config by mutableStateOf(configStore.load())
         private set
     var apiKey by mutableStateOf("")
         private set
@@ -49,7 +72,7 @@ class SettingsViewModel(
     private var modelLoad: Job? = null
 
     init {
-        apiKey = dependencies.keyStore.apiKey(config.provider) ?: ""
+        apiKey = keyStore.apiKey(config.provider) ?: ""
     }
 
     val launchAtLoginSupported: Boolean get() = StartupRegistration.isSupported
@@ -57,10 +80,14 @@ class SettingsViewModel(
     var launchAtLogin by mutableStateOf(StartupRegistration.isEnabled)
         private set
 
-    /** Reads the registry back, so the switch snaps to whatever actually stuck. */
+    /**
+     * Reads the registry back, so the switch snaps to whatever actually stuck,
+     * and records the answer so first-run registration never overrides it.
+     */
     fun toggleLaunchAtLogin(enabled: Boolean) {
         StartupRegistration.isEnabled = enabled
         launchAtLogin = StartupRegistration.isEnabled
+        update(config.copy(launchAtLogin = launchAtLogin))
     }
 
     /** The model "Automatic" would pick right now, once the list is known. */
@@ -71,7 +98,7 @@ class SettingsViewModel(
         if (provider == config.provider) return
         // A model id from one provider is meaningless to another.
         update(config.copy(provider = provider, model = null))
-        apiKey = dependencies.keyStore.apiKey(provider) ?: ""
+        apiKey = keyStore.apiKey(provider) ?: ""
         keySaved = false
         availableModels = emptyList()
         modelsError = null
@@ -83,7 +110,7 @@ class SettingsViewModel(
     }
 
     fun saveApiKey() {
-        dependencies.keyStore.setApiKey(config.provider, apiKey)
+        keyStore.setApiKey(config.provider, apiKey)
         keySaved = true
     }
 
@@ -142,7 +169,7 @@ class SettingsViewModel(
         modelLoad = scope.launch {
             try {
                 val models = withContext(Dispatchers.IO) {
-                    dependencies.rewordService.listModels(
+                    rewordService.listModels(
                         config.provider, apiKey, config.endpointOverride
                     )
                 }
@@ -161,7 +188,7 @@ class SettingsViewModel(
 
     private fun update(updated: RewordConfig) {
         config = updated
-        dependencies.configStore.save(updated)
+        configStore.save(updated)
     }
 }
 

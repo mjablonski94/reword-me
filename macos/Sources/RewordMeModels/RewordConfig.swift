@@ -42,6 +42,10 @@ public struct RewordConfig: Codable, Equatable, Sendable {
     /// Where the local Ollama server listens; only used by the ollama provider.
     public var ollamaHost: String
     public var hotkey: HotkeyConfig
+    /// nil until the user has had a say. The app registers itself for startup
+    /// on first run - a menu-bar app that is not running cannot answer its
+    /// shortcut - and records the answer here, so switching it off sticks.
+    public var launchAtLogin: Bool?
 
     public init(
         provider: ProviderKind = .anthropic,
@@ -49,7 +53,8 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         rules: [RewriteRule] = [],
         basePrompt: String = "",
         ollamaHost: String = OllamaEndpoint.defaultHost,
-        hotkey: HotkeyConfig = .default
+        hotkey: HotkeyConfig = .default,
+        launchAtLogin: Bool? = nil
     ) {
         self.provider = provider
         self.model = model
@@ -57,6 +62,7 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         self.basePrompt = basePrompt
         self.ollamaHost = ollamaHost
         self.hotkey = hotkey
+        self.launchAtLogin = launchAtLogin
     }
 
     public static let `default` = RewordConfig()
@@ -70,6 +76,7 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         ollamaHost = try container.decodeIfPresent(String.self, forKey: .ollamaHost)
             ?? OllamaEndpoint.defaultHost
         hotkey = try container.decodeIfPresent(HotkeyConfig.self, forKey: .hotkey) ?? .default
+        launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin)
     }
 
     /// Endpoint override for providers whose server address is user
