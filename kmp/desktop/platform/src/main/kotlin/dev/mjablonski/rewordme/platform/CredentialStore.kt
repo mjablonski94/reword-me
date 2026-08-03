@@ -20,10 +20,10 @@ class CredentialApiKeyStore : ApiKeyStore {
     override fun apiKey(provider: ProviderKind): String? =
         if (isWindows) WindowsCredentials.read(target(provider)) else null
 
-    override fun setApiKey(provider: ProviderKind, key: String?) {
-        if (!isWindows) return
+    override fun setApiKey(provider: ProviderKind, key: String?): Boolean {
+        if (!isWindows) return false
         val trimmed = key?.trim()
-        if (trimmed.isNullOrEmpty()) WindowsCredentials.delete(target(provider))
+        return if (trimmed.isNullOrEmpty()) WindowsCredentials.delete(target(provider))
         else WindowsCredentials.write(target(provider), trimmed)
     }
 
@@ -31,9 +31,9 @@ class CredentialApiKeyStore : ApiKeyStore {
 }
 
 /**
- * advapi32.dll credential calls, which jna-platform does not wrap. Failures are
- * swallowed: a vault the app cannot reach must not stop it from starting, and
- * the caller treats a missing key the same as a missing vault.
+ * advapi32.dll credential calls, which jna-platform does not wrap. Read
+ * failures behave like a missing key, while mutations report their native
+ * success value so Settings never claims that a failed write was saved.
  */
 private object WindowsCredentials {
     fun read(target: String): String? = runCatching {
@@ -54,30 +54,30 @@ private object WindowsCredentials {
         }
     }.getOrNull()
 
-    fun write(target: String, secret: String) {
-        runCatching {
-            val bytes = secret.toByteArray(Charsets.UTF_8)
-            // A local, so the GC cannot free the blob before the call returns.
-            val blob = Memory(bytes.size.toLong())
-            blob.write(0, bytes, 0, bytes.size)
-            val credential = Credential().apply {
-                Type = CRED_TYPE_GENERIC
-                TargetName = WString(target)
-                CredentialBlobSize = bytes.size
-                CredentialBlob = blob
-                Persist = CRED_PERSIST_LOCAL_MACHINE
-            }
-            credential.write()
-            Advapi32Cred.INSTANCE.CredWriteW(credential, 0)
+    fun write(target: String, secret: String): Boolean = runCatching {
+        val bytes = secret.toByteArray(Charsets.UTF_8)
+        // A local, so the GC cannot free the blob before the call returns.
+        val blob = Memory(bytes.size.toLong())
+        blob.write(0, bytes, 0, bytes.size)
+        val credential = Credential().apply {
+            Type = CRED_TYPE_GENERIC
+            TargetName = WString(target)
+            CredentialBlobSize = bytes.size
+            CredentialBlob = blob
+            Persist = CRED_PERSIST_LOCAL_MACHINE
         }
-    }
+        credential.write()
+        Advapi32Cred.INSTANCE.CredWriteW(credential, 0)
+    }.getOrDefault(false)
 
-    fun delete(target: String) {
-        runCatching { Advapi32Cred.INSTANCE.CredDeleteW(WString(target), CRED_TYPE_GENERIC, 0) }
-    }
+    fun delete(target: String): Boolean = runCatching {
+        Advapi32Cred.INSTANCE.CredDeleteW(WString(target), CRED_TYPE_GENERIC, 0) ||
+            Native.getLastError() == ERROR_NOT_FOUND
+    }.getOrDefault(false)
 
     private const val CRED_TYPE_GENERIC = 1
     private const val CRED_PERSIST_LOCAL_MACHINE = 2
+    private const val ERROR_NOT_FOUND = 1168
 }
 
 /** Public to the JVM because JNA reads the fields reflectively. */

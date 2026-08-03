@@ -63,8 +63,7 @@ private fun vaultKeyStore(): ApiKeyStore {
     val credentials = CredentialApiKeyStore()
     val moved = ProviderKind.entries.all { provider ->
         val key = plaintext.apiKey(provider) ?: return@all true
-        credentials.setApiKey(provider, key)
-        credentials.apiKey(provider) == key
+        credentials.setApiKey(provider, key) && credentials.apiKey(provider) == key
     }
     if (!moved) return plaintext
     plaintext.discard()

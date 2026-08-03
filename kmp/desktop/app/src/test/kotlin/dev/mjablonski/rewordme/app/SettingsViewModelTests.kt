@@ -15,7 +15,12 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 
 /**
  * The settings state, against fakes for the three ports it talks to. Hand
@@ -36,11 +41,15 @@ class SettingsViewModelTests {
         }
     }
 
-    private class FakeKeyStore(private val keys: MutableMap<ProviderKind, String> = mutableMapOf()) :
-        ApiKeyStore {
+    private class FakeKeyStore(
+        private val keys: MutableMap<ProviderKind, String> = mutableMapOf(),
+        private val acceptsWrites: Boolean = true
+    ) : ApiKeyStore {
         override fun apiKey(provider: ProviderKind): String? = keys[provider]
-        override fun setApiKey(provider: ProviderKind, key: String?) {
+        override fun setApiKey(provider: ProviderKind, key: String?): Boolean {
+            if (!acceptsWrites) return false
             if (key == null) keys.remove(provider) else keys[provider] = key
+            return true
         }
     }
 
@@ -78,14 +87,16 @@ class SettingsViewModelTests {
     private fun viewModel(
         config: RewordConfig = RewordConfig(),
         keyStore: ApiKeyStore = FakeKeyStore(),
-        hotkeys: HotkeyBinder = FakeHotkeys()
+        hotkeys: HotkeyBinder = FakeHotkeys(),
+        rewording: Rewording = UnusedRewording,
+        scope: CoroutineScope = CoroutineScope(Dispatchers.Unconfined)
     ): Pair<SettingsViewModel, FakeConfigStore> {
         val store = FakeConfigStore(config)
         val model = SettingsViewModel(
             configStore = store,
             keyStore = keyStore,
-            rewordService = UnusedRewording,
-            scope = CoroutineScope(Dispatchers.Unconfined),
+            rewordService = rewording,
+            scope = scope,
             hotkeys = hotkeys
         )
         return model to store
@@ -233,6 +244,45 @@ class SettingsViewModelTests {
         assertTrue(model.keySaved)
     }
 
+    @Test
+    fun `a rejected key write is never reported as saved`() {
+        val (model, _) = viewModel(keyStore = FakeKeyStore(acceptsWrites = false))
+        model.editApiKey("cannot-write")
+
+        model.saveApiKey()
+
+        assertFalse(model.keySaved)
+        assertEquals(Strings["provider.saveFailed"], model.keySaveError)
+    }
+
+    @Test
+    fun `an old model request cannot clear or replace a newer provider request`() = runBlocking {
+        val service = ControlledRewording()
+        val (model, _) = viewModel(rewording = service, scope = this)
+
+        model.loadModels()
+        val first = withTimeout(2_000) { service.requests.receive() }
+        model.selectProvider(ProviderKind.OLLAMA)
+        model.loadModels()
+        val second = withTimeout(2_000) { service.requests.receive() }
+
+        yield()
+        assertTrue(model.isLoadingModels, "cancellation from the old request must not stop the new spinner")
+        assertEquals(ProviderKind.ANTHROPIC, first.provider)
+        assertEquals(ProviderKind.OLLAMA, second.provider)
+
+        second.answer.complete(listOf(ModelInfo("z-local"), ModelInfo("a-local")))
+        withTimeout(2_000) {
+            while (model.isLoadingModels) yield()
+        }
+
+        assertEquals(listOf("z-local", "a-local"), model.availableModels.map { it.id })
+        assertEquals("z-local", model.automaticModelHint, "Ollama automatic keeps server order")
+        first.answer.complete(listOf(ModelInfo("stale")))
+        yield()
+        assertEquals(listOf("z-local", "a-local"), model.availableModels.map { it.id })
+    }
+
     // MARK: - Rules
 
     @Test
@@ -316,5 +366,33 @@ class SettingsViewModelTests {
 
         assertNull(model.config.model)
         assertNull(store.stored.model)
+    }
+
+    private class ControlledRewording : Rewording {
+        data class Request(
+            val provider: ProviderKind,
+            val answer: CompletableDeferred<List<ModelInfo>> = CompletableDeferred()
+        )
+
+        val requests = Channel<Request>(Channel.UNLIMITED)
+
+        override suspend fun listModels(
+            provider: ProviderKind,
+            apiKey: String,
+            endpoint: String?
+        ): List<ModelInfo> {
+            val request = Request(provider)
+            requests.send(request)
+            return request.answer.await()
+        }
+
+        override suspend fun reword(
+            provider: ProviderKind,
+            apiKey: String,
+            model: String,
+            systemPrompt: String,
+            text: String,
+            endpoint: String?
+        ): String = ""
     }
 }

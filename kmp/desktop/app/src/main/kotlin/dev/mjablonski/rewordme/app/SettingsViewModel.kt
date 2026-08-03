@@ -56,6 +56,8 @@ class SettingsViewModel(
         private set
     var keySaved by mutableStateOf(false)
         private set
+    var keySaveError by mutableStateOf<String?>(null)
+        private set
 
     var availableModels by mutableStateOf(emptyList<ModelInfo>())
         private set
@@ -70,6 +72,7 @@ class SettingsViewModel(
         private set
 
     private var modelLoad: Job? = null
+    private var modelLoadId = 0L
 
     init {
         apiKey = keyStore.apiKey(config.provider) ?: ""
@@ -100,21 +103,32 @@ class SettingsViewModel(
         update(config.copy(provider = provider, model = null))
         apiKey = keyStore.apiKey(provider) ?: ""
         keySaved = false
-        availableModels = emptyList()
-        modelsError = null
+        keySaveError = null
+        clearModelResults()
     }
 
     fun editApiKey(value: String) {
+        if (value == apiKey) return
         apiKey = value
         keySaved = false
+        keySaveError = null
+        clearModelResults()
     }
 
     fun saveApiKey() {
-        keyStore.setApiKey(config.provider, apiKey)
-        keySaved = true
+        val normalized = apiKey.trim()
+        val saved = keyStore.setApiKey(config.provider, normalized)
+        if (saved) apiKey = normalized
+        keySaved = saved
+        keySaveError = if (saved) null else Strings["provider.saveFailed"]
     }
 
-    fun setOllamaHost(host: String) = update(config.copy(ollamaHost = host))
+    fun setOllamaHost(host: String) {
+        if (host == config.ollamaHost) return
+        // A selected model and loaded catalog belong to the old server.
+        update(config.copy(ollamaHost = host, model = null))
+        clearModelResults()
+    }
 
     fun selectModel(model: String?) = update(config.copy(model = model))
 
@@ -139,6 +153,7 @@ class SettingsViewModel(
     }
 
     fun cancelRecording() {
+        if (!isRecordingHotkey) return
         isRecordingHotkey = false
         hotkeyStatus = hotkeys.bind(config)
     }
@@ -164,26 +179,40 @@ class SettingsViewModel(
 
     fun loadModels() {
         modelLoad?.cancel()
+        val requestId = ++modelLoadId
+        val provider = config.provider
+        val key = apiKey
+        val endpoint = config.endpointOverride
         isLoadingModels = true
         modelsError = null
         modelLoad = scope.launch {
             try {
                 val models = withContext(Dispatchers.IO) {
-                    rewordService.listModels(
-                        config.provider, apiKey, config.endpointOverride
-                    )
+                    rewordService.listModels(provider, key, endpoint)
                 }
-                availableModels = models.sortedBy { it.id }
+                if (requestId != modelLoadId) return@launch
+                availableModels = models
                 if (models.isEmpty()) modelsError = Strings["provider.noModels"]
             } catch (error: RewordError) {
-                modelsError = error.localized()
+                if (requestId == modelLoadId) modelsError = error.localized()
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
-                modelsError = error.message ?: Strings["provider.noModels"]
+                if (requestId == modelLoadId) {
+                    modelsError = error.message ?: Strings["provider.noModels"]
+                }
             } finally {
-                isLoadingModels = false
+                if (requestId == modelLoadId) isLoadingModels = false
             }
         }
+    }
+
+    private fun clearModelResults() {
+        modelLoad?.cancel()
+        modelLoad = null
+        modelLoadId++
+        isLoadingModels = false
+        availableModels = emptyList()
+        modelsError = null
     }
 
     private fun update(updated: RewordConfig) {

@@ -29,6 +29,7 @@
 "provider.getKey" = "Uzyskaj klucz API na %@";
 "provider.saveKey" = "Zapisz klucz";
 "provider.saved" = "Zapisano";
+"provider.saveFailed" = "Nie udało się zapisać klucza API";
 "provider.keychainCaption" = "Przechowywany w pęku kluczy logowania, nigdy w zwykłych plikach. Jeśli macOS zapyta, czy RewordMe może uzyskać dostęp do pęku kluczy, to Twój Mac chroni klucz - wybierz „Zawsze zezwalaj”.";
 "provider.modelSection" = "Model";
 "provider.modelLabel" = "Model";

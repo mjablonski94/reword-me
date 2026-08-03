@@ -29,6 +29,7 @@
 "provider.getKey" = "在 %@ 获取 API 密钥";
 "provider.saveKey" = "保存密钥";
 "provider.saved" = "已保存";
+"provider.saveFailed" = "无法保存 API 密钥";
 "provider.keychainCaption" = "密钥保存在登录钥匙串中，绝不会存放在普通文件里。如果 macOS 询问是否允许 RewordMe 访问钥匙串，那是 Mac 在保护你的密钥 - 请选择“始终允许”。";
 "provider.modelSection" = "模型";
 "provider.modelLabel" = "模型";

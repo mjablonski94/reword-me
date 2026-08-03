@@ -29,6 +29,7 @@
 "provider.getKey" = "Ottieni una chiave API su %@";
 "provider.saveKey" = "Salva chiave";
 "provider.saved" = "Salvata";
+"provider.saveFailed" = "Impossibile salvare la chiave API";
 "provider.keychainCaption" = "Conservata nel portachiavi di login, mai in file in chiaro. Se macOS chiede se RewordMe può accedere al portachiavi, è il tuo Mac che protegge la chiave - scegli \"Consenti sempre\".";
 "provider.modelSection" = "Modello";
 "provider.modelLabel" = "Modello";

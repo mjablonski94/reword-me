@@ -23,8 +23,9 @@ final class SettingsViewModel: ObservableObject {
             NotificationCenter.default.post(name: .rewordConfigChanged, object: nil)
             if oldValue.provider != config.provider {
                 apiKey = keyStore.apiKey(for: config.provider) ?? ""
-                availableModels = []
-                modelsError = nil
+                keySavedFeedback = false
+                keySaveError = nil
+                clearModelResults()
             }
             if oldValue.ollamaHost != config.ollamaHost {
                 invalidateResolvedModel()
@@ -37,6 +38,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var isLoadingModels = false
     @Published var modelsError: String?
     @Published var keySavedFeedback = false
+    @Published var keySaveError: String?
     @Published var accessibilityTrusted: Bool
     @Published var launchAtLogin: Bool {
         didSet { updateLaunchAtLogin() }
@@ -49,6 +51,8 @@ final class SettingsViewModel: ObservableObject {
     private let accessibility: any AccessibilityChecking
     private let defaults: UserDefaults
     private var feedbackTask: Task<Void, Never>?
+    private var modelLoadTask: Task<Void, Never>?
+    private var modelLoadID: UUID?
 
     init(dependencies: AppDependencies, defaults: UserDefaults = .standard) {
         self.configStore = dependencies.configStore
@@ -67,10 +71,17 @@ final class SettingsViewModel: ObservableObject {
 
     func saveAPIKey() {
         explainKeychainPromptOnce()
-        keyStore.setAPIKey(apiKey, for: config.provider)
-        invalidateResolvedModel()
+        let normalized = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let saved = keyStore.setAPIKey(normalized, for: config.provider)
+        if saved { apiKey = normalized }
+        keySavedFeedback = saved
+        keySaveError = saved ? nil : Loc.saveKeyFailed
+        guard saved else {
+            feedbackTask?.cancel()
+            return
+        }
 
-        keySavedFeedback = true
+        invalidateResolvedModel()
         feedbackTask?.cancel()
         feedbackTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(2.5))
@@ -79,27 +90,71 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    func selectProvider(_ provider: ProviderKind) {
+        guard provider != config.provider else { return }
+        var updated = config
+        updated.provider = provider
+        // A model id from one provider is meaningless to another.
+        updated.model = nil
+        config = updated
+    }
+
+    func editAPIKey(_ value: String) {
+        guard value != apiKey else { return }
+        apiKey = value
+        keySavedFeedback = false
+        keySaveError = nil
+        clearModelResults()
+    }
+
+    func setOllamaHost(_ host: String) {
+        guard host != config.ollamaHost else { return }
+        var updated = config
+        updated.ollamaHost = host
+        // A pinned model belongs to the old local server's catalog.
+        updated.model = nil
+        config = updated
+    }
+
     func loadModels() {
+        modelLoadTask?.cancel()
+        let requestID = UUID()
+        modelLoadID = requestID
         isLoadingModels = true
         modelsError = nil
         let provider = config.provider
         let key = apiKey
         let endpoint = config.endpointOverride
-        Task { [weak self] in
+        modelLoadTask = Task { [weak self] in
             guard let self else { return }
+            defer {
+                if self.modelLoadID == requestID {
+                    self.isLoadingModels = false
+                    self.modelLoadTask = nil
+                }
+            }
             do {
                 let models = try await service.listModels(
                     provider: provider, apiKey: key, endpoint: endpoint
                 )
-                self.availableModels = models.sorted { $0.id < $1.id }
+                guard !Task.isCancelled,
+                      self.modelLoadID == requestID,
+                      self.config.provider == provider,
+                      self.apiKey == key,
+                      self.config.endpointOverride == endpoint else { return }
+                // Preserve server order: Ollama's first item is its automatic
+                // choice. The Picker sorts only its visual presentation.
+                self.availableModels = models
                 if models.isEmpty {
                     self.modelsError = Loc.noModels
                 }
+            } catch is CancellationError {
+                return
             } catch {
+                guard self.modelLoadID == requestID else { return }
                 self.modelsError = (error as? RewordError).map(Loc.message(for:))
                     ?? error.localizedDescription
             }
-            self.isLoadingModels = false
         }
     }
 
@@ -135,6 +190,14 @@ final class SettingsViewModel: ObservableObject {
 
     private func invalidateResolvedModel() {
         Task { [modelResolver] in await modelResolver.invalidate() }
+        clearModelResults()
+    }
+
+    private func clearModelResults() {
+        modelLoadTask?.cancel()
+        modelLoadTask = nil
+        modelLoadID = nil
+        isLoadingModels = false
         availableModels = []
         modelsError = nil
     }

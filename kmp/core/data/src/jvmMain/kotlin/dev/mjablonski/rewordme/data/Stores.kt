@@ -53,14 +53,15 @@ class FileApiKeyStore(
 
     override fun apiKey(provider: ProviderKind): String? = readAll()[provider.id]
 
-    override fun setApiKey(provider: ProviderKind, key: String?) {
+    override fun setApiKey(provider: ProviderKind, key: String?): Boolean = runCatching {
         val keys = readAll().toMutableMap()
         val trimmed = key?.trim()
         if (trimmed.isNullOrEmpty()) keys.remove(provider.id) else keys[provider.id] = trimmed
         Files.createDirectories(directory)
         Files.writeString(file, prettyJson.encodeToString(keysSerializer, keys))
         restrictToOwner()
-    }
+        true
+    }.getOrDefault(false)
 
     /** Removes the file once its contents live somewhere safer. */
     fun discard() {

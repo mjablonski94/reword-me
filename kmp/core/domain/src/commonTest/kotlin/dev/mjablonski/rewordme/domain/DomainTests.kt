@@ -2,6 +2,7 @@ package dev.mjablonski.rewordme.domain
 
 import dev.mjablonski.rewordme.models.ModelInfo
 import dev.mjablonski.rewordme.models.ProviderKind
+import dev.mjablonski.rewordme.models.RewordConfig
 import dev.mjablonski.rewordme.models.RewriteRule
 import dev.mjablonski.rewordme.models.RuleKind
 import kotlin.test.Test
@@ -9,6 +10,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class PromptBuilderTest {
     @Test
@@ -76,6 +78,52 @@ class ModelSelectionTest {
     @Test
     fun emptyListGivesNull() {
         assertNull(ModelSelection.defaultModel(ProviderKind.OPENAI, emptyList()))
+    }
+}
+
+class ModelResolverTest {
+    private class Listing : ModelListing {
+        var calls = 0
+
+        override suspend fun listModels(
+            provider: ProviderKind,
+            apiKey: String,
+            endpoint: String?
+        ): List<ModelInfo> {
+            calls++
+            return listOf(ModelInfo(if (provider == ProviderKind.OLLAMA) "local" else "gpt-5-nano"))
+        }
+    }
+
+    @Test
+    fun automaticCacheIncludesApiKey() = runBlocking {
+        val listing = Listing()
+        val resolver = ModelResolver()
+        val config = RewordConfig(provider = ProviderKind.OPENAI)
+
+        resolver.model(config, "first-key", listing)
+        resolver.model(config, "second-key", listing)
+
+        assertEquals(2, listing.calls, "a changed credential can expose a different catalog")
+    }
+
+    @Test
+    fun automaticCacheIncludesEndpoint() = runBlocking {
+        val listing = Listing()
+        val resolver = ModelResolver()
+
+        resolver.model(
+            RewordConfig(provider = ProviderKind.OLLAMA, ollamaHost = "http://first:11434"),
+            "",
+            listing
+        )
+        resolver.model(
+            RewordConfig(provider = ProviderKind.OLLAMA, ollamaHost = "http://second:11434"),
+            "",
+            listing
+        )
+
+        assertEquals(2, listing.calls, "a different Ollama server needs its own resolution")
     }
 }
 

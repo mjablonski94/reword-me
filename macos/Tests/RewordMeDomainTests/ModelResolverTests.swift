@@ -61,6 +61,34 @@ final class ModelResolverTests: XCTestCase {
         XCTAssertEqual(calls, 2)
     }
 
+    func testChangedAPIKeyUsesADifferentCacheEntry() async throws {
+        let stub = StubModelListing(models: [ModelInfo(id: "gpt-5-nano")])
+        let resolver = ModelResolver()
+        var config = RewordConfig.default
+        config.provider = .openai
+
+        _ = try await resolver.model(for: config, apiKey: "first", service: stub)
+        _ = try await resolver.model(for: config, apiKey: "second", service: stub)
+
+        let calls = await stub.calls
+        XCTAssertEqual(calls, 2, "a changed credential can expose a different catalog")
+    }
+
+    func testChangedOllamaEndpointUsesADifferentCacheEntry() async throws {
+        let stub = StubModelListing(models: [ModelInfo(id: "local")])
+        let resolver = ModelResolver()
+        var config = RewordConfig.default
+        config.provider = .ollama
+        config.ollamaHost = "http://first:11434"
+        _ = try await resolver.model(for: config, apiKey: "", service: stub)
+
+        config.ollamaHost = "http://second:11434"
+        _ = try await resolver.model(for: config, apiKey: "", service: stub)
+
+        let calls = await stub.calls
+        XCTAssertEqual(calls, 2, "a different local server needs its own resolution")
+    }
+
     func testEmptyModelListThrows() async {
         let stub = StubModelListing(models: [])
         let resolver = ModelResolver()

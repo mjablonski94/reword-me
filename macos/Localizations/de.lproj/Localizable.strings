@@ -29,6 +29,7 @@
 "provider.getKey" = "API-Schlüssel erhältst du auf %@";
 "provider.saveKey" = "Schlüssel sichern";
 "provider.saved" = "Gesichert";
+"provider.saveFailed" = "Der API-Schlüssel konnte nicht gespeichert werden";
 "provider.keychainCaption" = "Wird im Anmelde-Schlüsselbund gespeichert, nie in einfachen Dateien. Fragt macOS, ob RewordMe auf den Schlüsselbund zugreifen darf, schützt dein Mac gerade den Schlüssel - wähle „Immer erlauben“.";
 "provider.modelSection" = "Modell";
 "provider.modelLabel" = "Modell";

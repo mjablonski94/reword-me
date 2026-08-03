@@ -12,5 +12,8 @@ public protocol ModelListing: Sendable {
 /// Where API keys live.
 public protocol APIKeyStore: Sendable {
     func apiKey(for provider: ProviderKind) -> String?
-    func setAPIKey(_ key: String?, for provider: ProviderKind)
+
+    /// True only when the requested value was persisted (or removed).
+    @discardableResult
+    func setAPIKey(_ key: String?, for provider: ProviderKind) -> Bool
 }

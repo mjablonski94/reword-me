@@ -29,6 +29,7 @@
 "provider.getKey" = "Get an API key at %@";
 "provider.saveKey" = "Save Key";
 "provider.saved" = "Saved";
+"provider.saveFailed" = "Could not save the API key";
 "provider.keychainCaption" = "Stored in your login Keychain, never in plain files. If macOS asks whether RewordMe may access the Keychain, that is your Mac guarding the key - choose Always Allow.";
 "provider.modelSection" = "Model";
 "provider.modelLabel" = "Model";

@@ -25,14 +25,31 @@ public struct KeychainAPIKeyStore: APIKeyStore {
         return String(data: data, encoding: .utf8)
     }
 
-    public func setAPIKey(_ key: String?, for provider: ProviderKind) {
-        SecItemDelete(baseQuery(for: provider) as CFDictionary)
+    @discardableResult
+    public func setAPIKey(_ key: String?, for provider: ProviderKind) -> Bool {
+        let query = baseQuery(for: provider)
         guard let key = key?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
-            return
+            let status = SecItemDelete(query as CFDictionary)
+            return status == errSecSuccess || status == errSecItemNotFound
         }
-        var attributes = baseQuery(for: provider)
-        attributes[kSecValueData as String] = Data(key.utf8)
-        SecItemAdd(attributes as CFDictionary, nil)
+
+        let value = Data(key.utf8)
+        let updateStatus = SecItemUpdate(
+            query as CFDictionary,
+            [kSecValueData as String: value] as CFDictionary
+        )
+        if updateStatus == errSecSuccess {
+            return true
+        }
+        guard updateStatus == errSecItemNotFound else {
+            // Crucially, the existing item is still intact when an update is
+            // denied or fails. The previous delete-then-add flow lost it.
+            return false
+        }
+
+        var attributes = query
+        attributes[kSecValueData as String] = value
+        return SecItemAdd(attributes as CFDictionary, nil) == errSecSuccess
     }
 
     private func baseQuery(for provider: ProviderKind) -> [String: Any] {

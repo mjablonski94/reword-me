@@ -38,6 +38,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -101,7 +106,7 @@ private fun Header(viewModel: PopupViewModel) {
                 maxLines = 1
             )
         }
-        RoundIcon(Icons.Rounded.Close) { viewModel.onClose?.invoke() }
+        RoundIcon(Icons.Rounded.Close) { viewModel.dismiss() }
     }
 }
 
@@ -183,7 +188,16 @@ private fun DescribeField(viewModel: PopupViewModel) {
             singleLine = true,
             textStyle = TextStyle(color = Palette.text, fontSize = 13.sp),
             cursorBrush = SolidColor(Palette.accent),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .onPreviewKeyEvent { event ->
+                    if (event.key == Key.Enter && event.type == KeyEventType.KeyDown) {
+                        viewModel.submitSteering()
+                        true
+                    } else {
+                        false
+                    }
+                },
             decorationBox = { inner ->
                 if (viewModel.steering.isEmpty()) {
                     Text(
@@ -255,13 +269,32 @@ private fun ResultView(viewModel: PopupViewModel) {
                 .verticalScroll(rememberScrollState())
         )
         DescribeField(viewModel)
+        if (viewModel.actionErrorMessage.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Warning,
+                    contentDescription = null,
+                    tint = Palette.warn,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    viewModel.actionErrorMessage,
+                    color = Palette.warn,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+            }
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             PillButton(Strings["popup.again"], icon = Icons.Rounded.Refresh) {
-                viewModel.regenerate()
+                viewModel.again()
             }
             Spacer(Modifier.weight(1f))
             PillButton(Strings["popup.copy"]) { viewModel.copy() }

@@ -68,9 +68,9 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "RewordMe"
-            // Release 1.0. The trailing .0 is not optional: jpackage rejects
-            // anything but MAJOR.MINOR.BUILD for the Windows Exe and Msi.
-            packageVersion = "1.0.0"
+            // Release 1.0.1. All three components are required: jpackage accepts
+            // only MAJOR.MINOR.BUILD for the Windows Exe and Msi.
+            packageVersion = "1.0.1"
             vendor = "Michal Jablonski"
 
             windows {

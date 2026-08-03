@@ -18,10 +18,10 @@ final class KeychainStoreTests: XCTestCase {
     }
 
     func testRoundTripAndOverwrite() {
-        store.setAPIKey("sk-first", for: .anthropic)
+        XCTAssertTrue(store.setAPIKey("sk-first", for: .anthropic))
         XCTAssertEqual(store.apiKey(for: .anthropic), "sk-first")
 
-        store.setAPIKey("sk-second", for: .anthropic)
+        XCTAssertTrue(store.setAPIKey("sk-second", for: .anthropic))
         XCTAssertEqual(store.apiKey(for: .anthropic), "sk-second")
     }
 
@@ -36,11 +36,11 @@ final class KeychainStoreTests: XCTestCase {
 
     func testNilOrBlankDeletesTheEntry() {
         store.setAPIKey("sk-key", for: .mistral)
-        store.setAPIKey(nil, for: .mistral)
+        XCTAssertTrue(store.setAPIKey(nil, for: .mistral))
         XCTAssertNil(store.apiKey(for: .mistral))
 
         store.setAPIKey("sk-key", for: .mistral)
-        store.setAPIKey("   ", for: .mistral)
+        XCTAssertTrue(store.setAPIKey("   ", for: .mistral))
         XCTAssertNil(store.apiKey(for: .mistral))
     }
 

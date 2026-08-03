@@ -29,6 +29,7 @@
 "provider.getKey" = "Consigue una clave API en %@";
 "provider.saveKey" = "Guardar clave";
 "provider.saved" = "Guardada";
+"provider.saveFailed" = "No se pudo guardar la clave API";
 "provider.keychainCaption" = "Se guarda en tu llavero de inicio de sesión, nunca en archivos planos. Si macOS pregunta si RewordMe puede acceder al llavero, es tu Mac protegiendo la clave - elige «Permitir siempre».";
 "provider.modelSection" = "Modelo";
 "provider.modelLabel" = "Modelo";

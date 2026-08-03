@@ -5,7 +5,13 @@ import RewordMeModels
 /// config wins; otherwise the provider's model list is fetched once and
 /// the least costly model is cached for the rest of the session.
 public actor ModelResolver {
-    private var cache: [ProviderKind: String] = [:]
+    private struct CacheKey: Hashable {
+        let provider: ProviderKind
+        let apiKey: String
+        let endpoint: URL?
+    }
+
+    private var cache: [CacheKey: String] = [:]
 
     public init() {}
 
@@ -17,7 +23,12 @@ public actor ModelResolver {
         if let explicit = config.model, !explicit.isEmpty {
             return explicit
         }
-        if let cached = cache[config.provider] {
+        let key = CacheKey(
+            provider: config.provider,
+            apiKey: apiKey,
+            endpoint: config.endpointOverride
+        )
+        if let cached = cache[key] {
             return cached
         }
         let models = try await service.listModels(
@@ -28,7 +39,7 @@ public actor ModelResolver {
         guard let pick = ModelSelection.defaultModel(for: config.provider, from: models) else {
             throw RewordError.noModelAvailable
         }
-        cache[config.provider] = pick.id
+        cache[key] = pick.id
         return pick.id
     }
 
