@@ -29,6 +29,7 @@
 "provider.getKey" = "API キーは %@ で取得できます";
 "provider.saveKey" = "キーを保存";
 "provider.saved" = "保存済み";
+"provider.saveFailed" = "API キーを保存できませんでした";
 "provider.keychainCaption" = "キーはログインキーチェーンにのみ保存され、平文ファイルには保存されません。macOS が RewordMe のキーチェーンへのアクセスを確認してきたら、それは Mac がキーを保護している証拠です -「常に許可」を選んでください。";
 "provider.modelSection" = "モデル";
 "provider.modelLabel" = "モデル";

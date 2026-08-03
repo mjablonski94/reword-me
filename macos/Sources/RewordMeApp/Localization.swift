@@ -45,6 +45,7 @@ enum Loc {
     }
     static var saveKey: String { t("provider.saveKey") }
     static var saved: String { t("provider.saved") }
+    static var saveKeyFailed: String { t("provider.saveFailed") }
     static var keychainCaption: String { t("provider.keychainCaption") }
     static var modelSection: String { t("provider.modelSection") }
     static var modelLabel: String { t("provider.modelLabel") }

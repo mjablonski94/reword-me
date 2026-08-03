@@ -102,26 +102,30 @@ object KeySynthesizer {
     const val VK_V = 0x56
     private const val KEYEVENTF_KEYUP = 2
 
-    fun sendCtrl(key: Int) {
-        if (!isWindows) return
+    fun sendCtrl(key: Int): Boolean {
+        if (!isWindows) return false
         // One event per SendInput with a pause between. Sent as a single batch
         // all four events carry the same timestamp, and apps that handle input
         // asynchronously - the WinUI Notepad among them - drop a combination
         // pressed and released that fast.
-        send(VK_CONTROL, down = true)
-        send(key, down = true)
-        send(key, down = false)
-        send(VK_CONTROL, down = false)
+        var sent = send(VK_CONTROL, down = true)
+        sent = send(key, down = true) && sent
+        sent = send(key, down = false) && sent
+        // Always attempt the key-up events, even when an earlier SendInput
+        // failed, so RewordMe can never leave Ctrl logically held down.
+        sent = send(VK_CONTROL, down = false) && sent
+        return sent
     }
 
-    private fun send(vk: Int, down: Boolean) {
+    private fun send(vk: Int, down: Boolean): Boolean {
         val input = WinUser.INPUT()
         input.type = WinDef.DWORD(WinUser.INPUT.INPUT_KEYBOARD.toLong())
         input.input.setType("ki")
         input.input.ki.wVk = WinDef.WORD(vk.toLong())
         input.input.ki.dwFlags = WinDef.DWORD(if (down) 0 else KEYEVENTF_KEYUP.toLong())
-        User32.INSTANCE.SendInput(WinDef.DWORD(1), arrayOf(input), input.size())
+        val count = User32.INSTANCE.SendInput(WinDef.DWORD(1), arrayOf(input), input.size())
         Thread.sleep(KEY_GAP_MS)
+        return count.toInt() == 1
     }
 
     private const val KEY_GAP_MS = 30L
@@ -135,7 +139,19 @@ class ForegroundTracker {
         if (isWindows) saved = User32.INSTANCE.GetForegroundWindow()
     }
 
-    fun restore() {
-        if (isWindows) saved?.let { User32.INSTANCE.SetForegroundWindow(it) }
+    fun restore(): Boolean {
+        if (!isWindows) return false
+        val target = saved ?: return false
+        User32.INSTANCE.SetForegroundWindow(target)
+        repeat(FOCUS_WAIT_ATTEMPTS) {
+            if (User32.INSTANCE.GetForegroundWindow() == target) return true
+            Thread.sleep(FOCUS_WAIT_MS)
+        }
+        return false
+    }
+
+    private companion object {
+        const val FOCUS_WAIT_ATTEMPTS = 10
+        const val FOCUS_WAIT_MS = 20L
     }
 }

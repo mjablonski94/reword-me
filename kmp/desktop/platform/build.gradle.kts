@@ -11,4 +11,5 @@ dependencies {
     api(project(":core:domain"))
     implementation(libs.jna)
     implementation(libs.jna.platform)
+    testImplementation(libs.kotlin.test)
 }

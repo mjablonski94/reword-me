@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.rounded.UnfoldMore
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -87,7 +88,12 @@ fun SettingsContent(viewModel: SettingsViewModel, initialTab: SettingsTab? = nul
             )
         }
         Column(Modifier.fillMaxSize().background(Palette.surface)) {
-            Toolbar(tab) { tab = it }
+            Toolbar(tab) { selected ->
+                if (tab == SettingsTab.GENERAL && selected != tab) {
+                    viewModel.cancelRecording()
+                }
+                tab = selected
+            }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -506,9 +512,21 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                     }
                     BorderedButton(
                         Strings["provider.saveKey"],
-                        enabled = viewModel.apiKey.isNotEmpty(),
+                        enabled = viewModel.apiKey.isNotBlank(),
                         onClick = viewModel::saveApiKey
                     )
+                }
+            }
+            if (viewModel.keySaveError != null) {
+                row {
+                    FormRow {
+                        StatusLabel(
+                            viewModel.keySaveError!!,
+                            Palette.warn,
+                            Icons.Rounded.Warning
+                        )
+                        Spacer(Modifier.weight(1f))
+                    }
                 }
             }
             row { Caption(Strings["provider.credentialCaption"]) }
@@ -543,7 +561,8 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
             FormRow(Strings["provider.modelLabel"]) {
                 PopUpButton(
                     label = viewModel.config.model ?: Strings["provider.automatic"],
-                    options = listOf<String?>(null) + viewModel.availableModels.map { it.id },
+                    options = listOf<String?>(null) +
+                        viewModel.availableModels.sortedBy { it.id }.map { it.id },
                     optionLabel = { it ?: Strings["provider.automatic"] },
                     onSelect = viewModel::selectModel,
                     // Capped rather than weighted: a weight here would compete
@@ -584,7 +603,7 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                 BorderedButton(
                     Strings["provider.loadModels"],
                     enabled = !viewModel.isLoadingModels &&
-                        (!provider.requiresApiKey || viewModel.apiKey.isNotEmpty()),
+                        (!provider.requiresApiKey || viewModel.apiKey.isNotBlank()),
                     onClick = viewModel::loadModels
                 )
             }
@@ -706,6 +725,9 @@ private fun GeneralTab(viewModel: SettingsViewModel) {
 @Composable
 private fun ShortcutRow(viewModel: SettingsViewModel) {
     val focus = remember { FocusRequester() }
+    DisposableEffect(Unit) {
+        onDispose { viewModel.cancelRecording() }
+    }
     LaunchedEffect(viewModel.isRecordingHotkey) {
         if (viewModel.isRecordingHotkey) focus.requestFocus()
     }

@@ -47,7 +47,9 @@ class GlobalHotkey {
             val user32 = User32.INSTANCE
             workerThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
             val registered =
-                user32.RegisterHotKey(null, HOTKEY_ID, hotkey.modifiers, hotkey.virtualKey)
+                user32.RegisterHotKey(
+                    null, HOTKEY_ID, hotkey.modifiers or MOD_NOREPEAT, hotkey.virtualKey
+                )
             outcome = if (registered) HotkeyResult.Registered else classify(Native.getLastError())
             ready.countDown()
             if (!registered) return@thread
@@ -85,6 +87,7 @@ class GlobalHotkey {
         const val WM_HOTKEY = 0x0312
         const val WM_QUIT = 0x0012
         const val ERROR_HOTKEY_ALREADY_REGISTERED = 1409
+        const val MOD_NOREPEAT = 0x4000
         const val JOIN_TIMEOUT_MS = 1000L
 
         fun classify(errorCode: Int): HotkeyResult =

@@ -3,7 +3,7 @@
 The KMP sibling of the [macOS app](../macos/): Compose Multiplatform desktop app targeting
 **Windows first**, with Linux and Android (`ACTION_PROCESS_TEXT`) planned on the same core.
 
-## Status: 1.0, released for Windows
+## Status: 1.0.1, released for Windows
 
 Linux and Android remain planned on the same core.
 
@@ -70,6 +70,17 @@ desktop:app        Compose UI (MVVM) + composition root
 ./gradlew :desktop:app:packageMsi   # Windows installer (run on Windows)
 ./gradlew :desktop:app:packageExe   # standalone installer
 ```
+
+For the Windows 1.0.1 release, install a 64-bit JDK 21 and WiX Toolset 3.x, make sure
+`JAVA_HOME` and WiX's `bin` directory are on `PATH`, then run this from PowerShell:
+
+```powershell
+cd kmp
+.\package-windows.ps1
+```
+
+The script runs the full build and tests, creates the EXE installer, verifies the configured
+version, and copies `RewordMe-1.0.1.exe` plus its SHA-256 file into the `kmp` directory.
 
 Verification helpers, all writing into `desktop/app/build/`:
 

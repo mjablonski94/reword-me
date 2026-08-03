@@ -29,6 +29,7 @@
 "provider.getKey" = "Obtenez une clé API sur %@";
 "provider.saveKey" = "Enregistrer la clé";
 "provider.saved" = "Enregistrée";
+"provider.saveFailed" = "Impossible d’enregistrer la clé API";
 "provider.keychainCaption" = "Stockée dans votre trousseau de session, jamais dans des fichiers en clair. Si macOS demande si RewordMe peut accéder au trousseau, c'est votre Mac qui protège la clé - choisissez « Toujours autoriser ».";
 "provider.modelSection" = "Modèle";
 "provider.modelLabel" = "Modèle";

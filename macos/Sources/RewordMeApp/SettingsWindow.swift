@@ -52,7 +52,13 @@ struct ProviderSettingsView: View {
     var body: some View {
         Form {
             Section(Loc.providerSection) {
-                Picker(Loc.providerSection, selection: $model.config.provider) {
+                Picker(
+                    Loc.providerSection,
+                    selection: Binding(
+                        get: { model.config.provider },
+                        set: model.selectProvider
+                    )
+                ) {
                     ForEach(ProviderKind.allCases) { kind in
                         Text(kind.displayName).tag(kind)
                     }
@@ -62,7 +68,10 @@ struct ProviderSettingsView: View {
 
             if model.config.provider.requiresAPIKey {
                 Section(Loc.apiKeySection) {
-                    SecureField(model.config.provider.keyPlaceholder, text: $model.apiKey)
+                    SecureField(
+                        model.config.provider.keyPlaceholder,
+                        text: Binding(get: { model.apiKey }, set: model.editAPIKey)
+                    )
                     HStack {
                         Link(
                             Loc.getKey(model.config.provider.apiKeyConsoleName),
@@ -76,9 +85,15 @@ struct ProviderSettingsView: View {
                                 .transition(.opacity)
                         }
                         Button(Loc.saveKey) { model.saveAPIKey() }
-                            .disabled(model.apiKey.isEmpty)
+                            .disabled(model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     .animation(.easeInOut(duration: 0.2), value: model.keySavedFeedback)
+                    if let error = model.keySaveError {
+                        Label(error, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .transition(.opacity)
+                    }
                     Text(Loc.keychainCaption)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -87,7 +102,14 @@ struct ProviderSettingsView: View {
                 Section(Loc.ollamaSection) {
                     Text(Loc.ollamaBlurb)
                         .font(.callout)
-                    TextField(Loc.ollamaServer, text: $model.config.ollamaHost, prompt: Text(OllamaEndpoint.defaultHost))
+                    TextField(
+                        Loc.ollamaServer,
+                        text: Binding(
+                            get: { model.config.ollamaHost },
+                            set: model.setOllamaHost
+                        ),
+                        prompt: Text(OllamaEndpoint.defaultHost)
+                    )
                     Text(Loc.ollamaCaption(OllamaEndpoint.defaultHost))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -102,7 +124,7 @@ struct ProviderSettingsView: View {
             Section(Loc.modelSection) {
                 Picker(Loc.modelLabel, selection: $model.config.model) {
                     Text(Loc.automaticModel).tag(String?.none)
-                    ForEach(model.availableModels) { modelInfo in
+                    ForEach(model.availableModels.sorted { $0.id < $1.id }) { modelInfo in
                         Text(modelInfo.id).tag(String?.some(modelInfo.id))
                     }
                     // Keep a previously chosen model selectable before the list loads.
@@ -126,7 +148,8 @@ struct ProviderSettingsView: View {
                     Spacer()
                     Button(Loc.loadModels) { model.loadModels() }
                         .disabled(
-                            (model.config.provider.requiresAPIKey && model.apiKey.isEmpty)
+                            (model.config.provider.requiresAPIKey &&
+                                model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                                 || model.isLoadingModels
                         )
                 }

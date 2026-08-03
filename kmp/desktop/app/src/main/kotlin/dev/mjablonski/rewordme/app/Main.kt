@@ -22,6 +22,7 @@ import dev.mjablonski.rewordme.platform.WindowEffects
 import java.awt.Desktop
 import java.awt.MouseInfo
 import java.net.URI
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -38,6 +39,7 @@ fun main() = application {
         position = WindowPosition(100.dp, 100.dp),
         size = DpSize.Unspecified
     )
+    val captureInProgress = remember { AtomicBoolean(false) }
 
     fun showPopupAtCursor() {
         val mouse = MouseInfo.getPointerInfo()?.location
@@ -48,14 +50,19 @@ fun main() = application {
     }
 
     fun triggerReword() {
+        if (!captureInProgress.compareAndSet(false, true)) return
         scope.launch {
-            dependencies.foreground.remember()
-            val text = withContext(Dispatchers.IO) {
-                dependencies.selectionReader.readSelection()
-            }
-            withContext(Dispatchers.Swing) {
-                viewModel.begin(if (text != null && SelectionFilter.isMeaningful(text)) text else "")
-                showPopupAtCursor()
+            try {
+                dependencies.foreground.remember()
+                val text = withContext(Dispatchers.IO) {
+                    dependencies.selectionReader.readSelection()
+                }
+                withContext(Dispatchers.Swing) {
+                    viewModel.begin(if (text != null && SelectionFilter.isMeaningful(text)) text else "")
+                    showPopupAtCursor()
+                }
+            } finally {
+                captureInProgress.set(false)
             }
         }
     }
@@ -83,7 +90,12 @@ fun main() = application {
         viewModel.onReplace = { replacement ->
             popupVisible = false
             scope.launch(Dispatchers.IO) {
-                dependencies.textReplacer.replaceSelection(replacement)
+                val replaced = dependencies.textReplacer.replaceSelection(replacement)
+                if (!replaced) {
+                    withContext(Dispatchers.Swing) {
+                        if (viewModel.replacementFailed(replacement)) popupVisible = true
+                    }
+                }
             }
         }
         val status = binder.bind(dependencies.configStore.load())
@@ -119,12 +131,15 @@ fun main() = application {
         viewModel = viewModel,
         state = popupState,
         visible = popupVisible,
-        onCloseRequest = { popupVisible = false }
+        onCloseRequest = viewModel::dismiss
     )
 
     if (settingsVisible) {
         Window(
-            onCloseRequest = { settingsVisible = false },
+            onCloseRequest = {
+                settingsViewModel.cancelRecording()
+                settingsVisible = false
+            },
             title = Strings["settings.windowTitle"],
             icon = windowIcon,
             // macOS fixes the sheet at 560x480 of content; the extra 32 is the
@@ -137,4 +152,3 @@ fun main() = application {
         }
     }
 }
-

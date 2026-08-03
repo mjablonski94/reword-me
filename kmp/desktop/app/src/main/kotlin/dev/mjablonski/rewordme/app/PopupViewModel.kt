@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * View model behind the popup. Menu-first: nothing is generated until
@@ -40,6 +41,8 @@ class PopupViewModel(
         internal set
     var errorMessage by mutableStateOf("")
         internal set
+    var actionErrorMessage by mutableStateOf("")
+        private set
     var modelLabel by mutableStateOf("")
         internal set
     var steering by mutableStateOf("")
@@ -48,12 +51,16 @@ class PopupViewModel(
     var onClose: (() -> Unit)? = null
 
     private var generation: Job? = null
+    private var generationId = 0L
 
     fun begin(text: String) {
-        generation?.cancel()
+        cancelGeneration()
         original = text
         steering = ""
         result = ""
+        errorMessage = ""
+        actionErrorMessage = ""
+        lastInstruction = null
         stage = if (text.isEmpty()) Stage.EMPTY else Stage.MENU
     }
 
@@ -63,11 +70,28 @@ class PopupViewModel(
         run(effective)
     }
 
+    fun submitSteering() {
+        if (steering.isNotBlank()) reword()
+    }
+
     fun regenerate() = run(lastInstruction)
 
+    /** Re-run with newly typed steering, or repeat the prior instruction. */
+    fun again() {
+        val instruction = instructionForAgain(steering, lastInstruction)
+        lastInstruction = instruction
+        run(instruction)
+    }
+
     fun backToMenu() {
-        generation?.cancel()
+        cancelGeneration()
+        actionErrorMessage = ""
         stage = if (original.isEmpty()) Stage.EMPTY else Stage.MENU
+    }
+
+    fun dismiss() {
+        cancelGeneration()
+        onClose?.invoke()
     }
 
     /** Shown in the empty state so the user knows which keys to press. */
@@ -76,52 +100,84 @@ class PopupViewModel(
     private var lastInstruction: String? = null
 
     private fun run(instruction: String?) {
-        generation?.cancel()
+        cancelGeneration()
+        val requestId = generationId
+        actionErrorMessage = ""
+        errorMessage = ""
         stage = Stage.LOADING
         val config = dependencies.configStore.load()
 
-        generation = scope.launch(Dispatchers.IO) {
+        generation = scope.launch {
             try {
-                val apiKey = if (config.provider.requiresApiKey) {
-                    dependencies.keyStore.apiKey(config.provider)
-                        ?: throw RewordError.MissingApiKey
-                } else {
-                    ""
+                val generated = withContext(Dispatchers.IO) {
+                    val apiKey = if (config.provider.requiresApiKey) {
+                        dependencies.keyStore.apiKey(config.provider)
+                            ?: throw RewordError.MissingApiKey
+                    } else {
+                        ""
+                    }
+                    val model = dependencies.modelResolver.model(
+                        config, apiKey, dependencies.rewordService
+                    )
+                    val systemPrompt = PromptBuilder.systemPrompt(
+                        config.rules, config.basePrompt, instruction
+                    )
+                    val reworded = dependencies.rewordService.reword(
+                        config.provider, apiKey, model, systemPrompt, original,
+                        config.endpointOverride
+                    )
+                    reworded to model
                 }
-                val model = dependencies.modelResolver.model(
-                    config, apiKey, dependencies.rewordService
-                )
-                val systemPrompt = PromptBuilder.systemPrompt(
-                    config.rules, config.basePrompt, instruction
-                )
-                val reworded = dependencies.rewordService.reword(
-                    config.provider, apiKey, model, systemPrompt, original,
-                    config.endpointOverride
-                )
-                result = reworded
-                modelLabel = "${config.provider.displayName} - $model"
+                if (requestId != generationId) return@launch
+                result = generated.first
+                modelLabel = "${config.provider.displayName} - ${generated.second}"
                 stage = Stage.RESULT
             } catch (error: RewordError) {
+                if (requestId != generationId) return@launch
                 errorMessage = error.localized()
                 stage = Stage.FAILED
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
+                if (requestId != generationId) return@launch
                 errorMessage = error.message ?: Strings["popup.errorTitle"]
                 stage = Stage.FAILED
             }
         }
     }
 
+    private fun cancelGeneration() {
+        generation?.cancel()
+        generation = null
+        generationId++
+    }
+
     fun replace() {
         if (result.isNotEmpty()) onReplace?.invoke(result)
     }
 
+    /** Ignore a late failure if a newer hotkey invocation replaced this result. */
+    fun replacementFailed(replacement: String): Boolean {
+        if (stage != Stage.RESULT || result != replacement) return false
+        actionErrorMessage = Strings["error.replaceFailed"]
+        return true
+    }
+
     fun copy() {
         if (result.isEmpty()) return
-        java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(
-            java.awt.datatransfer.StringSelection(result), null
-        )
-        onClose?.invoke()
+        val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
+        var copied = false
+        for (attempt in 0 until 10) {
+            try {
+                clipboard.setContents(java.awt.datatransfer.StringSelection(result), null)
+                copied = true
+                break
+            } catch (_: IllegalStateException) {
+                if (attempt < 9) Thread.sleep(25)
+            } catch (_: Exception) {
+                break
+            }
+        }
+        if (copied) dismiss() else actionErrorMessage = Strings["error.copyFailed"]
     }
 
     companion object {
@@ -147,4 +203,9 @@ class PopupViewModel(
             )
         )
     }
+}
+
+internal fun instructionForAgain(steering: String, previous: String?): String? {
+    val edited = steering.trim()
+    return if (edited.isNotEmpty() && edited != previous) edited else previous
 }

@@ -29,6 +29,7 @@
 "provider.getKey" = "Отримайте ключ API на %@";
 "provider.saveKey" = "Зберегти ключ";
 "provider.saved" = "Збережено";
+"provider.saveFailed" = "Не вдалося зберегти ключ API";
 "provider.keychainCaption" = "Зберігається у в’язці ключів входу, ніколи у звичайних файлах. Якщо macOS запитає, чи може RewordMe отримати доступ до в’язки ключів, це ваш Mac захищає ключ - оберіть «Завжди дозволяти».";
 "provider.modelSection" = "Модель";
 "provider.modelLabel" = "Модель";

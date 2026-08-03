@@ -29,7 +29,9 @@ interface Rewording : ModelListing {
 /** Where API keys live. */
 interface ApiKeyStore {
     fun apiKey(provider: ProviderKind): String?
-    fun setApiKey(provider: ProviderKind, key: String?)
+
+    /** True only when the requested value was persisted (or removed). */
+    fun setApiKey(provider: ProviderKind, key: String?): Boolean
 }
 
 /** Where the non-secret configuration lives. */

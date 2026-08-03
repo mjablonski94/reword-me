@@ -206,8 +206,9 @@ private class InMemoryConfig(private var config: RewordConfig) : ConfigStore {
 private class InMemoryKeys : ApiKeyStore {
     private val keys = mutableMapOf<ProviderKind, String>()
     override fun apiKey(provider: ProviderKind): String? = keys[provider]
-    override fun setApiKey(provider: ProviderKind, key: String?) {
+    override fun setApiKey(provider: ProviderKind, key: String?): Boolean {
         if (key == null) keys.remove(provider) else keys[provider] = key
+        return true
     }
 }
 
