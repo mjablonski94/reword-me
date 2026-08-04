@@ -1,0 +1,72 @@
+RewordMe local AI third-party notices
+====================================
+
+llama.cpp
+---------
+Project: https://github.com/ggml-org/llama.cpp
+Pinned runtime release: b10246
+
+MIT License
+
+Copyright (c) 2023-2026 The ggml authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Downloadable offline models
+---------------------------
+
+Qwen 3.5 0.8B Q4
+Model repository: https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
+Pinned revision: 8fea620810c4afa23dd6443f999a48574c1611a3
+License: Apache License 2.0
+License text: https://www.apache.org/licenses/LICENSE-2.0
+
+Gemma 3 1B IT Q4
+Model repository: https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF
+Pinned revision: f9c28bcd85737ffc5aef028638d3341d49869c27
+License: Gemma Terms of Use
+License text: https://ai.google.dev/gemma/terms
+
+Qwen 3 1.7B Q4
+Model repository: https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF
+Pinned revision: daeb8e2d528a760970442092f6bf1e55c3b659eb
+License: Apache License 2.0
+License text: https://www.apache.org/licenses/LICENSE-2.0
+
+SmolLM3 3B Q4
+Model repository: https://huggingface.co/ggml-org/SmolLM3-3B-GGUF
+Pinned revision: 4965cb60b150737b68a0408c36aeefb65078f894
+License: Apache License 2.0
+License text: https://www.apache.org/licenses/LICENSE-2.0
+
+Ministral 3 3B Instruct Q4
+Model repository: https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF
+Pinned revision: eb599d408350ea2bb60452cb86be7c7b2fc28227
+License: Apache License 2.0
+License text: https://www.apache.org/licenses/LICENSE-2.0
+
+Qwen 3 4B Q4
+Model repository: https://huggingface.co/ggml-org/Qwen3-4B-GGUF
+Pinned revision: 2f3b082b1356a6123f7ed71e65aea340da25d53c
+License: Apache License 2.0
+License text: https://www.apache.org/licenses/LICENSE-2.0
+
+Every model is an optional download made directly from its repository at the
+user's request. Model weights are not included in RewordMe installers. Settings
+shows the selected model's repository and applicable license before download.

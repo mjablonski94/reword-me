@@ -33,23 +33,21 @@
 "provider.keychainCaption" = "キーはログインキーチェーンにのみ保存され、平文ファイルには保存されません。macOS が RewordMe のキーチェーンへのアクセスを確認してきたら、それは Mac がキーを保護している証拠です -「常に許可」を選んでください。";
 "provider.modelSection" = "モデル";
 "provider.modelLabel" = "モデル";
-"provider.automatic" = "自動（最も低コスト）";
+"provider.automatic" = "自動";
 "provider.automaticHint" = "自動では現在 %@ が選ばれます";
 "provider.noModels" = "プロバイダから利用可能なモデルが返されませんでした。";
 "provider.loadModels" = "モデルを読み込む";
 
 "ollama.section" = "ローカルサーバ";
-"ollama.blurb" = "Ollama はあなたの Mac 上で動きます - API キー不要、無料で、テキストがマシンの外に出ることはありません。";
+"ollama.blurb" = "Ollama に API キーは不要です。サーバーアドレスがこの Mac を指している場合、テキストは端末内に留まります。別のホストを設定すると、テキストはそのホストに送信されます。";
 "ollama.serverLabel" = "サーバ";
 "ollama.caption" = "デフォルトは %@ です - Ollama が別の場所で待ち受けている場合のみ変更してください（OLLAMA_HOST、Docker のポートマッピング、別のマシン）。\nインストール後にモデルを取得してください。例:  ollama pull llama3.2";
 "ollama.getLink" = "Ollama は %@ で入手できます";
 
-"rules.section" = "やること・やらないこと";
+"rules.section" = "ルール";
 "rules.footer" = "有効なルールはリライトのたびに送信されます。時々しか使わないルールは削除せずオフにしてください。";
 "rules.add" = "ルールを追加";
 "rules.placeholder" = "例: 感嘆符は使わない";
-"rules.do" = "する";
-"rules.dont" = "しない";
 "base.section" = "ベースプロンプト";
 "base.footer" = "自由形式の恒常的な指示。例:「私はネイティブではありません。文法は直しても口調は残してください。」";
 
@@ -69,6 +67,8 @@
 "general.accessibilityCaption" = "選択テキストの読み取りとその場での置き換えに必要です。ない場合はサービスメニューとコピーのみ使えます。";
 "general.support" = "サポート";
 "general.buyCoffee" = "コーヒーをおごる";
+"general.about" = "このアプリについて";
+"general.version" = "バージョン";
 
 "keychain.alertTitle" = "キーは macOS キーチェーンに保存されます";
 "keychain.alertBody" = "RewordMe は API キーを、Safari がパスワードを保存するのと同じログインキーチェーンにのみ保存します。\n\n後で macOS が「RewordMeApp はキーチェーンに保存されている機密情報を使用しようとしています」のような表示でパスワードを求めることがあります。これはキーチェーンがキーを保護しているのであって、キーが Mac の外に出るわけではありません。「常に許可」を選べば再度尋ねられません。\n\nソースからビルドした場合はビルドごとに再署名されるため、macOS は毎回新しいアプリとみなして再度確認します。";
@@ -82,8 +82,37 @@
 "error.invalidKey" = "プロバイダが API キーを拒否しました。設定で確認してください。";
 "error.rateLimitedRetry" = "レート制限に達しました。%d 秒後に再試行してください。";
 "error.rateLimited" = "レート制限に達しました。しばらくして再試行してください。";
+"error.usageLimit" = "API クレジットが不足しているか、使用上限に達しました。再試行する前にプロバイダの請求と上限を確認してください。";
 "error.refused" = "プロバイダがこのテキストのリライトを拒否しました。";
 "error.api" = "プロバイダエラー（%d）: %@";
 "error.empty" = "プロバイダから空の応答が返されました。";
 "error.invalidResponse" = "プロバイダの応答を読み取れませんでした。";
 "error.noModel" = "このプロバイダで利用可能なモデルが見つかりませんでした。";
+"account.section" = "アカウントアクセス";
+"account.blurb" = "%@ は、ローカルにインストールされた公式アプリと既存のサブスクリプションログインを使用します。RewordMe がアカウントトークンを読み取ったり保存したりすることはありません。";
+"account.checking" = "インストールとログイン状態を確認中...";
+"account.signingIn" = "ブラウザでのログインを待っています...";
+"account.notInstalled" = "必要な公式アプリがインストールされていません。";
+"account.connected" = "サブスクリプションアカウントに接続済み";
+"account.notConnected" = "インストール済みですが、ログインしていません";
+"account.apiBilling" = "このアプリはサブスクリプションアカウントではなく、API キーで認証されています。";
+"account.setupGuide" = "公式セットアップガイド";
+"account.refresh" = "更新";
+"account.install" = "インストール";
+"account.signIn" = "ログイン";
+
+"local.section" = "オフラインモデル";
+"local.blurb" = "1つ以上のモデルを選んでダウンロードできます。選択したモデルはこのコンピュータ上だけで動作し、ダウンロード後はアカウント、API キー、Ollama、インターネット接続は不要です。";
+"local.source" = "モデルの詳細";
+"local.size" = "ダウンロードサイズ：約 563 MB";
+"local.download" = "モデルをダウンロード";
+"local.ready" = "ダウンロード済み・使用可能";
+"local.remove" = "モデルを削除";
+"local.retry" = "ダウンロードを再試行";
+
+"error.providerNotInstalled" = "%@ がインストールされていません。設定を開いてインストールしてください。";
+"error.accountNotSignedIn" = "%@ にログインしていません。設定を開いてアカウントを接続してください。";
+"error.accountUsesApiKey" = "%@ は API キー課金を使用しています。代わりにサブスクリプションアカウントでログインしてください。";
+"error.localNotDownloaded" = "ローカルモデルがダウンロードされていません。設定からダウンロードしてください。";
+"error.localRuntime" = "同梱のローカル AI ランタイムを利用できません。RewordMe を再インストールしてください。";
+"error.localDownload" = "ローカルモデルのダウンロードに失敗しました：%@";

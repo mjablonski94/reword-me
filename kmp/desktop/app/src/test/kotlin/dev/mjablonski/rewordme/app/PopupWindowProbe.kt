@@ -47,7 +47,7 @@ fun main(args: Array<String>) = application {
         )
         viewModel.begin(SAMPLE)
         viewModel.result = REWORDED
-        viewModel.modelLabel = "Gemini - gemini-3.5-flash-lite"
+        viewModel.modelLabel = "gemini-3.5-flash-lite · Gemini (Recommended)"
         viewModel.errorMessage = "No API key saved for Gemini."
         for (stage in stages) {
             viewModel.stage = stage

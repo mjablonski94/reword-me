@@ -33,23 +33,21 @@
 "provider.keychainCaption" = "Wird im Anmelde-Schlüsselbund gespeichert, nie in einfachen Dateien. Fragt macOS, ob RewordMe auf den Schlüsselbund zugreifen darf, schützt dein Mac gerade den Schlüssel - wähle „Immer erlauben“.";
 "provider.modelSection" = "Modell";
 "provider.modelLabel" = "Modell";
-"provider.automatic" = "Automatisch (günstigstes)";
+"provider.automatic" = "Automatisch";
 "provider.automaticHint" = "Automatisch ist derzeit %@";
 "provider.noModels" = "Der Anbieter hat keine nutzbaren Modelle zurückgegeben.";
 "provider.loadModels" = "Modelle laden";
 
 "ollama.section" = "Lokaler Server";
-"ollama.blurb" = "Ollama läuft auf deinem Mac - kein API-Schlüssel, keine Kosten, und der Text verlässt nie deinen Rechner.";
+"ollama.blurb" = "Ollama benötigt keinen API-Schlüssel. Wenn die Serveradresse auf diesen Mac verweist, bleibt der Text auf dem Gerät; bei einem anderen Host wird der Text an diesen Host gesendet.";
 "ollama.serverLabel" = "Server";
 "ollama.caption" = "Standard ist %@ - ändere es nur, wenn Ollama woanders lauscht (OLLAMA_HOST, Docker-Portweiterleitung, anderer Rechner).\nInstalliere es und lade dann ein Modell, z. B.:  ollama pull llama3.2";
 "ollama.getLink" = "Ollama gibt es auf %@";
 
-"rules.section" = "Regeln (Do's und Don'ts)";
+"rules.section" = "Regeln";
 "rules.footer" = "Jede aktivierte Regel wird mit jeder Umformulierung mitgesendet. Schalte Regeln aus statt sie zu löschen, wenn sie nur manchmal gelten.";
 "rules.add" = "Regel hinzufügen";
 "rules.placeholder" = "z. B. Nie Ausrufezeichen verwenden";
-"rules.do" = "Tu";
-"rules.dont" = "Lass";
 "base.section" = "Basis-Prompt";
 "base.footer" = "Freie ständige Anweisungen, z. B. „Ich bin kein Muttersprachler; korrigiere die Grammatik, aber behalte meine Stimme.“";
 
@@ -69,6 +67,8 @@
 "general.accessibilityCaption" = "Nötig, um den ausgewählten Text zu lesen und direkt zu ersetzen. Ohne funktionieren nur das Dienste-Menü und Kopieren.";
 "general.support" = "Unterstützung";
 "general.buyCoffee" = "Spendier mir einen Kaffee";
+"general.about" = "Info";
+"general.version" = "Version";
 
 "keychain.alertTitle" = "Dein Schlüssel wandert in den macOS-Schlüsselbund";
 "keychain.alertBody" = "RewordMe speichert API-Schlüssel ausschließlich in deinem Anmelde-Schlüsselbund, dort wo auch Safari Passwörter ablegt.\n\nmacOS fragt später eventuell nach deinem Passwort, etwa mit „RewordMeApp möchte vertrauliche Informationen aus dem Schlüsselbund verwenden“. Das ist der Schlüsselbund, der deinen Schlüssel schützt - der Schlüssel verlässt deinen Mac nicht. Wähle „Immer erlauben“, damit die Frage nicht wiederkommt.\n\nAus dem Quellcode gebaute Versionen werden bei jedem Build neu signiert, daher behandelt macOS jeden Build wie eine neue App und fragt erneut.";
@@ -82,8 +82,37 @@
 "error.invalidKey" = "Der Anbieter hat den API-Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.";
 "error.rateLimitedRetry" = "Ratenlimit erreicht. Versuche es in %ds erneut.";
 "error.rateLimited" = "Ratenlimit erreicht. Versuche es gleich erneut.";
+"error.usageLimit" = "API-Guthaben oder Nutzungslimit erreicht. Prüfe die Abrechnung und Limits deines Anbieters, bevor du es erneut versuchst.";
 "error.refused" = "Der Anbieter hat die Umformulierung dieses Textes abgelehnt.";
 "error.api" = "Anbieterfehler (%d): %@";
 "error.empty" = "Der Anbieter hat eine leere Antwort zurückgegeben.";
 "error.invalidResponse" = "Die Antwort des Anbieters konnte nicht gelesen werden.";
 "error.noModel" = "Kein nutzbares Modell für diesen Anbieter gefunden.";
+"account.section" = "Kontozugriff";
+"account.blurb" = "%@ verwendet die offiziell lokal installierte App und deren bestehende Abo-Anmeldung. RewordMe liest oder speichert das Konto-Token niemals.";
+"account.checking" = "Installation und Anmeldung werden geprüft...";
+"account.signingIn" = "Warten auf die Anmeldung im Browser...";
+"account.notInstalled" = "Die erforderliche offizielle App ist nicht installiert.";
+"account.connected" = "Mit einem Abonnementkonto verbunden";
+"account.notConnected" = "Installiert, aber nicht angemeldet";
+"account.apiBilling" = "Diese App ist mit einem API-Schlüssel authentifiziert, nicht mit einem Abonnementkonto.";
+"account.setupGuide" = "Offizielle Einrichtungsanleitung";
+"account.refresh" = "Aktualisieren";
+"account.install" = "Installieren";
+"account.signIn" = "Anmelden";
+
+"local.section" = "Offline-Modelle";
+"local.blurb" = "Wähle ein oder mehrere Modelle zum Download aus. Das ausgewählte Modell läuft vollständig auf diesem Computer und benötigt danach weder Konto, API-Schlüssel, Ollama noch Internetverbindung.";
+"local.source" = "Modelldetails";
+"local.size" = "Downloadgröße: etwa 563 MB";
+"local.download" = "Modell herunterladen";
+"local.ready" = "Heruntergeladen und bereit";
+"local.remove" = "Modell entfernen";
+"local.retry" = "Download wiederholen";
+
+"error.providerNotInstalled" = "%@ ist nicht installiert. Öffne die Einstellungen, um es zu installieren.";
+"error.accountNotSignedIn" = "%@ ist nicht angemeldet. Öffne die Einstellungen, um dein Konto zu verbinden.";
+"error.accountUsesApiKey" = "%@ verwendet API-Schlüssel-Abrechnung. Melde dich stattdessen mit deinem Abonnementkonto an.";
+"error.localNotDownloaded" = "Das lokale Modell wurde nicht heruntergeladen. Lade es in den Einstellungen herunter.";
+"error.localRuntime" = "Die enthaltene lokale KI-Laufzeit ist nicht verfügbar. Installiere RewordMe erneut.";
+"error.localDownload" = "Download des lokalen Modells fehlgeschlagen: %@";

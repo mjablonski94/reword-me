@@ -18,7 +18,6 @@ import dev.mjablonski.rewordme.models.ModelInfo
 import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordConfig
 import dev.mjablonski.rewordme.models.RewriteRule
-import dev.mjablonski.rewordme.models.RuleKind
 import dev.mjablonski.rewordme.platform.WindowEffects
 import java.io.File
 import javax.imageio.ImageIO
@@ -190,8 +189,8 @@ private const val PLACEHOLDER_KEY = "0000000000000000000000000000"
 private val SHOWCASE = RewordConfig(
     provider = ProviderKind.ANTHROPIC,
     rules = listOf(
-        RewriteRule(kind = RuleKind.DONT, text = "Never use exclamation marks"),
-        RewriteRule(kind = RuleKind.DO, text = "Keep it under two sentences", isEnabled = false)
+        RewriteRule(text = "Never use exclamation marks"),
+        RewriteRule(text = "Keep it under two sentences", isEnabled = false)
     ),
     basePrompt = "I am a non-native speaker; fix grammar but keep my voice."
 )

@@ -10,7 +10,7 @@ final class SettingsWindowController {
     init(dependencies: AppDependencies) {
         let model = SettingsViewModel(dependencies: dependencies)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: 580, height: 560),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -40,7 +40,7 @@ struct SettingsView: View {
             GeneralSettingsView(model: model)
                 .tabItem { Label(Loc.tabGeneral, systemImage: "gearshape") }
         }
-        .frame(width: 560, height: 480)
+        .frame(width: 580, height: 560)
     }
 }
 
@@ -64,9 +64,11 @@ struct ProviderSettingsView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .disabled(model.isLocalDownloadActive)
             }
 
-            if model.config.provider.requiresAPIKey {
+            switch model.config.provider.access {
+            case .apiKey:
                 Section(Loc.apiKeySection) {
                     SecureField(
                         model.config.provider.keyPlaceholder,
@@ -85,7 +87,7 @@ struct ProviderSettingsView: View {
                                 .transition(.opacity)
                         }
                         Button(Loc.saveKey) { model.saveAPIKey() }
-                            .disabled(model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .disabled(!model.canSaveAPIKey)
                     }
                     .animation(.easeInOut(duration: 0.2), value: model.keySavedFeedback)
                     if let error = model.keySaveError {
@@ -98,7 +100,11 @@ struct ProviderSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-            } else {
+            case .account:
+                accountSection
+            case .managedLocal:
+                localModelSection
+            case .externalLocal:
                 Section(Loc.ollamaSection) {
                     Text(Loc.ollamaBlurb)
                         .font(.callout)
@@ -121,41 +127,172 @@ struct ProviderSettingsView: View {
                 }
             }
 
-            Section(Loc.modelSection) {
-                Picker(Loc.modelLabel, selection: $model.config.model) {
-                    Text(Loc.automaticModel).tag(String?.none)
-                    ForEach(model.availableModels.sorted { $0.id < $1.id }) { modelInfo in
-                        Text(modelInfo.id).tag(String?.some(modelInfo.id))
+            if model.config.provider.access != .managedLocal {
+                Section(Loc.modelSection) {
+                    Picker(Loc.modelLabel, selection: $model.config.model) {
+                        Text(Loc.automaticModel).tag(String?.none)
+                        ForEach(
+                            model.availableModels.filter { $0.id != "automatic" }
+                                .sorted { $0.id < $1.id }
+                        ) { modelInfo in
+                            Text(modelInfo.displayName).tag(String?.some(modelInfo.id))
+                        }
+                        // Keep a previously chosen model selectable before the list loads.
+                        if let current = model.config.model,
+                           current != "automatic",
+                           !model.availableModels.contains(where: { $0.id == current }) {
+                            Text(current).tag(String?.some(current))
+                        }
                     }
-                    // Keep a previously chosen model selectable before the list loads.
-                    if let current = model.config.model,
-                       !model.availableModels.contains(where: { $0.id == current }) {
-                        Text(current).tag(String?.some(current))
+                    HStack {
+                        if model.isLoadingModels {
+                            ProgressView().controlSize(.small)
+                        } else if let error = model.modelsError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        } else if !model.automaticModelHint.isEmpty {
+                            Text(model.automaticModelHint)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if model.config.provider.access == .apiKey ||
+                            model.config.provider.access == .externalLocal {
+                            Button(Loc.loadModels) { model.loadModels() }
+                                .disabled(
+                                    (model.config.provider.requiresAPIKey &&
+                                        model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                        || model.isLoadingModels
+                                )
+                        }
                     }
-                }
-                HStack {
-                    if model.isLoadingModels {
-                        ProgressView().controlSize(.small)
-                    } else if let error = model.modelsError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    } else if !model.automaticModelHint.isEmpty {
-                        Text(model.automaticModelHint)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button(Loc.loadModels) { model.loadModels() }
-                        .disabled(
-                            (model.config.provider.requiresAPIKey &&
-                                model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                || model.isLoadingModels
-                        )
                 }
             }
         }
         .formStyle(.grouped)
+        .onAppear { model.refreshProviderSetup() }
+    }
+
+    @ViewBuilder
+    private var accountSection: some View {
+        Section(Loc.accountSection) {
+            Text(Loc.accountBlurb(model.config.provider.displayName))
+                .font(.callout)
+
+            if model.isCheckingAccount || model.isSigningIn {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(model.isSigningIn ? Loc.accountSigningIn : Loc.accountChecking)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else if let status = model.accountStatus {
+                if !status.isInstalled {
+                    Label(Loc.accountNotInstalled, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                } else if status.isAuthenticated {
+                    Label(Loc.accountConnected, systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else if status.usesAPIKey {
+                    Label(Loc.accountAPIBilling, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else {
+                    Label(Loc.accountNotConnected, systemImage: "person.crop.circle.badge.exclamationmark")
+                        .foregroundStyle(.orange)
+                }
+                if let version = status.version, !version.isEmpty {
+                    Text(version).font(.caption.monospaced()).foregroundStyle(.secondary)
+                }
+            }
+
+            if let error = model.accountError {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            HStack {
+                Link(
+                    Loc.accountSetupGuide,
+                    destination: model.config.provider.apiKeyConsoleURL
+                )
+                .font(.caption)
+                Spacer()
+                Button(Loc.refresh) { model.refreshProviderSetup() }
+                    .disabled(model.isCheckingAccount || model.isSigningIn)
+                Button(model.accountStatus?.isInstalled == false ? Loc.install : Loc.signIn) {
+                    model.setUpAccountProvider()
+                }
+                .disabled(model.isCheckingAccount || model.isSigningIn)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var localModelSection: some View {
+        Section(Loc.localSection) {
+            Text(Loc.localBlurb)
+                .font(.callout)
+            Picker(Loc.modelLabel, selection: Binding(
+                get: { model.selectedLocalModel.id },
+                set: model.selectLocalModel
+            )) {
+                ForEach(LocalModelCatalog.all) { manifest in
+                    Text("\(manifest.displayName) — \(manifest.maker) · \(model.formattedBytes(manifest.byteCount))")
+                        .tag(manifest.id)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(model.isLocalDownloadActive)
+
+            let selected = model.selectedLocalModel
+            HStack(spacing: 10) {
+                Text("\(selected.maker) · \(model.formattedBytes(selected.byteCount))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Link(Loc.localSource, destination: selected.informationURL)
+                Link(selected.licenseName, destination: selected.licenseURL)
+            }
+            .font(.caption)
+
+            switch model.localModelState {
+            case .notDownloaded:
+                HStack {
+                    Spacer()
+                    Button(Loc.localDownload) { model.downloadLocalModel() }
+                }
+            case let .downloading(progress):
+                VStack(alignment: .leading, spacing: 7) {
+                    ProgressView(value: progress.fraction)
+                        .progressViewStyle(.linear)
+                    HStack {
+                        Text(model.localProgressText)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button(Loc.cancel) { model.cancelLocalModelDownload() }
+                    }
+                }
+            case .ready:
+                HStack {
+                    Label(Loc.localReady, systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Spacer()
+                    Button(Loc.localRemove, role: .destructive) { model.removeLocalModel() }
+                }
+            case let .failed(message):
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                HStack {
+                    Spacer()
+                    Button(Loc.localRetry) { model.downloadLocalModel() }
+                }
+            }
+        }
     }
 }
 
@@ -163,24 +300,31 @@ struct ProviderSettingsView: View {
 
 struct RewritingSettingsView: View {
     @ObservedObject var model: SettingsViewModel
+    @FocusState private var focusedRuleID: UUID?
 
     var body: some View {
         Form {
             Section {
-                ForEach($model.config.rules) { $rule in
+                // Never bind a text field through Array's index projection.
+                // AppKit can deliver a final edit callback after its focused
+                // row is removed; an index binding then traps if the array is
+                // shorter. UUID lookups safely ignore that late callback.
+                ForEach(model.config.rules) { rule in
                     HStack(spacing: 8) {
-                        Toggle("", isOn: $rule.isEnabled)
+                        Toggle("", isOn: ruleBinding(
+                            id: rule.id,
+                            keyPath: \.isEnabled,
+                            fallback: false
+                        ))
                             .labelsHidden()
-                        Picker("", selection: $rule.kind) {
-                            ForEach(RuleKind.allCases, id: \.self) { kind in
-                                Text(kind == .doRule ? Loc.ruleDo : Loc.ruleDont).tag(kind)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 80)
-                        TextField(Loc.rulePlaceholder, text: $rule.text)
+                        TextField(
+                            Loc.rulePlaceholder,
+                            text: ruleBinding(id: rule.id, keyPath: \.text, fallback: "")
+                        )
+                        .focused($focusedRuleID, equals: rule.id)
                         Button {
-                            model.removeRule(rule)
+                            if focusedRuleID == rule.id { focusedRuleID = nil }
+                            model.removeRule(id: rule.id)
                         } label: {
                             Image(systemName: "minus.circle")
                         }
@@ -209,6 +353,19 @@ struct RewritingSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func ruleBinding<Value>(
+        id: UUID,
+        keyPath: WritableKeyPath<RewriteRule, Value>,
+        fallback: Value
+    ) -> Binding<Value> {
+        Binding(
+            get: { model.rule(id: id)?[keyPath: keyPath] ?? fallback },
+            set: { newValue in
+                model.updateRule(id: id) { $0[keyPath: keyPath] = newValue }
+            }
+        )
     }
 }
 
@@ -268,6 +425,14 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section(Loc.aboutSection) {
+                LabeledContent(Loc.version) {
+                    Text(AppVersion.display)
+                        .monospacedDigit()
+                        .textSelection(.enabled)
+                }
+            }
+
             Section(Loc.supportSection) {
                 Link(
                     Loc.buyCoffee,
@@ -279,5 +444,19 @@ struct GeneralSettingsView: View {
         .onReceive(timer) { _ in
             model.refreshAccessibilityStatus()
         }
+    }
+}
+
+private enum AppVersion {
+    static var display: String {
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+            as? String ?? "—"
+        guard let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+              !build.isEmpty,
+              build != version else {
+            return version
+        }
+        return "\(version) (\(build))"
     }
 }

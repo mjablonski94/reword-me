@@ -81,6 +81,15 @@ private object ClipboardAccess {
     private const val RETRY_DELAY_MS = 25L
 }
 
+internal object ClipboardRestorePolicy {
+    fun shouldRestore(temporarySequence: Int, currentSequence: Int): Boolean =
+        temporarySequence == currentSequence
+}
+
+internal object ClipboardCopyPolicy {
+    fun observedSyntheticCopy(baseline: Int, current: Int): Boolean = baseline != current
+}
+
 /**
  * A replayable clipboard payload. Clipboard streams and readers are normally
  * one-shot views backed by the current owner, so they must be consumed before
@@ -172,30 +181,51 @@ internal class MaterializedTransferable private constructor(
 class WindowsSelectionReader : SelectionReading {
     override fun readSelection(): String? {
         if (!isWindows) return null
-        val previous = ClipboardAccess.snapshot() ?: return null
-        val before = Win32Clipboard.sequence
 
         // The hotkey's own modifiers (Ctrl+Alt) are usually still held
         // when we get here; a Ctrl+C synthesized now reaches the app as
-        // Ctrl+Alt+C and copies nothing. Wait for release first.
+        // Ctrl+Alt+C and copies nothing. Snapshot only after release so a
+        // user's intervening copy is the new baseline, never our result.
         if (!waitForModifierRelease()) return null
+        val previous = ClipboardAccess.snapshot() ?: return null
+        val before = Win32Clipboard.sequence
         val sent = KeySynthesizer.sendCtrl(KeySynthesizer.VK_C)
+        if (!sent) return null
 
         // Slow apps can take several hundred ms to write the clipboard.
         var copied: String? = null
-        var changed = false
+        var copiedSequence: Int? = null
+        var newerOwnerAppeared = false
         for (attempt in 0 until 30) {
             Thread.sleep(25)
-            if (Win32Clipboard.sequence == before) continue
-            changed = true
+            val currentSequence = Win32Clipboard.sequence
+            if (!ClipboardCopyPolicy.observedSyntheticCopy(before, currentSequence)) continue
+            if (copiedSequence == null) {
+                copiedSequence = currentSequence
+            } else if (currentSequence != copiedSequence) {
+                // The first generation is the only one attributable to the
+                // synthetic copy. A later generation belongs to someone else.
+                newerOwnerAppeared = true
+                copied = null
+                break
+            }
             copied = Win32Clipboard.text()?.takeIf(String::isNotEmpty)
-            if (copied != null || !sent) break
+            if (copied != null) break
         }
-        // Restore whenever Ctrl+C changed the clipboard, even if the copied
-        // selection was empty or a non-text format. Returning text while the
-        // restore failed would make a successful rewrite destroy user data.
-        val restored = !changed || ClipboardAccess.restore(previous)
-        return copied?.takeIf { sent && restored }
+        // Restore only the generation produced by Ctrl+C, even if it was an
+        // empty or non-text selection. A newer clipboard owner always wins.
+        val restored = if (copiedSequence == null || newerOwnerAppeared) {
+            true
+        } else if (ClipboardRestorePolicy.shouldRestore(
+            copiedSequence, Win32Clipboard.sequence
+        )) {
+            ClipboardAccess.restore(previous)
+        } else {
+            // A newer clipboard owner appeared after the selection was read.
+            // Preserving that content is a safe, successful skipped restore.
+            true
+        }
+        return copied?.takeIf { restored }
     }
 
     private fun waitForModifierRelease(): Boolean {
@@ -221,6 +251,7 @@ class WindowsTextReplacer(private val foreground: ForegroundTracker) : TextRepla
         if (!isWindows) return false
         val previous = ClipboardAccess.snapshot() ?: return false
         if (!ClipboardAccess.write(text)) return false
+        val temporarySequence = Win32Clipboard.sequence
 
         val focused = foreground.restore()
         val pasted = if (focused) {
@@ -229,7 +260,15 @@ class WindowsTextReplacer(private val foreground: ForegroundTracker) : TextRepla
         } else {
             false
         }
-        val restored = ClipboardAccess.restore(previous)
+        // Preserve a copy the user made while the paste was settling. The
+        // Win32 sequence number changes on every clipboard ownership change.
+        val restored = if (ClipboardRestorePolicy.shouldRestore(
+            temporarySequence, Win32Clipboard.sequence
+        )) {
+            ClipboardAccess.restore(previous)
+        } else {
+            true
+        }
         return focused && pasted && restored
     }
 }

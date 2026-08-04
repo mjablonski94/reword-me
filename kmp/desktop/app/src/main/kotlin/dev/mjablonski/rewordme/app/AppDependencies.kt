@@ -1,6 +1,8 @@
 package dev.mjablonski.rewordme.app
 
 import dev.mjablonski.rewordme.data.FileApiKeyStore
+import dev.mjablonski.rewordme.data.AccountProviderService
+import dev.mjablonski.rewordme.data.LocalModelManager
 import dev.mjablonski.rewordme.data.JsonConfigStore
 import dev.mjablonski.rewordme.data.RewordService
 import dev.mjablonski.rewordme.domain.ApiKeyStore
@@ -26,7 +28,12 @@ import dev.mjablonski.rewordme.platform.isWindows
 class AppDependencies {
     val configStore: ConfigStore = JsonConfigStore()
     val keyStore: ApiKeyStore = if (isWindows) vaultKeyStore() else FileApiKeyStore()
-    val rewordService: Rewording = RewordService()
+    val accountProviderService = AccountProviderService()
+    val localModelManager = LocalModelManager()
+    val rewordService: Rewording = RewordService(
+        accountProviders = accountProviderService,
+        localModel = localModelManager
+    )
     val modelResolver = ModelResolver()
     val foreground = ForegroundTracker()
     val selectionReader: SelectionReading =

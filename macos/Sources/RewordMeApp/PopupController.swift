@@ -5,11 +5,13 @@ import SwiftUI
 /// the key property: it takes clicks and key input without deactivating
 /// the host app, so the user's selection underneath stays alive.
 final class RewordPanel: NSPanel {
+    var onCancel: (() -> Void)?
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
     override func cancelOperation(_ sender: Any?) {
-        close()
+        if let onCancel { onCancel() } else { close() }
     }
 }
 
@@ -61,6 +63,7 @@ final class PopupController {
         panel.becomesKeyOnlyIfNeeded = false
         panel.isMovableByWindowBackground = true
         panel.isReleasedWhenClosed = false
+        panel.onCancel = { [weak self] in self?.dismiss() }
         hosting.view.wantsLayer = true
         panel.contentViewController = hosting
         self.panel = panel

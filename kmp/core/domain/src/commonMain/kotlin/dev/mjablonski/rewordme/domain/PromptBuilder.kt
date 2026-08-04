@@ -1,11 +1,10 @@
 package dev.mjablonski.rewordme.domain
 
 import dev.mjablonski.rewordme.models.RewriteRule
-import dev.mjablonski.rewordme.models.RuleKind
 
 /**
  * Assembles the system prompt from four layers:
- * 1. the fixed core instruction, 2. enabled do/don't rules,
+ * 1. the fixed core instruction, 2. enabled user-written rules,
  * 3. the user's freeform base prompt, 4. one-shot steering from the popup.
  */
 object PromptBuilder {
@@ -18,10 +17,8 @@ object PromptBuilder {
     fun systemPrompt(rules: List<RewriteRule>, basePrompt: String, steering: String?): String {
         val sections = mutableListOf(CORE_INSTRUCTION)
 
-        val dos = enabledTexts(rules, RuleKind.DO)
-        if (dos.isNotEmpty()) sections += "Do:\n" + bulleted(dos)
-        val donts = enabledTexts(rules, RuleKind.DONT)
-        if (donts.isNotEmpty()) sections += "Don't:\n" + bulleted(donts)
+        val enabledRules = enabledTexts(rules)
+        if (enabledRules.isNotEmpty()) sections += "Rules:\n" + bulleted(enabledRules)
 
         basePrompt.trim().takeIf(String::isNotEmpty)?.let { sections += it }
         steering?.trim()?.takeIf(String::isNotEmpty)?.let {
@@ -31,8 +28,8 @@ object PromptBuilder {
         return sections.joinToString("\n\n")
     }
 
-    private fun enabledTexts(rules: List<RewriteRule>, kind: RuleKind): List<String> =
-        rules.filter { it.isEnabled && it.kind == kind }
+    private fun enabledTexts(rules: List<RewriteRule>): List<String> =
+        rules.filter { it.isEnabled }
             .map { it.text.trim() }
             .filter(String::isNotEmpty)
 

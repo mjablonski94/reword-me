@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -65,7 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.mjablonski.rewordme.models.OllamaEndpoint
 import dev.mjablonski.rewordme.models.ProviderKind
-import dev.mjablonski.rewordme.models.RuleKind
+import dev.mjablonski.rewordme.models.ProviderAccess
+import dev.mjablonski.rewordme.models.LocalModelCatalog
+import dev.mjablonski.rewordme.data.LocalModelState
 import java.awt.Desktop
 import java.net.URI
 
@@ -272,6 +275,7 @@ private fun <T> PopUpButton(
     optionLabel: (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     // Set alongside a fixed width on [modifier], to keep a column of pop-up
     // buttons the same size whatever the current value happens to be.
     fillWidth: Boolean = false
@@ -285,13 +289,13 @@ private fun <T> PopUpButton(
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
             modifier = (if (fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .clip(controlShape)
-                .background(Palette.control)
-                .clickable { open = true }
+                .background(Palette.control.copy(alpha = if (enabled) 1f else 0.55f))
+                .clickable(enabled = enabled) { open = true }
                 .padding(horizontal = 9.dp, vertical = 5.dp)
         ) {
             Text(
                 label,
-                color = Palette.text,
+                color = Palette.text.copy(alpha = if (enabled) 1f else 0.55f),
                 fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -300,11 +304,11 @@ private fun <T> PopUpButton(
             Icon(
                 Icons.Rounded.UnfoldMore,
                 contentDescription = null,
-                tint = Palette.secondary,
+                tint = Palette.secondary.copy(alpha = if (enabled) 1f else 0.55f),
                 modifier = Modifier.size(14.dp)
             )
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        DropdownMenu(expanded = open && enabled, onDismissRequest = { open = false }) {
             options.forEach { option ->
                 DropdownMenuItem(onClick = {
                     open = false
@@ -480,13 +484,15 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                     label = provider.displayName,
                     options = ProviderKind.entries,
                     optionLabel = { it.displayName },
-                    onSelect = viewModel::selectProvider
+                    onSelect = viewModel::selectProvider,
+                    enabled = !viewModel.isLocalDownloadActive
                 )
             }
         }
     }
 
-    if (provider.requiresApiKey) {
+    when (provider.access) {
+        ProviderAccess.API_KEY -> {
         Section(Strings["provider.apiKeySection"]) {
             row {
                 FieldRow(
@@ -512,7 +518,7 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                     }
                     BorderedButton(
                         Strings["provider.saveKey"],
-                        enabled = viewModel.apiKey.isNotBlank(),
+                        enabled = viewModel.canSaveApiKey,
                         onClick = viewModel::saveApiKey
                     )
                 }
@@ -531,7 +537,10 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
             }
             row { Caption(Strings["provider.credentialCaption"]) }
         }
-    } else {
+        }
+        ProviderAccess.ACCOUNT -> AccountProviderSection(viewModel)
+        ProviderAccess.MANAGED_LOCAL -> ManagedLocalSection(viewModel)
+        ProviderAccess.EXTERNAL_LOCAL -> {
         Section(
             Strings["ollama.section"],
             Strings.format("ollama.caption", OllamaEndpoint.DEFAULT_HOST)
@@ -554,15 +563,20 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                 }
             }
         }
+        }
     }
 
-    Section(Strings["provider.modelSection"]) {
+    if (provider.access != ProviderAccess.MANAGED_LOCAL) Section(Strings["provider.modelSection"]) {
         row {
             FormRow(Strings["provider.modelLabel"]) {
                 PopUpButton(
-                    label = viewModel.config.model ?: Strings["provider.automatic"],
+                    label = viewModel.availableModels
+                        .firstOrNull { it.id == viewModel.config.selectedModel }?.displayName
+                        ?: viewModel.config.selectedModel
+                        ?: Strings["provider.automatic"],
                     options = listOf<String?>(null) +
-                        viewModel.availableModels.sortedBy { it.id }.map { it.id },
+                        viewModel.availableModels.filter { it.id != "automatic" }
+                            .sortedBy { it.id }.map { it.id },
                     optionLabel = { it ?: Strings["provider.automatic"] },
                     onSelect = viewModel::selectModel,
                     // Capped rather than weighted: a weight here would compete
@@ -600,12 +614,165 @@ private fun ProviderTab(viewModel: SettingsViewModel) {
                         )
                     }
                 }
+                if (provider.access in setOf(ProviderAccess.API_KEY, ProviderAccess.EXTERNAL_LOCAL)) {
+                    BorderedButton(
+                        Strings["provider.loadModels"],
+                        enabled = !viewModel.isLoadingModels &&
+                            (!provider.requiresApiKey || viewModel.apiKey.isNotBlank()),
+                        onClick = viewModel::loadModels
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountProviderSection(viewModel: SettingsViewModel) {
+    val provider = viewModel.config.provider
+    Section(Strings["account.section"]) {
+        row { Caption(Strings.format("account.blurb", provider.displayName), Palette.text) }
+        row {
+            FormRow {
+                when {
+                    viewModel.isCheckingAccount || viewModel.isSigningIn -> {
+                        CircularProgressIndicator(
+                            Modifier.size(14.dp), color = Palette.accent, strokeWidth = 2.dp
+                        )
+                        Text(
+                            Strings[if (viewModel.isSigningIn) "account.signingIn" else "account.checking"],
+                            color = Palette.secondary, fontSize = 12.sp
+                        )
+                    }
+                    viewModel.accountStatus?.isInstalled == false -> StatusLabel(
+                        Strings["account.notInstalled"], Palette.warn, Icons.Rounded.Warning
+                    )
+                    viewModel.accountStatus?.isAuthenticated == true -> StatusLabel(
+                        Strings["account.connected"], Palette.ok, Icons.Rounded.CheckCircle
+                    )
+                    viewModel.accountStatus?.usesApiKey == true -> StatusLabel(
+                        Strings["account.apiBilling"], Palette.warn, Icons.Rounded.Warning
+                    )
+                    else -> StatusLabel(
+                        Strings["account.notConnected"], Palette.warn, Icons.Rounded.Warning
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+            }
+        }
+        viewModel.accountStatus?.version?.takeIf(String::isNotBlank)?.let { version ->
+            row { Caption(version) }
+        }
+        viewModel.accountError?.let { error ->
+            row {
+                FormRow {
+                    StatusLabel(error, Palette.warn, Icons.Rounded.Warning)
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+        row {
+            FormRow {
+                LinkText(Strings["account.setupGuide"], provider.apiKeyConsoleUrl)
+                Spacer(Modifier.weight(1f))
                 BorderedButton(
-                    Strings["provider.loadModels"],
-                    enabled = !viewModel.isLoadingModels &&
-                        (!provider.requiresApiKey || viewModel.apiKey.isNotBlank()),
-                    onClick = viewModel::loadModels
+                    Strings["account.refresh"],
+                    enabled = !viewModel.isCheckingAccount && !viewModel.isSigningIn,
+                    onClick = viewModel::refreshProviderSetup
                 )
+                BorderedButton(
+                    Strings[if (viewModel.accountStatus?.isInstalled == false) "account.install" else "account.signIn"],
+                    enabled = !viewModel.isCheckingAccount && !viewModel.isSigningIn,
+                    onClick = viewModel::setUpAccountProvider
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManagedLocalSection(viewModel: SettingsViewModel) {
+    val selected = viewModel.selectedLocalModel
+    Section(Strings["local.section"]) {
+        row { Caption(Strings["local.blurb"], Palette.text) }
+        row {
+            FormRow(Strings["provider.modelLabel"]) {
+                PopUpButton(
+                    label = "${selected.displayName} — ${selected.maker} · ${viewModel.formatBytes(selected.byteCount)}",
+                    options = LocalModelCatalog.ALL.map { it.id },
+                    optionLabel = { id ->
+                        LocalModelCatalog.model(id).let {
+                            "${it.displayName} — ${it.maker} · ${viewModel.formatBytes(it.byteCount)}"
+                        }
+                    },
+                    onSelect = viewModel::selectLocalModel,
+                    modifier = Modifier.widthIn(max = 310.dp),
+                    enabled = !viewModel.isLocalDownloadActive
+                )
+            }
+        }
+        row {
+            FormRow {
+                Text(
+                    "${selected.maker} · ${viewModel.formatBytes(selected.byteCount)}",
+                    color = Palette.secondary,
+                    fontSize = 11.sp
+                )
+                Spacer(Modifier.weight(1f))
+                LinkText(Strings["local.source"], selected.informationUrl)
+                LinkText(selected.licenseName, selected.licenseUrl)
+            }
+        }
+        when (val state = viewModel.localModelState) {
+            LocalModelState.NotDownloaded -> row {
+                FormRow {
+                    Spacer(Modifier.weight(1f))
+                    BorderedButton(Strings["local.download"], onClick = viewModel::downloadLocalModel)
+                }
+            }
+            is LocalModelState.Downloading -> {
+                row {
+                    FormRow {
+                        LinearProgressIndicator(
+                            progress = state.progress.fraction,
+                            modifier = Modifier.weight(1f),
+                            color = Palette.accent
+                        )
+                    }
+                }
+                row {
+                    FormRow {
+                        Text(
+                            viewModel.localProgressText,
+                            color = Palette.secondary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Spacer(Modifier.weight(1f))
+                        BorderedButton(Strings["popup.cancel"], onClick = viewModel::cancelLocalModelDownload)
+                    }
+                }
+            }
+            is LocalModelState.Ready -> row {
+                FormRow {
+                    StatusLabel(Strings["local.ready"], Palette.ok, Icons.Rounded.CheckCircle)
+                    Spacer(Modifier.weight(1f))
+                    BorderedButton(Strings["local.remove"], onClick = viewModel::removeLocalModel)
+                }
+            }
+            is LocalModelState.Failed -> {
+                row {
+                    FormRow {
+                        StatusLabel(state.detail, Palette.warn, Icons.Rounded.Warning)
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+                row {
+                    FormRow {
+                        Spacer(Modifier.weight(1f))
+                        BorderedButton(Strings["local.retry"], onClick = viewModel::downloadLocalModel)
+                    }
+                }
             }
         }
     }
@@ -620,16 +787,6 @@ private fun RewritingTab(viewModel: SettingsViewModel) {
                     MacSwitch(rule.isEnabled) { enabled ->
                         viewModel.updateRule(rule.id) { it.copy(isEnabled = enabled) }
                     }
-                    PopUpButton(
-                        label = Strings[rule.kind.labelKey],
-                        options = RuleKind.entries,
-                        optionLabel = { Strings[it.labelKey] },
-                        onSelect = { kind ->
-                            viewModel.updateRule(rule.id) { it.copy(kind = kind) }
-                        },
-                        modifier = Modifier.width(88.dp),
-                        fillWidth = true
-                    )
                     PlainField(
                         value = rule.text,
                         onValueChange = { text ->
@@ -720,6 +877,19 @@ private fun GeneralTab(viewModel: SettingsViewModel) {
             }
         }
     }
+
+    Section(Strings["general.about"]) {
+        row {
+            FormRow(Strings["general.version"]) {
+                Text(
+                    AppInfo.version,
+                    color = Palette.secondary,
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -762,6 +932,3 @@ private fun ShortcutRow(viewModel: SettingsViewModel) {
         }
     }
 }
-
-private val RuleKind.labelKey: String
-    get() = if (this == RuleKind.DO) "rules.do" else "rules.dont"

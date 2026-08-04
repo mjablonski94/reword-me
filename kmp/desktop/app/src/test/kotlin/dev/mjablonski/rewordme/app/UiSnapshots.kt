@@ -14,7 +14,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.use
+import dev.mjablonski.rewordme.domain.ApiKeyStore
+import dev.mjablonski.rewordme.domain.ConfigStore
+import dev.mjablonski.rewordme.domain.Rewording
+import dev.mjablonski.rewordme.models.LocalModelCatalog
+import dev.mjablonski.rewordme.models.ModelInfo
+import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordConfig
+import dev.mjablonski.rewordme.models.RewriteRule
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +56,7 @@ fun main(args: Array<String>) {
     popup("result") {
         begin(SAMPLE)
         result = REWORDED
-        modelLabel = "Gemini - gemini-3.5-flash-lite"
+        modelLabel = "gemini-3.5-flash-lite · Gemini (Recommended)"
         stage = PopupViewModel.Stage.RESULT
     }
     popup("failed") {
@@ -64,6 +71,44 @@ fun main(args: Array<String>) {
             // Pinned to the real window size: the screen fills its window, so
             // an unconstrained render says nothing about the actual layout.
             Box(Modifier.size(560.dp, 520.dp)) { SettingsContent(settings, tab) }
+        }
+    }
+
+    val offlineConfig = RewordConfig(
+        provider = ProviderKind.LOCAL,
+        modelsByProvider = mapOf(ProviderKind.LOCAL.id to LocalModelCatalog.DEFAULT.id)
+    )
+    val offlineSettings = SettingsViewModel(
+        configStore = SnapshotConfigStore(offlineConfig),
+        keyStore = SnapshotKeyStore,
+        rewordService = SnapshotRewording,
+        scope = scope,
+        hotkeys = NoHotkeys
+    )
+    snapshot(out, "settings-offline", 576, 650) {
+        Box(Modifier.size(560.dp, 634.dp)) {
+            SettingsContent(offlineSettings, SettingsTab.PROVIDER)
+        }
+    }
+
+    val rulesSettings = SettingsViewModel(
+        configStore = SnapshotConfigStore(
+            RewordConfig(
+                rules = listOf(
+                    RewriteRule(text = "Never use em dashes; use a hyphen instead."),
+                    RewriteRule(text = "Keep the result under two sentences", isEnabled = false)
+                ),
+                basePrompt = "Preserve my direct, conversational voice."
+            )
+        ),
+        keyStore = SnapshotKeyStore,
+        rewordService = SnapshotRewording,
+        scope = scope,
+        hotkeys = NoHotkeys
+    )
+    snapshot(out, "settings-rules", 576, 650) {
+        Box(Modifier.size(560.dp, 634.dp)) {
+            SettingsContent(rulesSettings, SettingsTab.REWRITING)
         }
     }
 
@@ -92,6 +137,35 @@ private fun snapshot(out: File, name: String, width: Int, height: Int, content: 
 private object NoHotkeys : HotkeyBinder {
     override fun bind(config: RewordConfig) = HotkeyStatus.Active
     override fun release() = Unit
+}
+
+private class SnapshotConfigStore(private var config: RewordConfig) : ConfigStore {
+    override fun load() = config
+    override fun save(config: RewordConfig) {
+        this.config = config
+    }
+}
+
+private object SnapshotKeyStore : ApiKeyStore {
+    override fun apiKey(provider: ProviderKind): String? = null
+    override fun setApiKey(provider: ProviderKind, key: String?): Boolean = true
+}
+
+private object SnapshotRewording : Rewording {
+    override suspend fun listModels(
+        provider: ProviderKind,
+        apiKey: String,
+        endpoint: String?
+    ): List<ModelInfo> = LocalModelCatalog.ALL.map { ModelInfo(it.id, it.displayName) }
+
+    override suspend fun reword(
+        provider: ProviderKind,
+        apiKey: String,
+        model: String,
+        systemPrompt: String,
+        text: String,
+        endpoint: String?
+    ): String = REWORDED
 }
 
 internal const val SAMPLE =

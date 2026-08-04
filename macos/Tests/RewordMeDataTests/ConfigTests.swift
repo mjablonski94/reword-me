@@ -28,7 +28,7 @@ final class ConfigTests: XCTestCase {
     func testDecodingEmptyObjectFallsBackToDefaults() throws {
         let decoded = try JSONDecoder().decode(RewordConfig.self, from: Data("{}".utf8))
         XCTAssertEqual(decoded, .default)
-        XCTAssertEqual(decoded.provider, .anthropic)
+        XCTAssertEqual(decoded.provider, .gemini)
         XCTAssertNil(decoded.model)
         XCTAssertEqual(decoded.hotkey, .default)
         XCTAssertEqual(decoded.hotkey.display, "⌥⌘R")
@@ -37,6 +37,18 @@ final class ConfigTests: XCTestCase {
             decoded.hotkey.carbonModifiers,
             HotkeyConfig.carbonCommand | HotkeyConfig.carbonOption
         )
+    }
+
+    func testLegacyGlobalModelMigratesToItsSavedProvider() throws {
+        let legacy = Data(#"{"provider":"gemini","model":"gemini-2.5-flash"}"#.utf8)
+        var decoded = try JSONDecoder().decode(RewordConfig.self, from: legacy)
+
+        XCTAssertEqual(decoded.model, "gemini-2.5-flash")
+        decoded.provider = .openai
+        XCTAssertNil(decoded.model)
+        decoded.model = "gpt-5-mini"
+        decoded.provider = .gemini
+        XCTAssertEqual(decoded.model, "gemini-2.5-flash")
     }
 
     func testEveryProviderHasAnAPIKeyConsoleLink() {
@@ -59,5 +71,22 @@ final class ConfigTests: XCTestCase {
         config.basePrompt = "base"
         try store.save(config)
         XCTAssertEqual(store.load(), config)
+    }
+
+    func testInvalidConfigSurvivesTheFirstRunDefaultSave() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rewordme-invalid-config-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let invalid = Data("{ recoverable but invalid JSON".utf8)
+        let store = ConfigStore(url: dir.appendingPathComponent("config.json"))
+        try invalid.write(to: store.url)
+
+        var defaults = store.load()
+        defaults.launchAtLogin = false
+        try store.save(defaults)
+
+        XCTAssertEqual(try Data(contentsOf: store.invalidBackupURL), invalid)
+        XCTAssertEqual(store.load().launchAtLogin, false)
     }
 }

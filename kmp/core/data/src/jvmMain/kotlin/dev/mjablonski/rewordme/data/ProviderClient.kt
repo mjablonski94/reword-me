@@ -34,7 +34,7 @@ interface ProviderClient {
 
 internal val lenientJson = Json { ignoreUnknownKeys = true }
 
-/** Maps a provider kind to its client; tests can inject stubs. */
+/** Maps HTTP wire-format providers to clients; account providers bypass it. */
 class ProviderClientRegistry(
     clients: List<ProviderClient> = defaultClients()
 ) {
@@ -47,7 +47,7 @@ class ProviderClientRegistry(
         fun defaultClients(): List<ProviderClient> =
             listOf(AnthropicClient(), GeminiClient()) +
                 listOf(
-                    ProviderKind.OPENAI, ProviderKind.MISTRAL, ProviderKind.XAI,
+                    ProviderKind.LOCAL, ProviderKind.OPENAI, ProviderKind.MISTRAL, ProviderKind.XAI,
                     ProviderKind.DEEPSEEK, ProviderKind.OLLAMA
                 ).map(::OpenAiCompatibleClient)
     }

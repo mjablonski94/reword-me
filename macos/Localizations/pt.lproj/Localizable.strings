@@ -33,23 +33,21 @@
 "provider.keychainCaption" = "Guardada nas suas Chaves de início de sessão, nunca em arquivos comuns. Se o macOS perguntar se o RewordMe pode acessar as Chaves, é o seu Mac protegendo a chave - escolha \"Sempre Permitir\".";
 "provider.modelSection" = "Modelo";
 "provider.modelLabel" = "Modelo";
-"provider.automatic" = "Automático (mais barato)";
+"provider.automatic" = "Automático";
 "provider.automaticHint" = "Automático corresponde atualmente a %@";
 "provider.noModels" = "O provedor não retornou modelos utilizáveis.";
 "provider.loadModels" = "Carregar modelos";
 
 "ollama.section" = "Servidor local";
-"ollama.blurb" = "O Ollama roda no seu Mac - sem chave de API, sem custo, e o texto nunca sai da sua máquina.";
+"ollama.blurb" = "O Ollama não requer uma chave de API. Quando o endereço do servidor aponta para este Mac, o texto permanece no dispositivo; se configurar outro host, o texto é enviado para esse host.";
 "ollama.serverLabel" = "Servidor";
 "ollama.caption" = "O padrão é %@ - mude apenas se o Ollama escutar em outro lugar (OLLAMA_HOST, mapeamento de porta do Docker, outra máquina).\nInstale e depois baixe um modelo, p. ex.:  ollama pull llama3.2";
 "ollama.getLink" = "Obtenha o Ollama em %@";
 
-"rules.section" = "O que fazer e o que evitar";
+"rules.section" = "Regras";
 "rules.footer" = "Cada regra ativada é enviada com cada reformulação. Desative regras em vez de apagá-las quando elas só se aplicam às vezes.";
 "rules.add" = "Adicionar regra";
 "rules.placeholder" = "p. ex. Nunca use pontos de exclamação";
-"rules.do" = "Faça";
-"rules.dont" = "Evite";
 "base.section" = "Prompt base";
 "base.footer" = "Instruções permanentes livres, p. ex. \"Não sou falante nativo; corrija a gramática mas mantenha a minha voz.\"";
 
@@ -69,6 +67,8 @@
 "general.accessibilityCaption" = "Necessário para ler o texto selecionado e substituí-lo no lugar. Sem ele, apenas o menu Serviços e Copiar funcionam.";
 "general.support" = "Apoio";
 "general.buyCoffee" = "Pague-me um café";
+"general.about" = "Sobre";
+"general.version" = "Versão";
 
 "keychain.alertTitle" = "Sua chave vai para as Chaves do macOS";
 "keychain.alertBody" = "O RewordMe guarda chaves de API apenas nas suas Chaves de início de sessão, o mesmo lugar onde o Safari guarda senhas.\n\nO macOS pode depois pedir sua senha com um aviso como \"RewordMeApp quer usar suas informações confidenciais guardadas nas chaves\". São as Chaves protegendo a sua chave, não a chave saindo do seu Mac. Escolha \"Sempre Permitir\" para que não pergunte de novo.\n\nCompilações feitas do código-fonte são reassinadas a cada compilação, então o macOS trata cada uma como um app novo e pergunta mais uma vez.";
@@ -82,8 +82,37 @@
 "error.invalidKey" = "O provedor rejeitou a chave de API. Verifique-a nos Ajustes.";
 "error.rateLimitedRetry" = "Limite de requisições atingido. Tente novamente em %ds.";
 "error.rateLimited" = "Limite de requisições atingido. Tente novamente em instantes.";
+"error.usageLimit" = "Os créditos da API acabaram ou o limite de uso foi atingido. Verifique a cobrança e os limites do provedor antes de tentar novamente.";
 "error.refused" = "O provedor se recusou a reformular este texto.";
 "error.api" = "Erro do provedor (%d): %@";
 "error.empty" = "O provedor retornou uma resposta vazia.";
 "error.invalidResponse" = "Não foi possível ler a resposta do provedor.";
 "error.noModel" = "Nenhum modelo utilizável encontrado para este provedor.";
+"account.section" = "Acesso por conta";
+"account.blurb" = "%@ usa a aplicação oficial instalada localmente e o início de sessão da subscrição existente. O RewordMe nunca lê nem guarda o token da conta.";
+"account.checking" = "A verificar a instalação e a sessão...";
+"account.signingIn" = "A aguardar o início de sessão no navegador...";
+"account.notInstalled" = "A aplicação oficial necessária não está instalada.";
+"account.connected" = "Ligado com uma conta de subscrição";
+"account.notConnected" = "Instalado, mas sem sessão iniciada";
+"account.apiBilling" = "Esta aplicação está autenticada com uma chave de API, não com uma conta de subscrição.";
+"account.setupGuide" = "Guia oficial de configuração";
+"account.refresh" = "Atualizar";
+"account.install" = "Instalar";
+"account.signIn" = "Iniciar sessão";
+
+"local.section" = "Modelos offline";
+"local.blurb" = "Escolha e transfira um ou mais modelos. O modelo selecionado é executado totalmente neste computador e, depois da transferência, não requer conta, chave de API, Ollama nem ligação à internet.";
+"local.source" = "Detalhes do modelo";
+"local.size" = "Tamanho da transferência: cerca de 563 MB";
+"local.download" = "Transferir modelo";
+"local.ready" = "Transferido e pronto";
+"local.remove" = "Remover modelo";
+"local.retry" = "Repetir transferência";
+
+"error.providerNotInstalled" = "%@ não está instalado. Abra as Definições para o instalar.";
+"error.accountNotSignedIn" = "A sessão em %@ não foi iniciada. Abra as Definições para ligar a conta.";
+"error.accountUsesApiKey" = "%@ está a usar faturação por chave de API. Inicie sessão com a conta de subscrição.";
+"error.localNotDownloaded" = "O modelo local não foi transferido. Transfira-o nas Definições.";
+"error.localRuntime" = "O runtime de IA local incluído não está disponível. Reinstale o RewordMe.";
+"error.localDownload" = "Falha ao transferir o modelo local: %@";

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -46,6 +47,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -98,12 +100,14 @@ private fun Header(viewModel: PopupViewModel) {
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.weight(1f))
-        if (viewModel.stage == PopupViewModel.Stage.RESULT && viewModel.modelLabel.isNotEmpty()) {
+        if (viewModel.modelLabel.isNotEmpty()) {
             Text(
                 viewModel.modelLabel,
                 color = Palette.secondary.copy(alpha = 0.7f),
                 fontSize = 10.sp,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 180.dp)
             )
         }
         RoundIcon(Icons.Rounded.Close) { viewModel.dismiss() }
@@ -330,9 +334,11 @@ private fun ErrorView(viewModel: PopupViewModel) {
             )
         }
         Text(viewModel.errorMessage, color = Palette.secondary, fontSize = 12.sp)
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Spacer(Modifier.weight(1f))
-            PillButton(Strings["popup.tryAgain"]) { viewModel.regenerate() }
+        if (viewModel.canRetry) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.weight(1f))
+                PillButton(Strings["popup.tryAgain"]) { viewModel.regenerate() }
+            }
         }
     }
 }

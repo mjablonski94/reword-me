@@ -35,8 +35,24 @@ public struct HotkeyConfig: Codable, Equatable, Sendable {
 /// Everything except API keys (those live in the Keychain).
 public struct RewordConfig: Codable, Equatable, Sendable {
     public var provider: ProviderKind
-    /// nil means automatic: the least costly model the provider lists.
-    public var model: String?
+    /// A provider owns its model choice. Keeping the choices in one map means
+    /// switching away and back restores the right selection without ever
+    /// sending (for example) a Gemini model id to OpenAI.
+    public var modelsByProvider: [String: String]
+    /// The model selected for `provider`; nil means automatic. This computed
+    /// compatibility property keeps the rest of the app and older call sites
+    /// source-compatible while persistence uses `modelsByProvider`.
+    public var model: String? {
+        get { modelsByProvider[provider.rawValue] }
+        set {
+            let normalized = newValue?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let normalized, !normalized.isEmpty {
+                modelsByProvider[provider.rawValue] = normalized
+            } else {
+                modelsByProvider.removeValue(forKey: provider.rawValue)
+            }
+        }
+    }
     public var rules: [RewriteRule]
     public var basePrompt: String
     /// Where the local Ollama server listens; only used by the ollama provider.
@@ -48,8 +64,9 @@ public struct RewordConfig: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool?
 
     public init(
-        provider: ProviderKind = .anthropic,
+        provider: ProviderKind = .gemini,
         model: String? = nil,
+        modelsByProvider: [String: String] = [:],
         rules: [RewriteRule] = [],
         basePrompt: String = "",
         ollamaHost: String = OllamaEndpoint.defaultHost,
@@ -57,7 +74,10 @@ public struct RewordConfig: Codable, Equatable, Sendable {
         launchAtLogin: Bool? = nil
     ) {
         self.provider = provider
-        self.model = model
+        self.modelsByProvider = modelsByProvider
+        if let model = model?.trimmingCharacters(in: .whitespacesAndNewlines), !model.isEmpty {
+            self.modelsByProvider[provider.rawValue] = model
+        }
         self.rules = rules
         self.basePrompt = basePrompt
         self.ollamaHost = ollamaHost
@@ -67,16 +87,50 @@ public struct RewordConfig: Codable, Equatable, Sendable {
 
     public static let `default` = RewordConfig()
 
+    private enum CodingKeys: String, CodingKey {
+        case provider
+        /// Written for compatibility with 1.0.1 and used as a migration input.
+        case model
+        case modelsByProvider
+        case rules
+        case basePrompt
+        case ollamaHost
+        case hotkey
+        case launchAtLogin
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        provider = try container.decodeIfPresent(ProviderKind.self, forKey: .provider) ?? .anthropic
-        model = try container.decodeIfPresent(String.self, forKey: .model)
+        provider = try container.decodeIfPresent(ProviderKind.self, forKey: .provider) ?? .gemini
+        modelsByProvider = try container.decodeIfPresent(
+            [String: String].self, forKey: .modelsByProvider
+        ) ?? [:]
+        // 1.0.1 stored one global model. On first read, bind that value to the
+        // provider saved beside it so it cannot leak into a different provider.
+        if modelsByProvider[provider.rawValue] == nil,
+           let legacy = try container.decodeIfPresent(String.self, forKey: .model)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !legacy.isEmpty {
+            modelsByProvider[provider.rawValue] = legacy
+        }
         rules = try container.decodeIfPresent([RewriteRule].self, forKey: .rules) ?? []
         basePrompt = try container.decodeIfPresent(String.self, forKey: .basePrompt) ?? ""
         ollamaHost = try container.decodeIfPresent(String.self, forKey: .ollamaHost)
             ?? OllamaEndpoint.defaultHost
         hotkey = try container.decodeIfPresent(HotkeyConfig.self, forKey: .hotkey) ?? .default
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(provider, forKey: .provider)
+        try container.encodeIfPresent(model, forKey: .model)
+        try container.encode(modelsByProvider, forKey: .modelsByProvider)
+        try container.encode(rules, forKey: .rules)
+        try container.encode(basePrompt, forKey: .basePrompt)
+        try container.encode(ollamaHost, forKey: .ollamaHost)
+        try container.encode(hotkey, forKey: .hotkey)
+        try container.encodeIfPresent(launchAtLogin, forKey: .launchAtLogin)
     }
 
     /// Endpoint override for providers whose server address is user

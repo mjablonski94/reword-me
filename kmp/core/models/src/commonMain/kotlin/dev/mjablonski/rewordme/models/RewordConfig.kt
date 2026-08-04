@@ -3,14 +3,15 @@ package dev.mjablonski.rewordme.models
 import kotlin.random.Random
 import kotlinx.serialization.Serializable
 
+/** Legacy persisted classification retained for 1.0.1 config compatibility. */
 @Serializable
 enum class RuleKind { DO, DONT }
 
-/** A user-defined do/don't rule, toggleable per rule. */
+/** A literal user-written rule. [kind] is retained only for config migration. */
 @Serializable
 data class RewriteRule(
     val id: String = randomId(),
-    val kind: RuleKind,
+    val kind: RuleKind = RuleKind.DO,
     val text: String,
     val isEnabled: Boolean = true
 ) {
@@ -43,9 +44,14 @@ data class HotkeyConfig(
 /** Everything except API keys (those live in the platform's secret store). */
 @Serializable
 data class RewordConfig(
-    val provider: ProviderKind = ProviderKind.ANTHROPIC,
-    /** null means automatic: the least costly model the provider lists. */
+    val provider: ProviderKind = ProviderKind.GEMINI,
+    /**
+     * Legacy 1.0.1 value. New writes move it into [modelsByProvider]; keeping
+     * the field lets existing config files migrate without losing a choice.
+     */
     val model: String? = null,
+    /** Each provider owns its model selection; a missing entry means automatic. */
+    val modelsByProvider: Map<String, String> = emptyMap(),
     val rules: List<RewriteRule> = emptyList(),
     val basePrompt: String = "",
     /** Where the local Ollama server listens; only used by the ollama provider. */
@@ -58,6 +64,30 @@ data class RewordConfig(
      */
     val launchAtLogin: Boolean? = null
 ) {
+    /** The selection belonging to [provider], including a legacy-file fallback. */
+    val selectedModel: String?
+        get() = modelsByProvider[provider.id]
+            ?: model?.takeIf { modelsByProvider.isEmpty() && it.isNotBlank() }
+
+    /** Binds the legacy model to its saved provider before changing provider. */
+    fun selectingProvider(selected: ProviderKind): RewordConfig {
+        val migrated = migratedModels()
+        return copy(provider = selected, model = null, modelsByProvider = migrated)
+    }
+
+    fun selectingModel(selected: String?): RewordConfig {
+        val updated = migratedModels().toMutableMap()
+        val normalized = selected?.trim().orEmpty()
+        if (normalized.isEmpty()) updated.remove(provider.id) else updated[provider.id] = normalized
+        return copy(model = null, modelsByProvider = updated)
+    }
+
+    private fun migratedModels(): Map<String, String> {
+        val legacy = model?.trim().orEmpty()
+        if (legacy.isEmpty() || provider.id in modelsByProvider) return modelsByProvider
+        return modelsByProvider + (provider.id to legacy)
+    }
+
     /** Endpoint override for providers with a configurable server address. */
     val endpointOverride: String?
         get() = if (provider == ProviderKind.OLLAMA) OllamaEndpoint.baseUrl(ollamaHost) else null

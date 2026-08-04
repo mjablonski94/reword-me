@@ -23,11 +23,22 @@ final class SettingsViewModel: ObservableObject {
             NotificationCenter.default.post(name: .rewordConfigChanged, object: nil)
             if oldValue.provider != config.provider {
                 apiKey = keyStore.apiKey(for: config.provider) ?? ""
+                persistedAPIKey = apiKey
                 keySavedFeedback = false
                 keySaveError = nil
                 clearModelResults()
+                refreshProviderSetup()
+                if config.provider.access == .account || config.provider.access == .managedLocal {
+                    loadModels()
+                }
             }
             if oldValue.ollamaHost != config.ollamaHost {
+                invalidateResolvedModel()
+            }
+            if oldValue.provider == .local,
+               config.provider == .local,
+               oldValue.model != config.model {
+                refreshLocalModelState()
                 invalidateResolvedModel()
             }
         }
@@ -39,6 +50,15 @@ final class SettingsViewModel: ObservableObject {
     @Published var modelsError: String?
     @Published var keySavedFeedback = false
     @Published var keySaveError: String?
+    @Published var accountStatus: AccountProviderStatus?
+    @Published var isCheckingAccount = false
+    @Published var isSigningIn = false
+    @Published var accountError: String?
+    @Published var localModelState: LocalModelState = .notDownloaded
+    @Published var localDownloadProgress = LocalModelProgress(
+        receivedBytes: 0,
+        totalBytes: LocalModelManifest.byteCount
+    )
     @Published var accessibilityTrusted: Bool
     @Published var launchAtLogin: Bool {
         didSet { updateLaunchAtLogin() }
@@ -48,17 +68,27 @@ final class SettingsViewModel: ObservableObject {
     private let keyStore: any APIKeyStore
     private let service: RewordService
     private let modelResolver: ModelResolver
+    private let accountProviders: AccountProviderService
+    private let localModel: LocalModelManager
     private let accessibility: any AccessibilityChecking
     private let defaults: UserDefaults
     private var feedbackTask: Task<Void, Never>?
     private var modelLoadTask: Task<Void, Never>?
     private var modelLoadID: UUID?
+    private var accountTask: Task<Void, Never>?
+    private var accountRequestID: UUID?
+    private var localDownloadTask: Task<Void, Never>?
+    private var localDownloadID: UUID?
+    private var localDownloadModelID: String?
+    private var persistedAPIKey = ""
 
     init(dependencies: AppDependencies, defaults: UserDefaults = .standard) {
         self.configStore = dependencies.configStore
         self.keyStore = dependencies.keyStore
         self.service = dependencies.rewordService
         self.modelResolver = dependencies.modelResolver
+        self.accountProviders = dependencies.accountProviderService
+        self.localModel = dependencies.localModelManager
         self.accessibility = dependencies.accessibility
         self.defaults = defaults
 
@@ -67,13 +97,24 @@ final class SettingsViewModel: ObservableObject {
         launchAtLogin = SMAppService.mainApp.status == .enabled
         accessibilityTrusted = dependencies.accessibility.isTrusted
         apiKey = keyStore.apiKey(for: loaded.provider) ?? ""
+        persistedAPIKey = apiKey
+
+        Task { [weak self] in
+            self?.refreshProviderSetup()
+            if loaded.provider.access == .account || loaded.provider.access == .managedLocal {
+                self?.loadModels()
+            }
+        }
     }
 
     func saveAPIKey() {
         explainKeychainPromptOnce()
         let normalized = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let saved = keyStore.setAPIKey(normalized, for: config.provider)
-        if saved { apiKey = normalized }
+        if saved {
+            apiKey = normalized
+            persistedAPIKey = normalized
+        }
         keySavedFeedback = saved
         keySaveError = saved ? nil : Loc.saveKeyFailed
         guard saved else {
@@ -94,8 +135,19 @@ final class SettingsViewModel: ObservableObject {
         guard provider != config.provider else { return }
         var updated = config
         updated.provider = provider
-        // A model id from one provider is meaningless to another.
-        updated.model = nil
+        config = updated
+    }
+
+    var selectedLocalModel: OfflineModelManifest {
+        LocalModelCatalog.model(id: config.model)
+    }
+
+    var isLocalDownloadActive: Bool { localDownloadModelID != nil }
+
+    func selectLocalModel(_ modelID: String) {
+        guard LocalModelCatalog.all.contains(where: { $0.id == modelID }) else { return }
+        var updated = config
+        updated.model = modelID
         config = updated
     }
 
@@ -105,6 +157,10 @@ final class SettingsViewModel: ObservableObject {
         keySavedFeedback = false
         keySaveError = nil
         clearModelResults()
+    }
+
+    var canSaveAPIKey: Bool {
+        apiKey.trimmingCharacters(in: .whitespacesAndNewlines) != persistedAPIKey
     }
 
     func setOllamaHost(_ host: String) {
@@ -158,22 +214,225 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Account and managed-local setup
+
+    func refreshProviderSetup() {
+        accountTask?.cancel()
+        accountTask = nil
+        accountRequestID = nil
+        accountStatus = nil
+        accountError = nil
+        isCheckingAccount = false
+        isSigningIn = false
+
+        let provider = config.provider
+        switch provider.access {
+        case .account:
+            let requestID = UUID()
+            accountRequestID = requestID
+            isCheckingAccount = true
+            accountTask = Task { [weak self] in
+                guard let self else { return }
+                defer {
+                    if self.accountRequestID == requestID {
+                        self.isCheckingAccount = false
+                        self.isSigningIn = false
+                        self.accountTask = nil
+                        self.accountRequestID = nil
+                    }
+                }
+                let status = await accountProviders.status(for: provider)
+                guard !Task.isCancelled,
+                      self.accountRequestID == requestID,
+                      self.config.provider == provider else { return }
+                self.accountStatus = status
+            }
+        case .managedLocal:
+            refreshLocalModelState()
+        case .apiKey, .externalLocal:
+            break
+        }
+    }
+
+    /// Installed CLIs open their official browser sign-in. Missing CLIs open
+    /// the provider's official setup page instead of failing silently.
+    func setUpAccountProvider() {
+        guard config.provider.isAccountProvider else { return }
+        accountTask?.cancel()
+        let provider = config.provider
+        let requestID = UUID()
+        accountRequestID = requestID
+        isCheckingAccount = true
+        isSigningIn = false
+        accountError = nil
+        accountTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if self.accountRequestID == requestID {
+                    self.isCheckingAccount = false
+                    self.isSigningIn = false
+                    self.accountTask = nil
+                    self.accountRequestID = nil
+                }
+            }
+            let status = await accountProviders.status(for: provider)
+            guard !Task.isCancelled,
+                  self.accountRequestID == requestID,
+                  self.config.provider == provider else { return }
+            self.accountStatus = status
+            self.isCheckingAccount = false
+            guard status.isInstalled else {
+                NSWorkspace.shared.open(provider.apiKeyConsoleURL)
+                return
+            }
+            self.isSigningIn = true
+            do {
+                try await accountProviders.signIn(to: provider)
+                guard !Task.isCancelled,
+                      self.accountRequestID == requestID,
+                      self.config.provider == provider else { return }
+                let refreshed = await accountProviders.status(for: provider)
+                guard !Task.isCancelled,
+                      self.accountRequestID == requestID,
+                      self.config.provider == provider else { return }
+                self.accountStatus = refreshed
+            } catch is CancellationError {
+                return
+            } catch {
+                guard self.accountRequestID == requestID,
+                      self.config.provider == provider else { return }
+                self.accountError = self.localizedMessage(for: error)
+            }
+        }
+    }
+
+    func downloadLocalModel() {
+        guard localDownloadTask == nil else { return }
+        let manifest = selectedLocalModel
+        let downloadID = UUID()
+        localDownloadID = downloadID
+        localDownloadModelID = manifest.id
+        localDownloadProgress = LocalModelProgress(
+            receivedBytes: 0,
+            totalBytes: manifest.byteCount
+        )
+        localModelState = .downloading(localDownloadProgress)
+        localDownloadTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await localModel.download(modelID: manifest.id) { [weak self] progress in
+                    Task { @MainActor in
+                        guard let self else { return }
+                        guard self.localDownloadID == downloadID else { return }
+                        self.localDownloadProgress = progress
+                        self.localModelState = .downloading(progress)
+                    }
+                }
+                let state = await localModel.state(modelID: manifest.id)
+                if self.localDownloadID == downloadID {
+                    self.localModelState = state
+                }
+            } catch is CancellationError {
+                if self.localDownloadID == downloadID {
+                    self.localModelState = .notDownloaded
+                }
+            } catch {
+                if self.localDownloadID == downloadID {
+                    self.localModelState = .failed(self.localizedMessage(for: error))
+                }
+            }
+            if self.localDownloadID == downloadID { self.localDownloadID = nil }
+            if self.localDownloadModelID == manifest.id { self.localDownloadModelID = nil }
+            self.localDownloadTask = nil
+        }
+    }
+
+    func cancelLocalModelDownload() {
+        guard localDownloadTask != nil else { return }
+        // Invalidate already queued progress callbacks before signalling the
+        // downloader so Cancel cannot be followed by stale progress UI.
+        localDownloadID = nil
+        localDownloadModelID = nil
+        localModelState = .notDownloaded
+        localDownloadTask?.cancel()
+        Task { [localModel] in await localModel.cancelDownload() }
+    }
+
+    func removeLocalModel() {
+        let manifest = selectedLocalModel
+        localDownloadTask?.cancel()
+        localDownloadTask = nil
+        localDownloadID = nil
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await localModel.removeModel(modelID: manifest.id)
+                if selectedLocalModel.id == manifest.id { localModelState = .notDownloaded }
+            } catch {
+                if selectedLocalModel.id == manifest.id {
+                    localModelState = .failed(localizedMessage(for: error))
+                }
+            }
+        }
+    }
+
+    private func refreshLocalModelState() {
+        let provider = config.provider
+        let modelID = selectedLocalModel.id
+        Task { [weak self] in
+            guard let self else { return }
+            let state = await localModel.state(modelID: modelID)
+            guard self.config.provider == provider,
+                  self.selectedLocalModel.id == modelID else { return }
+            self.localModelState = state
+        }
+    }
+
+    var localProgressText: String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        let received = formatter.string(fromByteCount: localDownloadProgress.receivedBytes)
+        let total = formatter.string(fromByteCount: localDownloadProgress.totalBytes)
+        return "\(received) / \(total)"
+    }
+
+    func formattedBytes(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+
     var automaticModelHint: String {
         guard !availableModels.isEmpty else { return "" }
         guard let pick = ModelSelection.defaultModel(for: config.provider, from: availableModels) else {
             return ""
         }
+        // Account CLIs expose an internal "automatic" sentinel. The picker
+        // already has a localized Automatic row, so repeating the sentinel as
+        // a resolved model would be both redundant and misleading.
+        guard pick.id != "automatic" else { return "" }
         return Loc.automaticHint(pick.id)
     }
 
     // MARK: - Rules
 
     func addRule() {
-        config.rules.append(RewriteRule(kind: .dontRule, text: ""))
+        config.rules.append(RewriteRule(text: ""))
     }
 
-    func removeRule(_ rule: RewriteRule) {
-        config.rules.removeAll { $0.id == rule.id }
+    func rule(id: UUID) -> RewriteRule? {
+        config.rules.first { $0.id == id }
+    }
+
+    func updateRule(id: UUID, _ update: (inout RewriteRule) -> Void) {
+        guard let index = config.rules.firstIndex(where: { $0.id == id }) else { return }
+        var rule = config.rules[index]
+        update(&rule)
+        config.rules[index] = rule
+    }
+
+    func removeRule(id: UUID) {
+        config.rules.removeAll { $0.id == id }
     }
 
     // MARK: - Accessibility
@@ -200,6 +459,10 @@ final class SettingsViewModel: ObservableObject {
         isLoadingModels = false
         availableModels = []
         modelsError = nil
+    }
+
+    private func localizedMessage(for error: Error) -> String {
+        (error as? RewordError).map(Loc.message(for:)) ?? error.localizedDescription
     }
 
     /// Shown once, before the first key ever lands in the Keychain, so the

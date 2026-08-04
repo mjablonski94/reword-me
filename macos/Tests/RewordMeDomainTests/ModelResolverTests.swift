@@ -37,7 +37,7 @@ final class ModelResolverTests: XCTestCase {
             ModelInfo(id: "claude-haiku-4-5")
         ])
         let resolver = ModelResolver()
-        let config = RewordConfig.default
+        let config = RewordConfig(provider: .anthropic)
 
         let first = try await resolver.model(for: config, apiKey: "k", service: stub)
         let second = try await resolver.model(for: config, apiKey: "k", service: stub)
@@ -51,7 +51,7 @@ final class ModelResolverTests: XCTestCase {
     func testInvalidateForcesARefetch() async throws {
         let stub = StubModelListing(models: [ModelInfo(id: "claude-haiku-4-5")])
         let resolver = ModelResolver()
-        let config = RewordConfig.default
+        let config = RewordConfig(provider: .anthropic)
 
         _ = try await resolver.model(for: config, apiKey: "k", service: stub)
         await resolver.invalidate()
