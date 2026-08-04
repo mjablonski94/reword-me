@@ -48,7 +48,7 @@ class SettingsViewModelTests {
         override fun apiKey(provider: ProviderKind): String? = keys[provider]
         override fun setApiKey(provider: ProviderKind, key: String?): Boolean {
             if (!acceptsWrites) return false
-            if (key == null) keys.remove(provider) else keys[provider] = key
+            if (key.isNullOrBlank()) keys.remove(provider) else keys[provider] = key
             return true
         }
     }
@@ -180,7 +180,7 @@ class SettingsViewModelTests {
     // MARK: - Provider and key
 
     @Test
-    fun `switching provider clears the model, because ids do not carry across`() {
+    fun `switching provider shows only that provider's model and restores it later`() {
         val (model, store) = viewModel(
             config = RewordConfig(provider = ProviderKind.ANTHROPIC, model = "claude-haiku-4-5")
         )
@@ -188,8 +188,11 @@ class SettingsViewModelTests {
         model.selectProvider(ProviderKind.GEMINI)
 
         assertEquals(ProviderKind.GEMINI, model.config.provider)
-        assertNull(model.config.model, "a model id from another provider is meaningless")
-        assertEquals(ProviderKind.GEMINI, store.stored.provider)
+        assertNull(model.config.selectedModel, "a model id from another provider is meaningless")
+        model.selectModel("gemini-2.5-flash")
+        model.selectProvider(ProviderKind.ANTHROPIC)
+        assertEquals("claude-haiku-4-5", model.config.selectedModel)
+        assertEquals(ProviderKind.ANTHROPIC, store.stored.provider)
     }
 
     @Test
@@ -245,6 +248,24 @@ class SettingsViewModelTests {
     }
 
     @Test
+    fun `clearing a saved key enables save and removes it from the store`() {
+        val keys = FakeKeyStore(mutableMapOf(ProviderKind.MISTRAL to "existing"))
+        val (model, _) = viewModel(
+            config = RewordConfig(provider = ProviderKind.MISTRAL),
+            keyStore = keys
+        )
+        assertFalse(model.canSaveApiKey)
+
+        model.editApiKey("   ")
+
+        assertTrue(model.canSaveApiKey)
+        model.saveApiKey()
+        assertNull(keys.apiKey(ProviderKind.MISTRAL))
+        assertFalse(model.canSaveApiKey)
+        assertTrue(model.keySaved)
+    }
+
+    @Test
     fun `a rejected key write is never reported as saved`() {
         val (model, _) = viewModel(keyStore = FakeKeyStore(acceptsWrites = false))
         model.editApiKey("cannot-write")
@@ -268,7 +289,7 @@ class SettingsViewModelTests {
 
         yield()
         assertTrue(model.isLoadingModels, "cancellation from the old request must not stop the new spinner")
-        assertEquals(ProviderKind.ANTHROPIC, first.provider)
+        assertEquals(ProviderKind.GEMINI, first.provider)
         assertEquals(ProviderKind.OLLAMA, second.provider)
 
         second.answer.complete(listOf(ModelInfo("z-local"), ModelInfo("a-local")))
@@ -364,8 +385,8 @@ class SettingsViewModelTests {
 
         model.selectModel(null)
 
-        assertNull(model.config.model)
-        assertNull(store.stored.model)
+        assertNull(model.config.selectedModel)
+        assertNull(store.stored.selectedModel)
     }
 
     private class ControlledRewording : Rewording {

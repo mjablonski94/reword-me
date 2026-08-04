@@ -29,9 +29,20 @@ fun RewordError.localized(): String = when (this) {
     is RewordError.RateLimited -> retryAfterSeconds
         ?.let { Strings.format("error.rateLimitedRetry", it) }
         ?: Strings["error.rateLimited"]
+    RewordError.UsageLimitReached -> Strings["error.usageLimit"]
     is RewordError.Refused -> explanation ?: Strings["error.refused"]
     is RewordError.Api -> Strings.format("error.api", status, detail)
     RewordError.EmptyResponse -> Strings["error.empty"]
     RewordError.InvalidResponse -> Strings["error.invalidResponse"]
     RewordError.NoModelAvailable -> Strings["error.noModel"]
+    is RewordError.ProviderNotInstalled ->
+        Strings.format("error.providerNotInstalled", providerName)
+    is RewordError.AccountNotSignedIn ->
+        Strings.format("error.accountNotSignedIn", providerName)
+    is RewordError.AccountUsesApiKey ->
+        Strings.format("error.accountUsesApiKey", providerName)
+    is RewordError.AccountCommandFailed -> detail
+    RewordError.LocalModelNotDownloaded -> Strings["error.localNotDownloaded"]
+    RewordError.LocalRuntimeUnavailable -> Strings["error.localRuntime"]
+    is RewordError.LocalModelDownloadFailed -> Strings.format("error.localDownload", detail)
 }

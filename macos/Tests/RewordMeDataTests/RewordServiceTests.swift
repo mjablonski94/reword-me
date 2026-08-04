@@ -62,6 +62,35 @@ final class RewordServiceTests: XCTestCase {
         }
     }
 
+    func testUsageAndBillingLimitsAreNotTreatedAsRetryableRateLimits() async {
+        let bodies = [
+            #"{"error":{"message":"No credits","type":"insufficient_quota","code":"credit_balance_exhausted"}}"#,
+            #"{"error":{"message":"Usage limit reached","type":"insufficient_quota","code":"organization_usage_limit_exceeded"}}"#,
+            #"{"error":{"message":"You exceeded your current quota. Check billing.","type":"insufficient_quota","code":null}}"#
+        ]
+        for body in bodies {
+            respond(status: 429, headers: ["retry-after": "30"], body: body)
+            await assertThrows(.usageLimitReached) {
+                _ = try await self.service.listModels(provider: .openai, apiKey: "k")
+            }
+        }
+    }
+
+    func testGeminiPerMinuteQuotaIsStillA_retryableRateLimit() async {
+        let bodies = [
+            #"{"error":{"message":"Quota exceeded for quota metric 'Generate Content API requests per minute'","status":"RESOURCE_EXHAUSTED"}}"#,
+            #"{"error":{"message":"RPM limit reached; retry shortly","type":"resource_exhausted"}}"#,
+            #"{"error":{"message":"TPM quota metric exceeded","type":"rate_limit_error"}}"#
+        ]
+        for body in bodies {
+            XCTAssertFalse(RewordService.isUsageLimitError(Data(body.utf8)), body)
+            respond(status: 429, headers: ["retry-after": "12"], body: body)
+            await assertThrows(.rateLimited(retryAfterSeconds: 12)) {
+                _ = try await self.service.listModels(provider: .gemini, apiKey: "k")
+            }
+        }
+    }
+
     func testServerErrorSurfacesProviderMessage() async {
         respond(
             status: 529,
@@ -104,6 +133,17 @@ final class RewordServiceTests: XCTestCase {
         let request = MockURLProtocol.requests.first
         XCTAssertEqual(request?.url?.host, "192.168.1.20")
         XCTAssertEqual(request?.value(forHTTPHeaderField: "Authorization"), "Bearer ollama")
+    }
+
+    func testManagedAndAccountCatalogsAreLocalAndNeedNoAPIKey() async throws {
+        let local = try await service.listModels(provider: .local, apiKey: "")
+        let codex = try await service.listModels(provider: .codex, apiKey: "")
+        let claude = try await service.listModels(provider: .claudeAccount, apiKey: "")
+
+        XCTAssertEqual(local.map(\.id), LocalModelCatalog.all.map(\.id))
+        XCTAssertEqual(codex.map(\.id), ["automatic"])
+        XCTAssertEqual(claude.map(\.id), ["automatic", "sonnet", "opus"])
+        XCTAssertTrue(MockURLProtocol.requests.isEmpty)
     }
 
     private func assertThrows(

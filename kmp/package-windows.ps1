@@ -3,12 +3,17 @@ param()
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
-$ExpectedVersion = "1.0.1"
+$VersionFile = Join-Path $ProjectRoot "desktop\app\src\main\resources\app.properties"
+$VersionText = Get-Content -Raw $VersionFile
+if ($VersionText -notmatch '(?m)^version=(\d+\.\d+\.\d+)\s*$') {
+    throw "app.properties must contain a three-component version such as version=1.0.1."
+}
+$ExpectedVersion = $Matches[1]
 $BuildFile = Join-Path $ProjectRoot "desktop\app\build.gradle.kts"
 $BuildText = Get-Content -Raw $BuildFile
 
-if ($BuildText -notmatch ('packageVersion\s*=\s*"' + [regex]::Escape($ExpectedVersion) + '"')) {
-    throw "desktop/app/build.gradle.kts is not set to package version $ExpectedVersion."
+if ($BuildText -notmatch 'packageVersion\s*=\s*appVersion') {
+    throw "desktop/app/build.gradle.kts must source packageVersion from app.properties."
 }
 
 if (-not $env:JAVA_HOME) {

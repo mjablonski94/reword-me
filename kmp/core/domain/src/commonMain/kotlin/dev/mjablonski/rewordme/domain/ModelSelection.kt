@@ -12,7 +12,7 @@ object ModelSelection {
         if (models.isEmpty()) return null
         // Local models are all free; Ollama lists the most recently
         // pulled/updated model first, which is the best default.
-        if (kind == ProviderKind.OLLAMA) return models.first()
+        if (kind.access != dev.mjablonski.rewordme.models.ProviderAccess.API_KEY) return models.first()
 
         val lowestTier = models.minOf { costTier(kind, it.id) }
         val candidates = models.filter { costTier(kind, it.id) == lowestTier }
@@ -24,14 +24,14 @@ object ModelSelection {
     internal fun costTier(kind: ProviderKind, id: String): Int {
         val lower = id.lowercase()
         return when (kind) {
-            ProviderKind.ANTHROPIC -> when {
+            ProviderKind.ANTHROPIC, ProviderKind.CLAUDE_ACCOUNT -> when {
                 "haiku" in lower -> 0
                 "sonnet" in lower -> 1
                 "opus" in lower -> 2
                 "fable" in lower || "mythos" in lower -> 3
                 else -> 2
             }
-            ProviderKind.OPENAI -> when {
+            ProviderKind.OPENAI, ProviderKind.CODEX -> when {
                 "nano" in lower -> 0
                 "mini" in lower -> 1
                 else -> 2
@@ -55,7 +55,7 @@ object ModelSelection {
                 else -> 2
             }
             ProviderKind.DEEPSEEK -> if ("chat" in lower) 0 else 1
-            ProviderKind.OLLAMA -> 0
+            ProviderKind.LOCAL, ProviderKind.OLLAMA -> 0
         }
     }
 

@@ -119,10 +119,39 @@ final class ProviderParsingTests: XCTestCase {
         )
     }
 
-    func testOllamaRequiresNoAPIKey() {
+    func testProviderAccessModesAndRequiredOrder() {
         XCTAssertFalse(ProviderKind.ollama.requiresAPIKey)
-        for provider in ProviderKind.allCases where provider != .ollama {
-            XCTAssertTrue(provider.requiresAPIKey)
+        let APIProviders: Set<ProviderKind> = [
+            .gemini, .openai, .anthropic, .mistral, .xai, .deepseek
+        ]
+        for provider in ProviderKind.allCases {
+            XCTAssertEqual(provider.requiresAPIKey, APIProviders.contains(provider))
+        }
+        XCTAssertEqual(
+            ProviderKind.allCases,
+            [.gemini, .local, .openai, .codex, .anthropic, .claudeAccount,
+             .mistral, .xai, .deepseek, .ollama]
+        )
+        XCTAssertEqual(ProviderKind.allCases[0].displayName, "Gemini (Recommended)")
+        XCTAssertEqual(ProviderKind.allCases[1].displayName, "Offline models (Local)")
+    }
+
+    func testOfflineCatalogIsPinnedAndHasInformationalLicenses() {
+        let models = LocalModelCatalog.all
+        XCTAssertEqual(models.count, 6)
+        XCTAssertEqual(Set(models.map(\.id)).count, models.count)
+        XCTAssertEqual(Set(models.map(\.fileName)).count, models.count)
+        XCTAssertEqual(LocalModelCatalog.defaultModel, models.first)
+        XCTAssertTrue(Set(models.map(\.maker)).isSuperset(of: ["Qwen", "Google", "Hugging Face", "Mistral AI"]))
+        for model in models {
+            XCTAssertGreaterThan(model.byteCount, 0)
+            XCTAssertNotEqual(model.tier, "")
+            XCTAssertEqual(model.sha256.count, 64)
+            XCTAssertTrue(model.sha256.allSatisfy { $0.isHexDigit })
+            XCTAssertTrue(model.downloadURL.absoluteString.contains("/resolve/\(model.revision)/"))
+            XCTAssertEqual(model.informationURL.host, "huggingface.co")
+            XCTAssertTrue(model.licenseURL.scheme == "https")
+            XCTAssertFalse(model.licenseName.isEmpty)
         }
     }
 
@@ -165,9 +194,9 @@ final class ProviderParsingTests: XCTestCase {
         }
     }
 
-    func testDefaultRegistryCoversEveryProviderKind() {
+    func testDefaultRegistryCoversEveryHTTPProviderKind() {
         let registry = ProviderClientRegistry()
-        for kind in ProviderKind.allCases {
+        for kind in ProviderKind.allCases where !kind.isAccountProvider {
             XCTAssertEqual(registry.client(for: kind).kind, kind)
         }
     }
@@ -213,9 +242,15 @@ final class ProviderParsingTests: XCTestCase {
         let errors: [RewordError] = [
             .missingAPIKey, .invalidAPIKey,
             .rateLimited(retryAfterSeconds: 30), .rateLimited(retryAfterSeconds: nil),
+            .usageLimitReached,
             .refused("nope"), .refused(nil),
             .apiError(status: 500, message: "boom"),
-            .emptyResponse, .invalidResponse, .noModelAvailable
+            .emptyResponse, .invalidResponse, .noModelAvailable,
+            .providerNotInstalled("Codex"), .accountNotSignedIn("Claude"),
+            .accountUsesAPIKey("Claude"),
+            .accountCommandFailed(message: "offline", retryable: true),
+            .localModelNotDownloaded,
+            .localRuntimeUnavailable, .localModelDownloadFailed("network")
         ]
         for error in errors {
             let description = error.errorDescription ?? ""
@@ -224,6 +259,8 @@ final class ProviderParsingTests: XCTestCase {
         XCTAssertTrue(
             RewordError.rateLimited(retryAfterSeconds: 30).errorDescription!.contains("30")
         )
+        XCTAssertTrue(RewordError.rateLimited(retryAfterSeconds: nil).isRetryable)
+        XCTAssertFalse(RewordError.usageLimitReached.isRetryable)
     }
 
     // MARK: - Shared error envelope

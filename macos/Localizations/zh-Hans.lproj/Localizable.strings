@@ -33,23 +33,21 @@
 "provider.keychainCaption" = "密钥保存在登录钥匙串中，绝不会存放在普通文件里。如果 macOS 询问是否允许 RewordMe 访问钥匙串，那是 Mac 在保护你的密钥 - 请选择“始终允许”。";
 "provider.modelSection" = "模型";
 "provider.modelLabel" = "模型";
-"provider.automatic" = "自动（最省钱）";
+"provider.automatic" = "自动";
 "provider.automaticHint" = "自动当前对应 %@";
 "provider.noModels" = "服务商未返回任何可用模型。";
 "provider.loadModels" = "加载模型";
 
 "ollama.section" = "本地服务器";
-"ollama.blurb" = "Ollama 在你的 Mac 上运行 - 无需 API 密钥，零成本，文本永远不会离开你的电脑。";
+"ollama.blurb" = "Ollama 不需要 API 密钥。服务器地址指向这台 Mac 时，文本会保留在本机；如果配置其他主机，文本将发送到该主机。";
 "ollama.serverLabel" = "服务器";
 "ollama.caption" = "默认为 %@ - 仅当 Ollama 监听其他地址时才需修改（OLLAMA_HOST、Docker 端口映射、另一台机器）。\n安装后拉取一个模型，例如：  ollama pull llama3.2";
 "ollama.getLink" = "在 %@ 获取 Ollama";
 
-"rules.section" = "要与不要";
+"rules.section" = "规则";
 "rules.footer" = "每条启用的规则都会随每次改写一起发送。规则只是偶尔适用时，请将其关闭而不是删除。";
 "rules.add" = "添加规则";
 "rules.placeholder" = "例如：绝不使用感叹号";
-"rules.do" = "要";
-"rules.dont" = "不要";
 "base.section" = "基础提示词";
 "base.footer" = "自由填写的长期指令，例如：“我不是母语者；请纠正语法但保留我的语气。”";
 
@@ -69,6 +67,8 @@
 "general.accessibilityCaption" = "用于读取选中的文本并就地替换。没有此权限时，只有“服务”菜单和“拷贝”可用。";
 "general.support" = "支持";
 "general.buyCoffee" = "请我喝杯咖啡";
+"general.about" = "关于";
+"general.version" = "版本";
 
 "keychain.alertTitle" = "你的密钥会存入 macOS 钥匙串";
 "keychain.alertBody" = "RewordMe 只把 API 密钥保存在登录钥匙串中，与 Safari 保存密码的位置相同。\n\nmacOS 之后可能会弹出类似“RewordMeApp 想使用储存在钥匙串中的机密信息”的提示并要求输入密码。这是钥匙串在保护你的密钥，密钥并没有离开你的 Mac。选择“始终允许”即可不再询问。\n\n从源码构建的版本每次重新构建都会重新签名，macOS 会把每次构建当作新应用并再询问一次。";
@@ -82,8 +82,37 @@
 "error.invalidKey" = "服务商拒绝了该 API 密钥。请在设置中检查。";
 "error.rateLimitedRetry" = "已达到请求频率限制。请在 %d 秒后重试。";
 "error.rateLimited" = "已达到请求频率限制。请稍后重试。";
+"error.usageLimit" = "API 额度已用完或已达到使用上限。重试前请检查服务商的账单和限额。";
 "error.refused" = "服务商拒绝改写这段文本。";
 "error.api" = "服务商错误（%d）：%@";
 "error.empty" = "服务商返回了空回复。";
 "error.invalidResponse" = "无法读取服务商的回复。";
 "error.noModel" = "未找到该服务商的可用模型。";
+"account.section" = "账户访问";
+"account.blurb" = "%@ 使用本机安装的官方应用及其现有订阅登录。RewordMe 绝不会读取或存储账户令牌。";
+"account.checking" = "正在检查安装和登录状态...";
+"account.signingIn" = "正在等待浏览器登录...";
+"account.notInstalled" = "尚未安装所需的官方应用。";
+"account.connected" = "已连接订阅账户";
+"account.notConnected" = "已安装，但尚未登录";
+"account.apiBilling" = "此应用使用 API 密钥认证，而不是订阅账户。";
+"account.setupGuide" = "官方设置指南";
+"account.refresh" = "刷新";
+"account.install" = "安装";
+"account.signIn" = "登录";
+
+"local.section" = "离线模型";
+"local.blurb" = "选择并下载一个或多个模型。所选模型完全在此电脑上运行，下载后无需账户、API 密钥、Ollama 或互联网连接。";
+"local.source" = "模型详情";
+"local.size" = "下载大小：约 563 MB";
+"local.download" = "下载模型";
+"local.ready" = "已下载并可用";
+"local.remove" = "移除模型";
+"local.retry" = "重试下载";
+
+"error.providerNotInstalled" = "尚未安装 %@。请打开“设置”进行安装。";
+"error.accountNotSignedIn" = "尚未登录 %@。请打开“设置”连接账户。";
+"error.accountUsesApiKey" = "%@ 正在使用 API 密钥计费。请改用订阅账户登录。";
+"error.localNotDownloaded" = "尚未下载本地模型。请在“设置”中下载。";
+"error.localRuntime" = "内置本地 AI 运行时不可用。请重新安装 RewordMe。";
+"error.localDownload" = "本地模型下载失败：%@";

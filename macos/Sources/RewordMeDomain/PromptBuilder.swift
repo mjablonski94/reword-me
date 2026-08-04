@@ -2,7 +2,7 @@ import Foundation
 import RewordMeModels
 
 /// Assembles the system prompt from four layers:
-/// 1. the fixed core instruction, 2. enabled do/don't rules,
+/// 1. the fixed core instruction, 2. enabled user-written rules,
 /// 3. the user's freeform base prompt, 4. one-shot steering from the popup.
 public enum PromptBuilder {
     public static let coreInstruction = """
@@ -19,13 +19,9 @@ public enum PromptBuilder {
     ) -> String {
         var sections: [String] = [coreInstruction]
 
-        let dos = enabledTexts(rules, kind: .doRule)
-        if !dos.isEmpty {
-            sections.append("Do:\n" + bulleted(dos))
-        }
-        let donts = enabledTexts(rules, kind: .dontRule)
-        if !donts.isEmpty {
-            sections.append("Don't:\n" + bulleted(donts))
+        let enabledRules = enabledTexts(rules)
+        if !enabledRules.isEmpty {
+            sections.append("Rules:\n" + bulleted(enabledRules))
         }
 
         let base = basePrompt.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -40,9 +36,9 @@ public enum PromptBuilder {
         return sections.joined(separator: "\n\n")
     }
 
-    private static func enabledTexts(_ rules: [RewriteRule], kind: RuleKind) -> [String] {
+    private static func enabledTexts(_ rules: [RewriteRule]) -> [String] {
         rules
-            .filter { $0.isEnabled && $0.kind == kind }
+            .filter(\.isEnabled)
             .map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
     }

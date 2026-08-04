@@ -7,6 +7,11 @@ import kotlin.test.assertNotNull
 
 class LocalizationTests {
     @Test
+    fun packagedVersionIsAvailableToSettings() {
+        assertEquals("1.0.1", AppInfo.version)
+    }
+
+    @Test
     fun everyLanguageHasTheEnglishKeySet() {
         val base = properties("Strings.properties")
         val languages = listOf("de", "es", "fr", "it", "ja", "ko", "pl", "pt", "uk", "zh")

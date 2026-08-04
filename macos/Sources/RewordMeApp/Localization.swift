@@ -64,14 +64,34 @@ enum Loc {
     static func getOllama(_ site: String) -> String {
         String(format: t("ollama.getLink"), site)
     }
+    static var accountSection: String { t("account.section") }
+    static func accountBlurb(_ provider: String) -> String {
+        String(format: t("account.blurb"), provider)
+    }
+    static var accountChecking: String { t("account.checking") }
+    static var accountSigningIn: String { t("account.signingIn") }
+    static var accountNotInstalled: String { t("account.notInstalled") }
+    static var accountConnected: String { t("account.connected") }
+    static var accountNotConnected: String { t("account.notConnected") }
+    static var accountAPIBilling: String { t("account.apiBilling") }
+    static var accountSetupGuide: String { t("account.setupGuide") }
+    static var refresh: String { t("account.refresh") }
+    static var install: String { t("account.install") }
+    static var signIn: String { t("account.signIn") }
+    static var localSection: String { t("local.section") }
+    static var localBlurb: String { t("local.blurb") }
+    static var localSource: String { t("local.source") }
+    static var localSize: String { t("local.size") }
+    static var localDownload: String { t("local.download") }
+    static var localReady: String { t("local.ready") }
+    static var localRemove: String { t("local.remove") }
+    static var localRetry: String { t("local.retry") }
 
     // Rewriting tab
     static var rulesSection: String { t("rules.section") }
     static var rulesFooter: String { t("rules.footer") }
     static var addRule: String { t("rules.add") }
     static var rulePlaceholder: String { t("rules.placeholder") }
-    static var ruleDo: String { t("rules.do") }
-    static var ruleDont: String { t("rules.dont") }
     static var basePromptSection: String { t("base.section") }
     static var basePromptFooter: String { t("base.footer") }
 
@@ -91,6 +111,8 @@ enum Loc {
     static var accessibilityCaption: String { t("general.accessibilityCaption") }
     static var supportSection: String { t("general.support") }
     static var buyCoffee: String { t("general.buyCoffee") }
+    static var aboutSection: String { t("general.about") }
+    static var version: String { t("general.version") }
 
     // Keychain explainer
     static var keychainAlertTitle: String { t("keychain.alertTitle") }
@@ -114,6 +136,8 @@ enum Loc {
                 return String(format: t("error.rateLimitedRetry"), retryAfter)
             }
             return t("error.rateLimited")
+        case .usageLimitReached:
+            return t("error.usageLimit")
         case let .refused(explanation):
             return explanation ?? t("error.refused")
         case let .apiError(status, message):
@@ -124,6 +148,20 @@ enum Loc {
             return t("error.invalidResponse")
         case .noModelAvailable:
             return t("error.noModel")
+        case let .providerNotInstalled(name):
+            return String(format: t("error.providerNotInstalled"), name)
+        case let .accountNotSignedIn(name):
+            return String(format: t("error.accountNotSignedIn"), name)
+        case let .accountUsesAPIKey(name):
+            return String(format: t("error.accountUsesApiKey"), name)
+        case let .accountCommandFailed(message, _):
+            return message
+        case .localModelNotDownloaded:
+            return t("error.localNotDownloaded")
+        case .localRuntimeUnavailable:
+            return t("error.localRuntime")
+        case let .localModelDownloadFailed(message):
+            return String(format: t("error.localDownload"), message)
         }
     }
 

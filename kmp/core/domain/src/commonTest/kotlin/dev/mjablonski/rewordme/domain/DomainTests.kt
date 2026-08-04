@@ -22,7 +22,7 @@ class PromptBuilderTest {
     }
 
     @Test
-    fun rulesAreGroupedAndDisabledOnesSkipped() {
+    fun rulesShareOneLiteralSectionAndDisabledOnesAreSkipped() {
         val prompt = PromptBuilder.systemPrompt(
             listOf(
                 RewriteRule(kind = RuleKind.DO, text = "Keep it short"),
@@ -32,8 +32,9 @@ class PromptBuilderTest {
             basePrompt = "Base.",
             steering = "more formal"
         )
-        assertTrue("Do:\n- Keep it short" in prompt)
-        assertTrue("Don't:\n- No emoji" in prompt)
+        assertTrue("Rules:\n- Keep it short\n- No emoji" in prompt)
+        assertFalse("Do:" in prompt)
+        assertFalse("Don't:" in prompt)
         assertFalse("Off" in prompt)
         assertTrue(prompt.endsWith("Additional instruction for this rewrite only: more formal"))
     }

@@ -7,19 +7,29 @@ import dev.mjablonski.rewordme.domain.ApiKeyStore
 import dev.mjablonski.rewordme.domain.ConfigStore
 import dev.mjablonski.rewordme.domain.ModelSelection
 import dev.mjablonski.rewordme.domain.Rewording
+import dev.mjablonski.rewordme.data.AccountProviderService
+import dev.mjablonski.rewordme.data.AccountProviderStatus
+import dev.mjablonski.rewordme.data.LocalModelManager
+import dev.mjablonski.rewordme.data.LocalModelProgress
+import dev.mjablonski.rewordme.data.LocalModelState
 import dev.mjablonski.rewordme.models.HotkeyConfig
 import dev.mjablonski.rewordme.models.ModelInfo
 import dev.mjablonski.rewordme.models.ProviderKind
+import dev.mjablonski.rewordme.models.ProviderAccess
+import dev.mjablonski.rewordme.models.LocalModelCatalog
+import dev.mjablonski.rewordme.models.OfflineModelManifest
 import dev.mjablonski.rewordme.models.RewordConfig
 import dev.mjablonski.rewordme.models.RewordError
 import dev.mjablonski.rewordme.models.RewriteRule
-import dev.mjablonski.rewordme.models.RuleKind
 import dev.mjablonski.rewordme.platform.StartupRegistration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.awt.Desktop
+import java.net.URI
+import java.util.Locale
 
 /**
  * Settings state. Every edit is written straight to disk - there is no OK or
@@ -29,6 +39,8 @@ class SettingsViewModel(
     private val configStore: ConfigStore,
     private val keyStore: ApiKeyStore,
     private val rewordService: Rewording,
+    private val accountProviders: AccountProviderService = AccountProviderService(),
+    private val localModel: LocalModelManager = LocalModelManager(),
     private val scope: CoroutineScope,
     private val hotkeys: HotkeyBinder
 ) {
@@ -46,6 +58,8 @@ class SettingsViewModel(
         dependencies.configStore,
         dependencies.keyStore,
         dependencies.rewordService,
+        dependencies.accountProviderService,
+        dependencies.localModelManager,
         scope,
         hotkeys
     )
@@ -66,6 +80,22 @@ class SettingsViewModel(
     var modelsError by mutableStateOf<String?>(null)
         private set
 
+    var accountStatus by mutableStateOf<AccountProviderStatus?>(null)
+        private set
+    var isCheckingAccount by mutableStateOf(false)
+        private set
+    var isSigningIn by mutableStateOf(false)
+        private set
+    var accountError by mutableStateOf<String?>(null)
+        private set
+
+    var localModelState by mutableStateOf<LocalModelState>(LocalModelState.NotDownloaded)
+        private set
+    var localDownloadProgress by mutableStateOf(
+        LocalModelProgress(0, LocalModelCatalog.DEFAULT.byteCount)
+    )
+        private set
+
     var hotkeyStatus by mutableStateOf(HotkeyStatus.Active)
         private set
     var isRecordingHotkey by mutableStateOf(false)
@@ -73,9 +103,20 @@ class SettingsViewModel(
 
     private var modelLoad: Job? = null
     private var modelLoadId = 0L
+    private var accountJob: Job? = null
+    private var accountRequestId = 0L
+    private var localDownloadJob: Job? = null
+    private var localDownloadId = 0L
+    private var localDownloadModelId: String? = null
+    private var persistedApiKey = ""
 
     init {
         apiKey = keyStore.apiKey(config.provider) ?: ""
+        persistedApiKey = apiKey
+        refreshProviderSetup()
+        if (config.provider.access in setOf(ProviderAccess.ACCOUNT, ProviderAccess.MANAGED_LOCAL)) {
+            loadModels()
+        }
     }
 
     val launchAtLoginSupported: Boolean get() = StartupRegistration.isSupported
@@ -96,15 +137,23 @@ class SettingsViewModel(
     /** The model "Automatic" would pick right now, once the list is known. */
     val automaticModelHint: String?
         get() = ModelSelection.defaultModel(config.provider, availableModels)?.id
+            ?.takeUnless { it == "automatic" }
+
+    val canSaveApiKey: Boolean
+        get() = apiKey.trim() != persistedApiKey
 
     fun selectProvider(provider: ProviderKind) {
         if (provider == config.provider) return
-        // A model id from one provider is meaningless to another.
-        update(config.copy(provider = provider, model = null))
+        update(config.selectingProvider(provider))
         apiKey = keyStore.apiKey(provider) ?: ""
+        persistedApiKey = apiKey
         keySaved = false
         keySaveError = null
         clearModelResults()
+        refreshProviderSetup()
+        if (provider.access in setOf(ProviderAccess.ACCOUNT, ProviderAccess.MANAGED_LOCAL)) {
+            loadModels()
+        }
     }
 
     fun editApiKey(value: String) {
@@ -118,7 +167,10 @@ class SettingsViewModel(
     fun saveApiKey() {
         val normalized = apiKey.trim()
         val saved = keyStore.setApiKey(config.provider, normalized)
-        if (saved) apiKey = normalized
+        if (saved) {
+            apiKey = normalized
+            persistedApiKey = normalized
+        }
         keySaved = saved
         keySaveError = if (saved) null else Strings["provider.saveFailed"]
     }
@@ -126,16 +178,29 @@ class SettingsViewModel(
     fun setOllamaHost(host: String) {
         if (host == config.ollamaHost) return
         // A selected model and loaded catalog belong to the old server.
-        update(config.copy(ollamaHost = host, model = null))
+        update(config.selectingModel(null).copy(ollamaHost = host))
         clearModelResults()
     }
 
-    fun selectModel(model: String?) = update(config.copy(model = model))
+    fun selectModel(model: String?) = update(config.selectingModel(model))
+
+    val selectedLocalModel: OfflineModelManifest
+        get() = LocalModelCatalog.model(config.selectedModel)
+
+    val isLocalDownloadActive: Boolean
+        get() = localDownloadModelId != null
+
+    fun selectLocalModel(modelId: String?) {
+        val manifest = LocalModelCatalog.ALL.firstOrNull { it.id == modelId } ?: return
+        if (manifest.id == selectedLocalModel.id) return
+        update(config.selectingModel(manifest.id))
+        refreshLocalModelState()
+    }
 
     fun setBasePrompt(prompt: String) = update(config.copy(basePrompt = prompt))
 
     fun addRule() =
-        update(config.copy(rules = config.rules + RewriteRule(kind = RuleKind.DO, text = "")))
+        update(config.copy(rules = config.rules + RewriteRule(text = "")))
 
     fun removeRule(id: String) =
         update(config.copy(rules = config.rules.filterNot { it.id == id }))
@@ -206,6 +271,174 @@ class SettingsViewModel(
         }
     }
 
+    fun refreshProviderSetup() {
+        accountJob?.cancel()
+        accountJob = null
+        val requestId = ++accountRequestId
+        accountStatus = null
+        accountError = null
+        isCheckingAccount = false
+        isSigningIn = false
+        val provider = config.provider
+        when (provider.access) {
+            ProviderAccess.ACCOUNT -> {
+                isCheckingAccount = true
+                accountJob = scope.launch {
+                    try {
+                        val status = withContext(Dispatchers.IO) { accountProviders.status(provider) }
+                        if (requestId != accountRequestId || config.provider != provider) return@launch
+                        accountStatus = status
+                    } catch (error: Exception) {
+                        if (error is kotlinx.coroutines.CancellationException) throw error
+                        if (requestId == accountRequestId && config.provider == provider) {
+                            accountError = userMessage(error)
+                        }
+                    } finally {
+                        if (requestId == accountRequestId) {
+                            isCheckingAccount = false
+                            isSigningIn = false
+                            accountJob = null
+                        }
+                    }
+                }
+            }
+            ProviderAccess.MANAGED_LOCAL -> refreshLocalModelState()
+            ProviderAccess.API_KEY, ProviderAccess.EXTERNAL_LOCAL -> Unit
+        }
+    }
+
+    fun setUpAccountProvider() {
+        val provider = config.provider
+        if (!provider.isAccountProvider) return
+        accountJob?.cancel()
+        val requestId = ++accountRequestId
+        isCheckingAccount = true
+        isSigningIn = false
+        accountError = null
+        accountJob = scope.launch {
+            try {
+                val status = withContext(Dispatchers.IO) { accountProviders.status(provider) }
+                if (requestId != accountRequestId || config.provider != provider) return@launch
+                accountStatus = status
+                isCheckingAccount = false
+                if (!status.isInstalled) {
+                    runCatching { Desktop.getDesktop().browse(URI(provider.apiKeyConsoleUrl)) }
+                        .onFailure {
+                            if (requestId == accountRequestId) accountError = userMessage(it)
+                        }
+                    return@launch
+                }
+                isSigningIn = true
+                withContext(Dispatchers.IO) { accountProviders.signIn(provider) }
+                if (requestId != accountRequestId || config.provider != provider) return@launch
+                val refreshed = withContext(Dispatchers.IO) { accountProviders.status(provider) }
+                if (requestId != accountRequestId || config.provider != provider) return@launch
+                accountStatus = refreshed
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                if (requestId == accountRequestId && config.provider == provider) {
+                    accountError = userMessage(error)
+                }
+            } finally {
+                if (requestId == accountRequestId) {
+                    isCheckingAccount = false
+                    isSigningIn = false
+                    accountJob = null
+                }
+            }
+        }
+    }
+
+    fun downloadLocalModel() {
+        if (localDownloadJob != null) return
+        val manifest = selectedLocalModel
+        val requestId = ++localDownloadId
+        localDownloadModelId = manifest.id
+        val initial = LocalModelProgress(0, manifest.byteCount)
+        localDownloadProgress = initial
+        localModelState = LocalModelState.Downloading(initial)
+        localDownloadJob = scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    localModel.download(manifest.id) { progress ->
+                        scope.launch {
+                            if (requestId == localDownloadId) {
+                                localDownloadProgress = progress
+                                localModelState = LocalModelState.Downloading(progress)
+                            }
+                        }
+                    }
+                }
+                val state = withContext(Dispatchers.IO) { localModel.state(manifest.id) }
+                if (requestId == localDownloadId) localModelState = state
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) {
+                    if (requestId == localDownloadId) {
+                        localModelState = LocalModelState.NotDownloaded
+                    }
+                    throw error
+                }
+                if (requestId == localDownloadId) {
+                    localModelState = LocalModelState.Failed(
+                        userMessage(error)
+                    )
+                }
+            } finally {
+                if (localDownloadModelId == manifest.id) localDownloadModelId = null
+                localDownloadJob = null
+            }
+        }
+    }
+
+    fun cancelLocalModelDownload() {
+        val job = localDownloadJob ?: return
+        ++localDownloadId
+        localDownloadModelId = null
+        localModelState = LocalModelState.NotDownloaded
+        // Mark the coroutine cancelled before closing its blocking stream so
+        // the resulting IOException is correctly treated as cancellation.
+        job.cancel()
+        localModel.cancelDownload()
+    }
+
+    fun removeLocalModel() {
+        val manifest = selectedLocalModel
+        cancelLocalModelDownload()
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) { localModel.removeModel(manifest.id) }
+                if (selectedLocalModel.id == manifest.id) {
+                    localModelState = LocalModelState.NotDownloaded
+                }
+            } catch (error: Exception) {
+                if (selectedLocalModel.id == manifest.id) {
+                    localModelState = LocalModelState.Failed(userMessage(error))
+                }
+            }
+        }
+    }
+
+    val localProgressText: String
+        get() = "${formatBytes(localDownloadProgress.receivedBytes)} / ${formatBytes(localDownloadProgress.totalBytes)}"
+
+    fun formatBytes(bytes: Long): String = when {
+        bytes >= 1_000_000_000 -> String.format(Locale.getDefault(), "%.2f GB", bytes / 1_000_000_000.0)
+        bytes >= 1_000_000 -> String.format(Locale.getDefault(), "%.1f MB", bytes / 1_000_000.0)
+        bytes >= 1_000 -> String.format(Locale.getDefault(), "%.1f KB", bytes / 1_000.0)
+        else -> "$bytes B"
+    }
+
+    private fun refreshLocalModelState() {
+        val provider = config.provider
+        val modelId = selectedLocalModel.id
+        scope.launch {
+            val state = withContext(Dispatchers.IO) { localModel.state(modelId) }
+            if (config.provider == provider && selectedLocalModel.id == modelId) {
+                localModelState = state
+            }
+        }
+    }
+
     private fun clearModelResults() {
         modelLoad?.cancel()
         modelLoad = null
@@ -213,6 +446,11 @@ class SettingsViewModel(
         isLoadingModels = false
         availableModels = emptyList()
         modelsError = null
+    }
+
+    private fun userMessage(error: Throwable): String = when (error) {
+        is RewordError -> error.localized()
+        else -> error.message ?: error.javaClass.simpleName
     }
 
     private fun update(updated: RewordConfig) {

@@ -4,8 +4,14 @@ import dev.mjablonski.rewordme.domain.ApiKeyStore
 import dev.mjablonski.rewordme.domain.ConfigStore
 import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordConfig
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
+import java.util.UUID
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 
@@ -30,14 +36,24 @@ class JsonConfigStore(
     private val directory: Path = defaultConfigDirectory()
 ) : ConfigStore {
     private val file: Path get() = directory.resolve("config.json")
+    private val invalidBackup: Path get() = directory.resolve("config.invalid.json")
 
-    override fun load(): RewordConfig = runCatching {
-        prettyJson.decodeFromString<RewordConfig>(Files.readString(file))
-    }.getOrElse { RewordConfig() }
+    override fun load(): RewordConfig {
+        if (!Files.isRegularFile(file)) return RewordConfig()
+        return try {
+            prettyJson.decodeFromString<RewordConfig>(Files.readString(file))
+        } catch (_: Throwable) {
+            // Preserve the bytes that failed to parse before a later save can
+            // replace config.json. This makes recovery and bug reports possible.
+            runCatching {
+                Files.copy(file, invalidBackup, StandardCopyOption.REPLACE_EXISTING)
+            }
+            RewordConfig()
+        }
+    }
 
     override fun save(config: RewordConfig) {
-        Files.createDirectories(directory)
-        Files.writeString(file, prettyJson.encodeToString(RewordConfig.serializer(), config))
+        writeTextAtomically(file, prettyJson.encodeToString(RewordConfig.serializer(), config))
     }
 }
 
@@ -57,8 +73,7 @@ class FileApiKeyStore(
         val keys = readAll().toMutableMap()
         val trimmed = key?.trim()
         if (trimmed.isNullOrEmpty()) keys.remove(provider.id) else keys[provider.id] = trimmed
-        Files.createDirectories(directory)
-        Files.writeString(file, prettyJson.encodeToString(keysSerializer, keys))
+        writeTextAtomically(file, prettyJson.encodeToString(keysSerializer, keys))
         restrictToOwner()
         true
     }.getOrDefault(false)
@@ -86,5 +101,34 @@ class FileApiKeyStore(
             f.setReadable(true, true)
             f.setWritable(true, true)
         }
+    }
+}
+
+/** Same-directory temp + fsync + replace keeps crashes from truncating JSON. */
+internal fun writeTextAtomically(target: Path, text: String) {
+    Files.createDirectories(target.parent)
+    val temporary = target.resolveSibling(".${target.fileName}.${UUID.randomUUID()}.tmp")
+    try {
+        FileChannel.open(
+            temporary,
+            StandardOpenOption.CREATE_NEW,
+            StandardOpenOption.WRITE
+        ).use { channel ->
+            val bytes = ByteBuffer.wrap(text.toByteArray(Charsets.UTF_8))
+            while (bytes.hasRemaining()) channel.write(bytes)
+            channel.force(true)
+        }
+        try {
+            Files.move(
+                temporary,
+                target,
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING
+            )
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+        }
+    } finally {
+        Files.deleteIfExists(temporary)
     }
 }

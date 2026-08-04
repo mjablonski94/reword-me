@@ -13,6 +13,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MaterializedTransferableTests {
     @Test
@@ -50,6 +52,26 @@ class MaterializedTransferableTests {
         }
 
         assertNull(MaterializedTransferable.capture(broken))
+    }
+
+    @Test
+    fun delayedRestoreOnlyRunsWhileTemporaryClipboardIsStillCurrent() {
+        assertTrue(ClipboardRestorePolicy.shouldRestore(42, 42))
+        assertFalse(ClipboardRestorePolicy.shouldRestore(42, 43))
+    }
+
+    @Test
+    fun selectionRestoreAlsoPreservesANewerClipboardOwner() {
+        val sequenceAfterSyntheticCopy = 100
+        assertTrue(ClipboardRestorePolicy.shouldRestore(sequenceAfterSyntheticCopy, 100))
+        assertFalse(ClipboardRestorePolicy.shouldRestore(sequenceAfterSyntheticCopy, 101))
+    }
+
+    @Test
+    fun selectionCopyUsesThePostModifierClipboardAsItsBaseline() {
+        assertFalse(ClipboardCopyPolicy.observedSyntheticCopy(43, 43))
+        assertTrue(ClipboardCopyPolicy.observedSyntheticCopy(43, 44))
+        assertFalse(ClipboardRestorePolicy.shouldRestore(44, 45))
     }
 
     private class MapTransferable(

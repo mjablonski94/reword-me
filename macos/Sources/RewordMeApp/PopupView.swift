@@ -45,11 +45,13 @@ struct PopupView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            if viewModel.stage == .result, !viewModel.modelLabel.isEmpty {
+            if !viewModel.modelLabel.isEmpty {
                 Text(viewModel.modelLabel)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(viewModel.modelLabel)
             }
             Button {
                 viewModel.onClose?()
@@ -80,7 +82,7 @@ struct PopupView: View {
             case .menu: menu
             case .loading: loading
             case .result: resultView
-            case .failed(let message): errorView(message)
+            case .failed(let message, let canRetry): errorView(message, canRetry: canRetry)
             }
         }
     }
@@ -249,7 +251,7 @@ struct PopupView: View {
 
     // MARK: Error
 
-    private func errorView(_ message: String) -> some View {
+    private func errorView(_ message: String, canRetry: Bool) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(Loc.errorTitle, systemImage: "exclamationmark.triangle.fill")
                 .font(.callout.weight(.semibold))
@@ -258,10 +260,12 @@ struct PopupView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
-            HStack {
-                Spacer()
-                Button(Loc.tryAgain) { viewModel.regenerate() }
-                    .glassButtonStyle()
+            if canRetry {
+                HStack {
+                    Spacer()
+                    Button(Loc.tryAgain) { viewModel.regenerate() }
+                        .glassButtonStyle()
+                }
             }
         }
         .padding(10)

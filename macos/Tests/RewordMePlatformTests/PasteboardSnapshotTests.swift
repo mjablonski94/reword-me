@@ -52,4 +52,32 @@ final class PasteboardSnapshotTests: XCTestCase {
 
         XCTAssertNil(pasteboard.string(forType: .string))
     }
+
+    func testDelayedRestoreOnlyRunsWhileTemporaryClipboardIsStillCurrent() {
+        XCTAssertTrue(ClipboardRestorePolicy.shouldRestore(
+            temporaryChangeCount: 42,
+            currentChangeCount: 42
+        ))
+        XCTAssertFalse(ClipboardRestorePolicy.shouldRestore(
+            temporaryChangeCount: 42,
+            currentChangeCount: 43
+        ))
+    }
+
+    func testSelectionCopyUsesThePostModifierClipboardAsItsBaseline() {
+        // An external copy made while modifiers are being released is part of
+        // the baseline captured afterward, not evidence of synthetic Cmd+C.
+        XCTAssertFalse(ClipboardCopyPolicy.observedSyntheticCopy(
+            baseline: 43,
+            current: 43
+        ))
+        XCTAssertTrue(ClipboardCopyPolicy.observedSyntheticCopy(
+            baseline: 43,
+            current: 44
+        ))
+        XCTAssertFalse(ClipboardRestorePolicy.shouldRestore(
+            temporaryChangeCount: 44,
+            currentChangeCount: 45
+        ))
+    }
 }

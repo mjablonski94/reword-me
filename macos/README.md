@@ -8,8 +8,9 @@
 A tiny macOS menu-bar app that rewrites your selected text with an LLM. Select text in any app,
 press **Option+Command+R**, and a floating popup appears with a reworded version - regenerate it,
 steer the next generation ("more formal"), copy it, or replace the selection in place. Bring your
-own API key for Claude (Anthropic), ChatGPT (OpenAI) or Gemini (Google); by default RewordMe uses
-the least costly model your provider offers.
+own API key, an existing ChatGPT/Claude subscription through its official installed app, or a
+managed local model. Gemini is recommended for the simplest setup; automatic API mode uses the
+least costly model your provider offers.
 
 - Repository: https://github.com/mjablonski94/reword-me
 - Platform: macOS 14 (Sonoma) and later
@@ -67,9 +68,10 @@ words and *how*:
 - **You can steer, not just accept.** Type *"make it sound less corporate"*, press Return, judge,
   press Again. Writing Tools gives you a handful of fixed buttons; RewordMe gives you those *and*
   an open instruction line.
-- **Fully local when you want it.** Point it at Ollama on localhost (or any host you choose) and
-  rewrites are free, offline, and the text never leaves your machine - a privacy dial Writing
-  Tools simply does not have. Either way there is no account, no telemetry, no middleman server.
+- **Fully local when you want it.** Download an offline model inside Settings—RewordMe supplies
+  the runtime, verifies every model, and needs no Ollama—or keep using an existing Ollama server.
+  Offline rewrites are free and never leave your machine. Ollama stays on-device when its
+  configured server address points to this Mac; a remote address sends text to that host.
 - **It runs everywhere.** Any Mac on macOS 14+, Intel included - no Apple-Intelligence-capable
   hardware required. And when an app hides its text from the system (Electron apps, web content),
   RewordMe falls back to a clipboard dance and still works.
@@ -96,14 +98,20 @@ words and *how*:
 - **Regenerate and steer**: not happy with the result? Type a one-shot instruction like
   *"make it more formal"* and regenerate. Steering applies to that generation only.
 - **Replace in place** (via Accessibility, with a clipboard-paste fallback) or **Copy**.
-- **Do's and don'ts**: a toggleable list of standing rules (*"Never use exclamation marks"*,
+- **Rules**: a toggleable list of literal standing instructions (*"Never use exclamation marks"*,
   *"Keep it under two sentences"*) sent with every rewrite.
 - **Base prompt**: freeform standing instructions (*"I am a non-native speaker; fix grammar but
   keep my voice."*).
-- **Multi-provider**: Claude, ChatGPT, Gemini, Mistral, Grok (xAI), DeepSeek - just paste one
-  API key (stored in the login Keychain, never in plain files) - or **Ollama** for fully local,
-  free rewrites where the text never leaves your machine.
-- **Model choice**: pick any model the provider lists, or leave it on **Automatic**, which
+- **Complete provider list, in setup-first order**: Gemini (recommended), Offline models (local),
+  OpenAI API, Codex via ChatGPT, Claude API, Claude via Claude account, Mistral, Grok (xAI),
+  DeepSeek, and Ollama. API keys stay in Keychain. Account access delegates to the official
+  authenticated app and never reads its token.
+- **Managed offline-model catalog**: six pinned downloads from Qwen, Google, Hugging Face, and
+  Mistral AI, each with byte-count and SHA-256 verification, a determinate progress bar,
+  downloaded/total size, cancellation, retry, and removal. Models can coexist; one selected model
+  runs at a time through the pinned bundled llama.cpp runtime, with no separate Ollama install.
+- **Provider-specific model choice**: each provider remembers its own model. Pick any listed
+  model, or leave it on **Automatic**, which
   resolves to the least costly tier (Haiku / nano / Flash-Lite / Ministral / grok-mini /
   deepseek-chat) so everyday rewrites stay cheap.
 - **Launch at login** (start with the system) via `SMAppService`.
@@ -119,7 +127,7 @@ words and *how*:
    hosting a SwiftUI view. Because it never activates RewordMe, the host app keeps focus and the
    selection.
 4. **Rewrite** - the system prompt is assembled from a fixed core instruction, your enabled
-   do/don't rules, your base prompt, and the optional one-shot steering line; the selected text is
+   rules, your base prompt, and the optional one-shot steering line; the selected text is
    sent as the user message over plain HTTPS to the provider you configured.
 5. **Replace** - sets `AXSelectedText` directly when the focused element allows it; otherwise it
    pastes over the selection and restores your clipboard afterwards.
@@ -149,16 +157,23 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
 
 ## Usage
 
-1. Open **Settings** from the menu-bar icon, pick a provider and paste its API key, then
-   **Save Key**. The Provider tab links straight to the right console:
+1. Open **Settings** from the menu-bar icon and pick a provider. Gemini is first and recommended;
+   Offline models (Local) is second. API providers accept a key and link to the right console:
    - Claude: https://platform.claude.com/settings/keys
    - OpenAI: https://platform.openai.com/api-keys
    - Gemini: https://aistudio.google.com/apikey (free tier available)
    - Mistral: https://console.mistral.ai/api-keys (free tier available)
    - Grok (xAI): https://console.x.ai
    - DeepSeek: https://platform.deepseek.com/api_keys
-   - Ollama: no key at all - install from https://ollama.com, `ollama pull llama3.2`, done.
-     The server address is configurable (defaults to `http://localhost:11434`).
+   Account and local options use their own setup panel:
+   - Codex via ChatGPT: RewordMe checks for Codex/ChatGPT, opens the official install guide when
+     missing, and uses the CLI's ChatGPT sign-in without reading its token.
+   - Claude via Claude account: the equivalent flow through official Claude Code authentication.
+   - Offline models (Local): choose a model, then click **Download Model**. Qwen 3.5 0.8B is the
+     fastest default; Google Gemma, Hugging Face SmolLM3, Mistral Ministral, and larger Qwen
+     options are available. Cancel/retry/remove and model/license links are shown in Settings.
+   - Ollama remains available: install from https://ollama.com and `ollama pull llama3.2`; its
+     server address is configurable (default `http://localhost:11434`).
 2. Select text in any app.
 3. Press **Option+Command+R** (or right-click > Services > *Reword with RewordMe*).
 4. In the popup: pick **Proofread**, **Rewrite**, a tone preset, or type your own instruction
@@ -167,17 +182,29 @@ after `./build.sh` - re-grant once. A Developer ID build keeps the grant.
 
 ## Configuration
 
-| Provider | Rewriting | General |
-|---|---|---|
-| <img src="docs/media/settings-provider.png" alt="Provider tab: provider dropdown, API key, model picker"> | <img src="docs/media/settings-rewriting.png" alt="Rewriting tab: do/don't rules and base prompt"> | <img src="docs/media/settings-general.png" alt="General tab: editable shortcut, launch at login, permissions"> |
+| Provider | General |
+|---|---|
+| <img src="docs/media/settings-provider.png" alt="Provider tab: provider dropdown, API key, model picker"> | <img src="docs/media/settings-general.png" alt="General tab: editable shortcut, launch at login, permissions"> |
+
+The provider and managed-offline choices stay explicit rather than mixing API billing,
+subscription accounts, and local execution:
+
+<p align="center">
+  <img src="docs/media/provider-picker.png" width="201" alt="Provider picker showing every RewordMe provider in setup-first order">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/media/offline-model-picker.png" width="326" alt="Offline model picker showing models from Qwen, Google, Hugging Face, and Mistral AI">
+</p>
 
 Settings live in three tabs:
 
-- **Provider** - provider picker, API key (Keychain), model picker. *Automatic (least costly)*
+- **Provider** - provider picker, API-key/account/local setup, and a model picker whose selection
+  is remembered separately for each provider. For direct APIs, *Automatic*
   fetches the provider's model list and picks the cheapest family - Claude Haiku, GPT nano/mini,
   Gemini Flash-Lite - preferring stable releases over previews. Pick an explicit model any time;
   **Load Models** shows everything your key can access.
-- **Rewriting** - the do/don't rules list (each rule toggleable) and the freeform base prompt.
+- **Rewriting** - a list of literal rules (each independently toggleable) and the freeform base
+  prompt. Write positive or negative instructions directly in the rule text; no separate rule type
+  is needed.
 - **General** - the shortcut (click it, press a new combination; Esc cancels; it must include
   Command, Option or Control), launch at login, Accessibility status.
 
@@ -189,7 +216,7 @@ The system prompt is assembled per request as:
 
 ```
 1. Core instruction        (fixed: rewrite, preserve meaning/language, output only the text)
-2. Do: / Don't: rules      (your enabled rules)
+2. Rules                   (your enabled literal instructions)
 3. Base prompt             (your freeform standing instructions)
 4. One-shot steering       (typed in the popup, this generation only)
 ```
@@ -209,7 +236,7 @@ model-tier selection) stay as plain static functions.
 Sources/
 ├── RewordMeModels/          pure value types - no IO, no AppKit
 │   ├── Provider.swift       provider kinds + metadata, model info, typed errors
-│   ├── RewriteRule.swift    do/don't rule model
+│   ├── RewriteRule.swift    migration-compatible rule model
 │   └── RewordConfig.swift   settings model + hotkey config + Ollama endpoint
 ├── RewordMeDomain/          business rules + ports (depends on Models only)
 │   ├── Ports.swift          ModelListing, APIKeyStore - implemented by outer layers
@@ -221,6 +248,9 @@ Sources/
 │   ├── ProviderClient.swift the per-provider wire-format protocol + registry
 │   ├── AnthropicClient.swift / GeminiClient.swift / OpenAICompatibleClient.swift
 │   ├── RewordService.swift  URLSession transport, HTTP error mapping (401/429/5xx)
+│   ├── AccountProviderService.swift  isolated Codex/Claude account execution
+│   ├── LocalModelManager.swift  verified download + loopback llama.cpp lifecycle
+│   ├── ProcessRunner.swift  cancellable direct process execution (never a shell)
 │   ├── KeychainAPIKeyStore.swift  APIKeyStore implementation
 │   └── ConfigStore.swift    JSON persistence in Application Support
 ├── RewordMePlatform/        macOS capabilities (depends on Models only)
@@ -247,7 +277,7 @@ Tests mirror the layers: `RewordMeDomainTests`, `RewordMeDataTests`, `RewordMePl
 ```bash
 swift build          # debug build
 swift test           # unit tests (Domain, Data, Platform test targets)
-./build.sh           # release .app bundle, ad-hoc signed
+./build.sh           # release .app + pinned llama.cpp runtime, ad-hoc signed
 ./build.sh debug     # debug .app bundle
 ```
 
@@ -281,6 +311,12 @@ export NOTARY_PROFILE="your-notarytool-keychain-profile"
   console (linked from the Provider tab), not in the chat apps themselves.
 - **"Rate limit reached"** - the provider throttled the key; the popup shows the retry hint.
   Consider a cheaper model tier (Automatic already picks the cheapest).
+- **Codex/Claude account says not installed** - use the Settings button to open the official
+  setup guide, install the app/CLI, sign in there with the subscription account, then Refresh.
+  API keys and subscription access are deliberately separate provider choices.
+- **Local model is not downloaded** - select Offline models (Local), choose the model, download it
+  in Settings, and keep the app open until checksum verification finishes. A cancelled download
+  is safely discarded; another already downloaded model remains available.
 - **The hotkey keeps asking for Accessibility even though it looks enabled** - the System
   Settings entry belongs to a previous build: every rebuild from source gets a fresh ad-hoc
   signature, and macOS treats it as a new app while still showing the old, now-meaningless
@@ -295,12 +331,15 @@ export NOTARY_PROFILE="your-notarytool-keychain-profile"
 
 ## Privacy
 
-- The selected text is sent **only** to the provider you configured, over HTTPS, with your own
-  API key. There is no middleman, no telemetry, no analytics. With **Ollama** the text never
-  leaves your machine at all.
+- The selected text goes **only** to the selected provider. Direct APIs use your own key; account
+  choices delegate to the official local CLI; RewordMe never copies account tokens. There is no
+  middleman, telemetry, or analytics. With an **offline model**, text stays on-device. Ollama is
+  also on-device when its configured server address points to this Mac; another address sends
+  text to that host.
 - API keys are stored in the macOS login Keychain and sent only in request headers - never in
   URLs, never on disk in plain text.
-- The clipboard is used only as a fallback and is restored to its previous contents immediately.
+- The clipboard is used only as a fallback. RewordMe restores its previous contents unless you
+  copy something newer while replacement is in progress; newer clipboard content is preserved.
 - Nothing else leaves your machine.
 
 ## Support
@@ -313,4 +352,5 @@ Bugs and ideas: [open an issue](https://github.com/mjablonski94/reword-me/issues
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+RewordMe is MIT-licensed—see [LICENSE](../LICENSE). Downloadable models retain their own licenses;
+see the repository's [third-party notices](../THIRD_PARTY_NOTICES.txt).

@@ -12,15 +12,18 @@ final class PromptBuilderTests: XCTestCase {
         XCTAssertTrue(PromptBuilder.coreInstruction.contains("Output only the rewritten text"))
     }
 
-    func testEnabledRulesAreGroupedIntoDoAndDontSections() {
+    func testEnabledRulesShareOneLiteralSectionRegardlessOfLegacyKind() {
         let rules = [
             RewriteRule(kind: .doRule, text: "Keep it under two sentences"),
             RewriteRule(kind: .dontRule, text: "Never use exclamation marks"),
             RewriteRule(kind: .doRule, text: "Use British spelling")
         ]
         let prompt = PromptBuilder.systemPrompt(rules: rules, basePrompt: "", steering: nil)
-        XCTAssertTrue(prompt.contains("Do:\n- Keep it under two sentences\n- Use British spelling"))
-        XCTAssertTrue(prompt.contains("Don't:\n- Never use exclamation marks"))
+        XCTAssertTrue(prompt.contains(
+            "Rules:\n- Keep it under two sentences\n- Never use exclamation marks\n- Use British spelling"
+        ))
+        XCTAssertFalse(prompt.contains("Do:"))
+        XCTAssertFalse(prompt.contains("Don't:"))
     }
 
     func testDisabledAndEmptyRulesAreSkipped() {
@@ -29,8 +32,7 @@ final class PromptBuilderTests: XCTestCase {
             RewriteRule(kind: .dontRule, text: "   ")
         ]
         let prompt = PromptBuilder.systemPrompt(rules: rules, basePrompt: "", steering: nil)
-        XCTAssertFalse(prompt.contains("Do:"))
-        XCTAssertFalse(prompt.contains("Don't:"))
+        XCTAssertFalse(prompt.contains("Rules:"))
         XCTAssertFalse(prompt.contains("Be formal"))
     }
 
@@ -41,7 +43,7 @@ final class PromptBuilderTests: XCTestCase {
             basePrompt: "I am a non-native speaker, keep my voice.",
             steering: nil
         )
-        let rulesIndex = prompt.range(of: "Do:")!.lowerBound
+        let rulesIndex = prompt.range(of: "Rules:")!.lowerBound
         let baseIndex = prompt.range(of: "non-native speaker")!.lowerBound
         XCTAssertLessThan(rulesIndex, baseIndex)
     }

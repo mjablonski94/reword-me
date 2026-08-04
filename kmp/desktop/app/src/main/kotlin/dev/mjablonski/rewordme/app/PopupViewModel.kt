@@ -11,6 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.mjablonski.rewordme.domain.PromptBuilder
+import dev.mjablonski.rewordme.models.LocalModelCatalog
+import dev.mjablonski.rewordme.models.ProviderKind
+import dev.mjablonski.rewordme.models.RewordConfig
 import dev.mjablonski.rewordme.models.RewordError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +44,8 @@ class PopupViewModel(
         internal set
     var errorMessage by mutableStateOf("")
         internal set
+    var canRetry by mutableStateOf(true)
+        internal set
     var actionErrorMessage by mutableStateOf("")
         private set
     var modelLabel by mutableStateOf("")
@@ -59,8 +64,11 @@ class PopupViewModel(
         steering = ""
         result = ""
         errorMessage = ""
+        canRetry = true
         actionErrorMessage = ""
         lastInstruction = null
+        val config = dependencies.configStore.load()
+        modelLabel = popupModelLabel(config, null)
         stage = if (text.isEmpty()) Stage.EMPTY else Stage.MENU
     }
 
@@ -104,8 +112,10 @@ class PopupViewModel(
         val requestId = generationId
         actionErrorMessage = ""
         errorMessage = ""
-        stage = Stage.LOADING
+        canRetry = true
         val config = dependencies.configStore.load()
+        modelLabel = popupModelLabel(config, null)
+        stage = Stage.LOADING
 
         generation = scope.launch {
             try {
@@ -129,17 +139,19 @@ class PopupViewModel(
                     reworded to model
                 }
                 if (requestId != generationId) return@launch
+                modelLabel = popupModelLabel(config, generated.second)
                 result = generated.first
-                modelLabel = "${config.provider.displayName} - ${generated.second}"
                 stage = Stage.RESULT
             } catch (error: RewordError) {
                 if (requestId != generationId) return@launch
                 errorMessage = error.localized()
+                canRetry = error.isRetryable
                 stage = Stage.FAILED
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
                 if (requestId != generationId) return@launch
                 errorMessage = error.message ?: Strings["popup.errorTitle"]
+                canRetry = true
                 stage = Stage.FAILED
             }
         }
@@ -149,6 +161,15 @@ class PopupViewModel(
         generation?.cancel()
         generation = null
         generationId++
+    }
+
+    private fun popupModelLabel(config: RewordConfig, resolvedModel: String?): String {
+        if (config.provider == ProviderKind.LOCAL) {
+            val manifest = LocalModelCatalog.model(resolvedModel ?: config.selectedModel)
+            return manifest.displayName
+        }
+        val model = resolvedModel ?: config.selectedModel ?: "Automatic"
+        return "$model · ${config.provider.displayName}"
     }
 
     fun replace() {

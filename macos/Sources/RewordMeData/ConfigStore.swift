@@ -14,12 +14,26 @@ public struct ConfigStore: Sendable {
         return base.appendingPathComponent("RewordMe/config.json")
     }()
 
+    public var invalidBackupURL: URL {
+        url.deletingLastPathComponent().appendingPathComponent("config.invalid.json")
+    }
+
     public func load() -> RewordConfig {
-        guard let data = try? Data(contentsOf: url),
-              let config = try? JSONDecoder().decode(RewordConfig.self, from: data) else {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: url.path) else {
             return .default
         }
-        return config
+        do {
+            let data = try Data(contentsOf: url)
+            return try JSONDecoder().decode(RewordConfig.self, from: data)
+        } catch {
+            // AppDependencies may immediately persist first-run defaults. Keep
+            // the undecodable bytes recoverable before that atomic save can
+            // replace config.json.
+            try? fileManager.removeItem(at: invalidBackupURL)
+            try? fileManager.copyItem(at: url, to: invalidBackupURL)
+            return .default
+        }
     }
 
     public func save(_ config: RewordConfig) throws {

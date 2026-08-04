@@ -7,6 +7,12 @@ public protocol TextReplacing {
     func replaceSelection(with text: String)
 }
 
+enum ClipboardRestorePolicy {
+    static func shouldRestore(temporaryChangeCount: Int, currentChangeCount: Int) -> Bool {
+        temporaryChangeCount == currentChangeCount
+    }
+}
+
 /// Sets AXSelectedText directly when the focused element allows it;
 /// otherwise pastes over the selection and restores the clipboard.
 @MainActor
@@ -55,11 +61,19 @@ public final class AXTextReplacer: TextReplacing {
         let snapshot = PasteboardSnapshot.capture()
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        let temporaryChangeCount = pasteboard.changeCount
 
         keySynthesizer.postCommandShortcut(keyCode: 9) // Cmd+V
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            snapshot.restore()
+            // A copy made by the user after RewordMe pasted is newer than our
+            // snapshot and must win. NSPasteboard's change count is monotonic.
+            if ClipboardRestorePolicy.shouldRestore(
+                temporaryChangeCount: temporaryChangeCount,
+                currentChangeCount: pasteboard.changeCount
+            ) {
+                snapshot.restore()
+            }
         }
     }
 }

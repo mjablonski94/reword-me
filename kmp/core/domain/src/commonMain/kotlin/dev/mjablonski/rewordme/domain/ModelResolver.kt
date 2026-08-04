@@ -16,7 +16,7 @@ class ModelResolver {
     private val cache = mutableMapOf<CacheKey, String>()
 
     suspend fun model(config: RewordConfig, apiKey: String, service: ModelListing): String {
-        config.model?.takeIf(String::isNotEmpty)?.let { return it }
+        config.selectedModel?.takeIf(String::isNotEmpty)?.let { return it }
         val key = CacheKey(config.provider, apiKey, config.endpointOverride)
         mutex.withLock { cache[key] }?.let { return it }
 

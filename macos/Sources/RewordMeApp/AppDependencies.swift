@@ -12,6 +12,8 @@ final class AppDependencies {
     let configStore: ConfigStore
     let keyStore: any APIKeyStore
     let rewordService: RewordService
+    let accountProviderService: AccountProviderService
+    let localModelManager: LocalModelManager
     let modelResolver: ModelResolver
     let selectionReader: any SelectionReading
     let textReplacer: any TextReplacing
@@ -20,7 +22,9 @@ final class AppDependencies {
     init(
         configStore: ConfigStore = ConfigStore(),
         keyStore: any APIKeyStore = KeychainAPIKeyStore(),
-        rewordService: RewordService = RewordService(),
+        rewordService: RewordService? = nil,
+        accountProviderService: AccountProviderService = AccountProviderService(),
+        localModelManager: LocalModelManager = LocalModelManager(),
         modelResolver: ModelResolver = ModelResolver(),
         selectionReader: (any SelectionReading)? = nil,
         textReplacer: (any TextReplacing)? = nil,
@@ -28,7 +32,12 @@ final class AppDependencies {
     ) {
         self.configStore = configStore
         self.keyStore = keyStore
-        self.rewordService = rewordService
+        self.accountProviderService = accountProviderService
+        self.localModelManager = localModelManager
+        self.rewordService = rewordService ?? RewordService(
+            accountProviders: accountProviderService,
+            localModel: localModelManager
+        )
         self.modelResolver = modelResolver
         self.selectionReader = selectionReader ?? AXSelectionReader()
         self.textReplacer = textReplacer ?? AXTextReplacer()

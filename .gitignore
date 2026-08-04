@@ -10,3 +10,6 @@ AppIcon.iconset/
 build/
 local.properties
 .kotlin/
+
+# Downloaded pinned llama.cpp build cache (runtime is copied into app artifacts).
+macos/LocalAIRuntime/

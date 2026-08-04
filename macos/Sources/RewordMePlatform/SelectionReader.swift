@@ -1,6 +1,12 @@
 import AppKit
 import ApplicationServices
 
+enum ClipboardCopyPolicy {
+    static func observedSyntheticCopy(baseline: Int, current: Int) -> Bool {
+        baseline != current
+    }
+}
+
 /// Posts keyboard shortcuts to the frontmost app.
 public protocol KeySynthesizing {
     func postCommandShortcut(keyCode: CGKeyCode)
@@ -116,17 +122,28 @@ public final class AXSelectionReader: SelectionReading {
     // MARK: - Clipboard fallback
 
     private func selectionViaClipboard(completion: @escaping @MainActor (String?) -> Void) {
-        let pasteboard = NSPasteboard.general
-        let snapshot = PasteboardSnapshot.capture()
-        let changeCountBefore = pasteboard.changeCount
-
         // The hotkey's own modifiers are usually still physically held
         // when we get here; a Cmd+C synthesized now reaches the app as
-        // Option+Cmd+C and copies nothing. Wait for release first.
+        // Option+Cmd+C and copies nothing. Capture the clipboard only after
+        // release so a copy made by the user while waiting becomes the new
+        // baseline instead of being mistaken for our synthetic Cmd+C.
         waitForModifierRelease(attemptsLeft: 20) { [keySynthesizer] in
+            let pasteboard = NSPasteboard.general
+            let snapshot = PasteboardSnapshot.capture(from: pasteboard)
+            let changeCountBefore = pasteboard.changeCount
             keySynthesizer.postCommandShortcut(keyCode: 8) // Cmd+C
-            self.pollForCopy(pasteboard: pasteboard, before: changeCountBefore, attemptsLeft: 20) { copied in
-                snapshot.restore()
+            self.pollForCopy(
+                pasteboard: pasteboard,
+                before: changeCountBefore,
+                attemptsLeft: 20
+            ) { copied, copyChangeCount in
+                if let copyChangeCount,
+                   ClipboardRestorePolicy.shouldRestore(
+                       temporaryChangeCount: copyChangeCount,
+                       currentChangeCount: pasteboard.changeCount
+                   ) {
+                    snapshot.restore()
+                }
                 completion(copied)
             }
         }
@@ -149,14 +166,25 @@ public final class AXSelectionReader: SelectionReading {
         pasteboard: NSPasteboard,
         before: Int,
         attemptsLeft: Int,
-        completion: @escaping @MainActor (String?) -> Void
+        completion: @escaping @MainActor (String?, Int?) -> Void
     ) {
-        if pasteboard.changeCount != before {
-            completion(pasteboard.string(forType: .string))
+        let observedChangeCount = pasteboard.changeCount
+        if ClipboardCopyPolicy.observedSyntheticCopy(
+            baseline: before,
+            current: observedChangeCount
+        ) {
+            let copied = pasteboard.string(forType: .string)
+            // If ownership changed while the value was being materialized,
+            // do not return unrelated newer text as the selection.
+            guard pasteboard.changeCount == observedChangeCount else {
+                completion(nil, nil)
+                return
+            }
+            completion(copied, observedChangeCount)
             return
         }
         guard attemptsLeft > 0 else {
-            completion(nil)
+            completion(nil, nil)
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {

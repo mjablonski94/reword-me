@@ -1,5 +1,6 @@
 package dev.mjablonski.rewordme.data
 
+import dev.mjablonski.rewordme.models.LocalModelCatalog
 import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordError
 import kotlin.test.Test
@@ -7,6 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class ClientParsingTests {
     @Test
@@ -78,9 +80,9 @@ class ClientParsingTests {
     }
 
     @Test
-    fun registryCoversEveryProvider() {
+    fun registryCoversEveryHttpProvider() {
         val registry = ProviderClientRegistry()
-        ProviderKind.entries.forEach { kind ->
+        ProviderKind.entries.filterNot { it.isAccountProvider }.forEach { kind ->
             assertEquals(kind, registry.client(kind).kind)
         }
     }
@@ -93,5 +95,46 @@ class ClientParsingTests {
         )
         assertEquals("boom", RewordService.errorDetail("""{"message":"boom"}"""))
         assertEquals("not json", RewordService.errorDetail("not json"))
+    }
+
+    @Test
+    fun usageAndBillingLimitErrorsAreDetectedSeparatelyFromTemporaryRateLimits() {
+        val actionRequired = listOf(
+            """{"error":{"message":"No credits","type":"insufficient_quota","code":"credit_balance_exhausted"}}""",
+            """{"error":{"message":"Usage limit reached","code":"organization_usage_limit_exceeded"}}""",
+            """{"error":{"message":"You exceeded your current quota. Check billing.","type":"insufficient_quota","code":null}}"""
+        )
+        actionRequired.forEach { body ->
+            assertTrue(RewordService.isUsageLimitError(body), body)
+        }
+        assertFalse(
+            RewordService.isUsageLimitError(
+                """{"error":{"message":"Too many requests","type":"rate_limit_error","code":"rate_limit_exceeded"}}"""
+            )
+        )
+        listOf(
+            """{"error":{"message":"Quota exceeded for quota metric 'Generate Content API requests per minute'","status":"RESOURCE_EXHAUSTED"}}""",
+            """{"error":{"message":"RPM limit reached; retry shortly","type":"resource_exhausted"}}""",
+            """{"error":{"message":"TPM quota metric exceeded","type":"rate_limit_error"}}"""
+        ).forEach { body ->
+            assertFalse(RewordService.isUsageLimitError(body), body)
+        }
+    }
+
+    @Test
+    fun managedAndAccountCatalogsAreLocalAndKeyless() = runBlocking {
+        val service = RewordService()
+        assertEquals(
+            LocalModelCatalog.ALL.map { it.id },
+            service.listModels(ProviderKind.LOCAL, "", null).map { it.id }
+        )
+        assertEquals(
+            listOf("automatic"),
+            service.listModels(ProviderKind.CODEX, "", null).map { it.id }
+        )
+        assertEquals(
+            listOf("automatic", "sonnet", "opus"),
+            service.listModels(ProviderKind.CLAUDE_ACCOUNT, "", null).map { it.id }
+        )
     }
 }

@@ -1,6 +1,7 @@
 package dev.mjablonski.rewordme.app
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,9 @@ import kotlinx.coroutines.withContext
 
 fun main() = application {
     val dependencies = remember { AppDependencies() }
+    DisposableEffect(dependencies) {
+        onDispose { dependencies.localModelManager.shutdown() }
+    }
     val scope = rememberCoroutineScope()
     val viewModel = remember { PopupViewModel(dependencies, scope) }
 
@@ -142,10 +146,10 @@ fun main() = application {
             },
             title = Strings["settings.windowTitle"],
             icon = windowIcon,
-            // macOS fixes the sheet at 560x480 of content; the extra 32 is the
+            // Match the 580x560 macOS content area; the extra 32 is the
             // Windows title bar, which counts towards the frame here.
             resizable = false,
-            state = rememberWindowState(size = DpSize(560.dp, 512.dp))
+            state = rememberWindowState(size = DpSize(580.dp, 592.dp))
         ) {
             LaunchedEffect(Unit) { WindowEffects.applyWindowChrome(window, dark = true) }
             SettingsContent(settingsViewModel)

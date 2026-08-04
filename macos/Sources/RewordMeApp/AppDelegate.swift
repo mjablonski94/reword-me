@@ -1,5 +1,6 @@
 import AppKit
 import RewordMeData
+import RewordMeDomain
 import RewordMeModels
 import RewordMePlatform
 import SwiftUI
@@ -20,6 +21,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupServicesProvider()
         // Deliberately no Accessibility prompt here: the grant is explained
         // and requested from the tray menu or on the first hotkey press.
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        dependencies.localModelManager.shutdownImmediately()
     }
 
     /// The menu bar is never shown (accessory app), but Cmd+C/V/X/A and
@@ -172,7 +177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         dependencies.selectionReader.readSelection { [weak self] text, bounds in
             guard let self else { return }
-            guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            guard let text, SelectionFilter.isMeaningful(text) else {
                 self.popupController.presentNoSelectionHint()
                 return
             }

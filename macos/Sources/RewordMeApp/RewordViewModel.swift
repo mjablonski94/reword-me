@@ -14,7 +14,7 @@ final class RewordViewModel: ObservableObject {
         case menu
         case loading
         case result
-        case failed(String)
+        case failed(message: String, canRetry: Bool)
     }
 
     struct Preset: Identifiable {
@@ -67,12 +67,14 @@ final class RewordViewModel: ObservableObject {
     private var lastInstruction: String?
 
     init(original: String, dependencies: AppDependencies) {
+        let config = dependencies.configStore.load()
         self.original = original
         self.configStore = dependencies.configStore
         self.keyStore = dependencies.keyStore
         self.service = dependencies.rewordService
         self.modelResolver = dependencies.modelResolver
-        self.hotkeyDisplay = dependencies.configStore.load().hotkey.display
+        self.hotkeyDisplay = config.hotkey.display
+        self.modelLabel = Self.popupModelLabel(config: config, resolvedModel: nil)
     }
 
     /// Runs a rewrite. An explicit preset instruction wins; otherwise
@@ -95,8 +97,9 @@ final class RewordViewModel: ObservableObject {
 
     private func run(instruction: String?) {
         generationTask?.cancel()
-        stage = .loading
         let config = configStore.load()
+        modelLabel = Self.popupModelLabel(config: config, resolvedModel: nil)
+        stage = .loading
 
         generationTask = Task { [weak self] in
             guard let self else { return }
@@ -113,6 +116,7 @@ final class RewordViewModel: ObservableObject {
                 let model = try await modelResolver.model(
                     for: config, apiKey: apiKey, service: service
                 )
+                self.modelLabel = Self.popupModelLabel(config: config, resolvedModel: model)
                 let systemPrompt = PromptBuilder.systemPrompt(
                     rules: config.rules,
                     basePrompt: config.basePrompt,
@@ -128,13 +132,17 @@ final class RewordViewModel: ObservableObject {
                 )
                 guard !Task.isCancelled else { return }
                 self.result = reworded
-                self.modelLabel = "\(config.provider.displayName) - \(model)"
                 self.stage = .result
             } catch {
                 guard !Task.isCancelled else { return }
-                let message = (error as? RewordError).map(Loc.message(for:))
-                    ?? error.localizedDescription
-                self.stage = .failed(message)
+                if let rewordError = error as? RewordError {
+                    self.stage = .failed(
+                        message: Loc.message(for: rewordError),
+                        canRetry: rewordError.isRetryable
+                    )
+                } else {
+                    self.stage = .failed(message: error.localizedDescription, canRetry: true)
+                }
             }
         }
     }
@@ -154,5 +162,17 @@ final class RewordViewModel: ObservableObject {
 
     func cancel() {
         generationTask?.cancel()
+    }
+
+    private static func popupModelLabel(
+        config: RewordConfig,
+        resolvedModel: String?
+    ) -> String {
+        if config.provider == .local {
+            let manifest = LocalModelCatalog.model(id: resolvedModel ?? config.model)
+            return manifest.displayName
+        }
+        let model = resolvedModel ?? config.model ?? "Automatic"
+        return "\(model) · \(config.provider.displayName)"
     }
 }

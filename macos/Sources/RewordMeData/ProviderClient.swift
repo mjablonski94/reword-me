@@ -19,8 +19,8 @@ public protocol ProviderClient: Sendable {
     func parseReword(_ data: Data) throws -> String
 }
 
-/// Maps a provider kind to its client. The default set covers every
-/// ProviderKind; tests can inject stubs.
+/// Maps HTTP wire-format providers to clients. Account-backed providers are
+/// intercepted by RewordService before this registry; tests can inject stubs.
 public struct ProviderClientRegistry: Sendable {
     private let clients: [ProviderKind: any ProviderClient]
 
@@ -30,7 +30,7 @@ public struct ProviderClientRegistry: Sendable {
 
     public static var defaultClients: [any ProviderClient] {
         [AnthropicClient(), GeminiClient()]
-            + [ProviderKind.openai, .mistral, .xai, .deepseek, .ollama]
+            + [ProviderKind.local, .openai, .mistral, .xai, .deepseek, .ollama]
                 .map { OpenAICompatibleClient(kind: $0) }
     }
 
