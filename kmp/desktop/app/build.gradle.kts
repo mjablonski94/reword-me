@@ -153,6 +153,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "RewordMe"
+            modules("java.net.http")
             // Release 1.0.1. All three components are required: jpackage accepts
             // only MAJOR.MINOR.BUILD for the Windows Exe and Msi.
             packageVersion = appVersion
