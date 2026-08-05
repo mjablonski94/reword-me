@@ -18,6 +18,17 @@ import kotlin.test.assertTrue
 
 class MaterializedTransferableTests {
     @Test
+    fun normalizesAReaderReturnedForAnInputStreamTextFlavor() {
+        val flavor = DataFlavor("text/plain;class=java.io.InputStream;charset=unicode")
+        val source = MapTransferable(linkedMapOf(flavor to StringReader("Chromium text")))
+
+        val captured = assertNotNull(MaterializedTransferable.capture(source))
+
+        val restored = captured.getTransferData(flavor) as InputStream
+        assertEquals("Chromium text", restored.readBytes().toString(Charsets.UTF_16))
+    }
+
+    @Test
     fun capturesTextFilesAndReplayableStreams() {
         val streamFlavor = DataFlavor("application/x-rewordme-test;class=java.io.InputStream")
         val readerFlavor = DataFlavor("text/x-rewordme-test;class=java.io.Reader")

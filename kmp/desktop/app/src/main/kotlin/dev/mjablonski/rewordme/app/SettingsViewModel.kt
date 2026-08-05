@@ -129,8 +129,12 @@ class SettingsViewModel(
      * and records the answer so first-run registration never overrides it.
      */
     fun toggleLaunchAtLogin(enabled: Boolean) {
-        StartupRegistration.isEnabled = enabled
-        launchAtLogin = StartupRegistration.isEnabled
+        launchAtLogin = if (StartupRegistration.isSupported) {
+            StartupRegistration.isEnabled = enabled
+            StartupRegistration.isEnabled
+        } else {
+            enabled
+        }
         update(config.copy(launchAtLogin = launchAtLogin))
     }
 

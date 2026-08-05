@@ -11,6 +11,7 @@ import java.io.Reader
 import java.io.StringReader
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
+import java.nio.charset.Charset
 
 /** Reads the selected text from whatever app is foreground. */
 interface SelectionReading {
@@ -127,7 +128,9 @@ internal class MaterializedTransferable private constructor(
             return MaterializedTransferable(captured)
         }
 
-        private fun materialize(flavor: DataFlavor, value: Any): StoredValue? = when (value) {
+        private fun materialize(flavor: DataFlavor, value: Any): StoredValue? {
+            if (flavor.isFlavorTextType) return materializeText(flavor, value)
+            return when (value) {
             is InputStream -> {
                 if (!flavor.representationClass.isAssignableFrom(ByteArrayInputStream::class.java)) {
                     null
@@ -169,6 +172,59 @@ internal class MaterializedTransferable private constructor(
                 StoredValue { ArrayList(copy) }
             }
             else -> StoredValue { value }
+            }
+        }
+
+        /**
+         * Windows clipboard owners sometimes return a Reader for a text flavor
+         * advertised as an InputStream (Chromium does this for text/plain).
+         * Normalize the payload, then replay the representation promised by
+         * the DataFlavor instead of rejecting that valid mismatch.
+         */
+        private fun materializeText(flavor: DataFlavor, value: Any): StoredValue? {
+            val charset = runCatching {
+                Charset.forName(flavor.getParameter("charset") ?: Charset.defaultCharset().name())
+            }.getOrDefault(Charset.defaultCharset())
+            val text = when (value) {
+                is String -> value
+                is Reader -> value.use(Reader::readText)
+                is CharBuffer -> value.asReadOnlyBuffer().toString()
+                is CharArray -> String(value)
+                is InputStream -> value.use(InputStream::readBytes).toString(charset)
+                is ByteBuffer -> {
+                    val copy = value.asReadOnlyBuffer()
+                    val bytes = ByteArray(copy.remaining())
+                    copy.get(bytes)
+                    bytes.toString(charset)
+                }
+                is ByteArray -> value.toString(charset)
+                else -> return null
+            }
+            val representation = flavor.representationClass
+            return when {
+                representation.isAssignableFrom(String::class.java) -> StoredValue { text }
+                representation.isAssignableFrom(StringReader::class.java) ->
+                    StoredValue { StringReader(text) }
+                representation.isAssignableFrom(CharBuffer::class.java) ->
+                    StoredValue { CharBuffer.wrap(text).asReadOnlyBuffer() }
+                representation == CharArray::class.java -> {
+                    val chars = text.toCharArray()
+                    StoredValue { chars.copyOf() }
+                }
+                representation.isAssignableFrom(ByteArrayInputStream::class.java) -> {
+                    val bytes = text.toByteArray(charset)
+                    StoredValue { ByteArrayInputStream(bytes) }
+                }
+                representation.isAssignableFrom(ByteBuffer::class.java) -> {
+                    val bytes = text.toByteArray(charset)
+                    StoredValue { ByteBuffer.wrap(bytes).asReadOnlyBuffer() }
+                }
+                representation == ByteArray::class.java -> {
+                    val bytes = text.toByteArray(charset)
+                    StoredValue { bytes.copyOf() }
+                }
+                else -> null
+            }
         }
     }
 }
@@ -187,7 +243,10 @@ class WindowsSelectionReader : SelectionReading {
         // Ctrl+Alt+C and copies nothing. Snapshot only after release so a
         // user's intervening copy is the new baseline, never our result.
         if (!waitForModifierRelease()) return null
-        val previous = ClipboardAccess.snapshot() ?: return null
+        // Clipboard owners can expose private or delayed formats that AWT
+        // cannot safely replay. Selection capture must still work in that
+        // case; the copied selection is left on the clipboard as a fallback.
+        val previous = ClipboardAccess.snapshot()
         val before = Win32Clipboard.sequence
         val sent = KeySynthesizer.sendCtrl(KeySynthesizer.VK_C)
         if (!sent) return null
@@ -214,18 +273,17 @@ class WindowsSelectionReader : SelectionReading {
         }
         // Restore only the generation produced by Ctrl+C, even if it was an
         // empty or non-text selection. A newer clipboard owner always wins.
-        val restored = if (copiedSequence == null || newerOwnerAppeared) {
-            true
-        } else if (ClipboardRestorePolicy.shouldRestore(
-            copiedSequence, Win32Clipboard.sequence
-        )) {
+        if (
+            copiedSequence != null &&
+            !newerOwnerAppeared &&
+            previous != null &&
+            ClipboardRestorePolicy.shouldRestore(copiedSequence, Win32Clipboard.sequence)
+        ) {
             ClipboardAccess.restore(previous)
-        } else {
-            // A newer clipboard owner appeared after the selection was read.
-            // Preserving that content is a safe, successful skipped restore.
-            true
         }
-        return copied?.takeIf { restored }
+        // Clipboard restoration is best-effort and must never turn a
+        // successful text capture into a false "no text selected" result.
+        return copied
     }
 
     private fun waitForModifierRelease(): Boolean {
