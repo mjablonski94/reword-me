@@ -11,5 +11,9 @@ build/
 local.properties
 .kotlin/
 
+# Android release signing (keystore.properties.example documents the format).
+kmp/android/app/keystore.properties
+kmp/android/app/*.keystore
+
 # Downloaded pinned llama.cpp build cache (runtime is copied into app artifacts).
 macos/LocalAIRuntime/

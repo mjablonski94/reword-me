@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window-level only; the full palette lives in common/Theme.kt. -->
+    <color name="surface">#FF292B2E</color>
+</resources>

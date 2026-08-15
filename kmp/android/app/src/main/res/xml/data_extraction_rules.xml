@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- API keys are sealed by this device's Keystore entry; backing up the
+     ciphertext would restore undecryptable blobs, so it stays local. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="rewordme.keys.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="rewordme.keys.xml" />
+    </device-transfer>
+</data-extraction-rules>

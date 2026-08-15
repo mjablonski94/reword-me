@@ -21,7 +21,7 @@ data class AccountProviderStatus(
 )
 
 /** Uses official local CLI authentication without reading or copying its tokens. */
-class AccountProviderService {
+class AccountProviderService : AccountRewording {
     suspend fun status(provider: ProviderKind): AccountProviderStatus {
         if (!provider.isAccountProvider) {
             return AccountProviderStatus(provider, false, false, detail = "Not an account provider")
@@ -58,7 +58,7 @@ class AccountProviderService {
         }
     }
 
-    suspend fun reword(
+    override suspend fun reword(
         provider: ProviderKind,
         model: String,
         systemPrompt: String,

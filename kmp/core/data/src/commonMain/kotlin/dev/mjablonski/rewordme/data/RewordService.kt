@@ -6,7 +6,6 @@ import dev.mjablonski.rewordme.models.LocalModelCatalog
 import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordError
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
@@ -23,10 +22,12 @@ import kotlinx.serialization.json.jsonPrimitive
  * the per-provider clients so they stay pure and testable.
  */
 class RewordService(
-    private val http: HttpClient = HttpClient(CIO),
+    // No engine named: ktor discovers the platform engine on the classpath
+    // (CIO on desktop, OkHttp on Android).
+    private val http: HttpClient = HttpClient(),
     private val registry: ProviderClientRegistry = ProviderClientRegistry(),
-    private val accountProviders: AccountProviderService = AccountProviderService(),
-    private val localModel: LocalModelManager = LocalModelManager()
+    private val accountProviders: AccountRewording = UnsupportedAccountRewording,
+    private val localModel: LocalModelConnecting = UnsupportedLocalModel
 ) : Rewording {
     override suspend fun listModels(
         provider: ProviderKind,

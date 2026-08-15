@@ -18,7 +18,7 @@ tracking and no RewordMe middleman account.
 | **macOS** | [`macos/`](macos/) | Swift 6, SwiftUI + AppKit | **Released** - v1.0.1, macOS 14+, 11 languages |
 | **Windows** | [`kmp/`](kmp/) | Kotlin Multiplatform, Compose Desktop | **Source-complete** - v1.0.1 installer and native Windows validation pending |
 | Linux | [`kmp/`](kmp/) | same KMP codebase | Planned |
-| Android | [`kmp/`](kmp/) | same KMP codebase (Process Text) | Planned |
+| **Android** | [`kmp/`](kmp/) | same KMP core, Jetpack Compose + Koin (Process Text) | **Draft** - selection-menu popup, settings, tutorial; 11 languages |
 
 Each platform README has its own build and install instructions.
 

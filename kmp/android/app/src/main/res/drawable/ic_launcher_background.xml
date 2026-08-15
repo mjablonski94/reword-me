@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The purple-indigo gradient tile behind the mark, same stops as the
+     desktop AppIcon (148,84,237 -> 71,77,219). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="315"
+        android:startColor="#9454ED"
+        android:endColor="#474DDB"
+        android:type="linear" />
+</shape>

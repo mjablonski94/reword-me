@@ -43,12 +43,6 @@ sealed interface LocalModelState {
     data class Failed(val detail: String) : LocalModelState
 }
 
-data class LocalServerConnection(
-    val endpoint: String,
-    val apiKey: String,
-    val modelId: String = LocalModelCatalog.DEFAULT.id
-)
-
 private object LocalRuntimeManifest {
     const val TAG = "b10246"
     const val X64_RESOURCE = "llama-b10246-bin-win-cpu-x64.zip"
@@ -65,7 +59,7 @@ class LocalModelManager(
         .followRedirects(HttpClient.Redirect.ALWAYS)
         .connectTimeout(Duration.ofSeconds(30))
         .build()
-) {
+) : LocalModelConnecting {
     private val serverMutex = Mutex()
     @Volatile private var downloadInput: InputStream? = null
     @Volatile private var downloadingModelId: String? = null
@@ -188,7 +182,7 @@ class LocalModelManager(
             .forEach(Files::deleteIfExists)
     }
 
-    suspend fun connection(modelId: String = LocalModelCatalog.DEFAULT.id): LocalServerConnection = serverMutex.withLock {
+    override suspend fun connection(modelId: String): LocalServerConnection = serverMutex.withLock {
         val manifest = LocalModelCatalog.model(modelId)
         try {
             coroutineContext.ensureActive()

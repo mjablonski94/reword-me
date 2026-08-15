@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The product is dark by design on every platform, so the theme pins
+         dark rather than following the system: colors live in Compose
+         (common/Theme.kt), these styles only shape the windows. -->
+    <style name="Theme.RewordMe" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:navigationBarColor">@color/surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Fullscreen translucent host for the popup card: Compose draws its own
+         scrim and centers the card, mirroring the desktop's undecorated
+         floating panel. -->
+    <style name="Theme.RewordMe.Popup">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+    </style>
+</resources>

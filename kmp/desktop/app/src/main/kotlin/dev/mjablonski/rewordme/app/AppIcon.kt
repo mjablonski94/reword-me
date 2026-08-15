@@ -48,6 +48,33 @@ object AppIcon {
         return image
     }
 
+    /**
+     * The ring and letter alone on transparency, scaled toward the centre:
+     * the foreground layer of the Android adaptive icon, where the launcher
+     * supplies the mask and our gradient sits in the background layer.
+     */
+    fun renderMark(px: Int, contentScale: Float): BufferedImage {
+        val image = BufferedImage(px, px, BufferedImage.TYPE_INT_ARGB)
+        val g = image.createGraphics()
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
+        g.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+        )
+
+        val dim = px.toFloat()
+        val inset = dim * (1f - contentScale) / 2f
+        g.translate(inset.toDouble(), inset.toDouble())
+        g.scale(contentScale.toDouble(), contentScale.toDouble())
+
+        drawRing(g, dim)
+        drawLetter(g, dim)
+
+        g.dispose()
+        return image
+    }
+
     /** Two clockwise arcs, each with an arrowhead at its trailing end. */
     private fun drawRing(g: java.awt.Graphics2D, dim: Float) {
         val center = dim / 2.0

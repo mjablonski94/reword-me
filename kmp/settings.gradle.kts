@@ -20,5 +20,8 @@ include(
     ":core:domain",
     ":core:data",
     ":desktop:platform",
-    ":desktop:app"
+    ":desktop:app",
+    ":android:arch",
+    ":android:platform",
+    ":android:app"
 )

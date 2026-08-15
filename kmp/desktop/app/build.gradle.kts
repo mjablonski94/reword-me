@@ -128,6 +128,15 @@ val makeAppIcon by tasks.registering(JavaExec::class) {
     args(project.file("icons/AppIcon.ico").absolutePath)
 }
 
+/** Regenerates the committed Android launcher mipmaps from the same mark. */
+val makeAndroidIcons by tasks.registering(JavaExec::class) {
+    group = "build"
+    description = "Writes android/app launcher icons from the drawn app mark."
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass = "dev.mjablonski.rewordme.app.MakeAndroidIconsKt"
+    args(rootProject.file("android/app/src/main/res").absolutePath)
+}
+
 /** Documentation screenshots of the real settings window, for the README. */
 val settingsShots by tasks.registering(JavaExec::class) {
     group = "documentation"

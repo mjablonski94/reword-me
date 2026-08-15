@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TextView refuses to offer PROCESS_TEXT actions on views without an
+         ID (it needs one to route the replacement result back), so the
+         programmatic tutorial editor gets a stable one. -->
+    <item name="home_try_it_editor" type="id" />
+</resources>

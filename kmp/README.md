@@ -1,11 +1,11 @@
 # RewordMe - Kotlin Multiplatform (Windows, Linux, Android)
 
 The KMP sibling of the [macOS app](../macos/): Compose Multiplatform desktop app targeting
-**Windows first**, with Linux and Android (`ACTION_PROCESS_TEXT`) planned on the same core.
+**Windows first**, plus an **Android** app on the same core; Linux is planned.
 
-## Status: 1.0.1, released for Windows
+## Status: 1.0.1, released for Windows; Android draft
 
-Linux and Android remain planned on the same core.
+Linux remains planned on the same core.
 
 Working:
 - Tray icon with menu (Reword Selection, Settings, Buy Me a Coffee, Quit)
@@ -43,7 +43,37 @@ Working:
   ownership entirely with that executable
 
 Still planned: UI Automation `TextPattern` (clipboard-free reads + a selection rectangle to
-place the popup against), Linux support, Android Process Text.
+place the popup against), Linux support.
+
+## Android
+
+The phone has no global hotkey, so the entry point is the OS text-selection menu
+(`ACTION_PROCESS_TEXT`): select text in any app, tap **Reword me** (localized per language,
+e.g. *Przeredaguj*, *Reformuler*, *リライト*), and the popup opens with the same menu-first
+flow as the desktops - describe field, Proofread/Rewrite, tone presets, then
+Again/Copy/Replace. **Replace** hands the rewrite back through `EXTRA_PROCESS_TEXT`, so the
+host app's own field swaps the selection in place; read-only selections offer Copy instead.
+
+- Architecture mirrors the tvapp conventions: per-feature `di` / `presentation` / `ui`
+  packages, MVI (`MviViewModel` with a single `StateFlow` state, intents in, one-shot
+  effects out), domain `UseCase`s, DI with Koin
+- Same business values as desktop: providers (minus the desktop-only account CLIs and the
+  managed llama.cpp runtime - Ollama stays, it is just a server address), automatic model
+  resolution, rules, base prompt, one-shot steering, the same dark palette by default
+- API keys are AES-256-GCM encrypted with a key that lives in the **Android Keystore** and
+  never leaves the device; the ciphertext is excluded from backups
+- Launcher home screen doubles as a live tutorial: a prefilled editor whose text you select
+  to run the real selection-menu flow end to end, plus a first-run setup hint
+- Dev vs release: debug builds install side by side (`.debug` id suffix, `-dev` version
+  suffix); release signing reads git-ignored `android/app/keystore.properties`
+  (see `keystore.properties.example`), falling back to the debug key so any clone builds
+
+```bash
+./gradlew :android:app:assembleDebug      # debug APK
+./gradlew :android:app:assembleRelease    # minified, signed if keystore.properties exists
+./gradlew :android:app:testDebugUnitTest  # view-model and reducer tests
+./gradlew :desktop:app:makeAndroidIcons   # regenerate launcher icons from the drawn mark
+```
 
 ## Settings
 
@@ -60,14 +90,20 @@ grab otherwise photographs whatever happens to be in front.
 Layered clean architecture, Gradle modules, dependencies pointing inward only:
 
 ```
-core:models        pure value types (KMP, commonMain)
+core:models        pure value types (KMP, commonMain; jvm + android targets)
 core:domain        business rules + ports: PromptBuilder, ModelSelection, ModelResolver,
-                   ConfigStore and ApiKeyStore interfaces
-core:data          IO: Ktor clients, API/account dispatch, managed model/runtime lifecycle,
-                   JSON config, and the plaintext key store used as the non-Windows fallback
+                   UseCase base + use cases, ConfigStore/ApiKeyStore/ProviderAvailability
+core:data          IO. commonMain: the pure Ktor provider clients + RewordService (engine
+                   discovered per platform: CIO on desktop, OkHttp on Android). jvmMain:
+                   account-CLI and managed llama.cpp gateways, JSON config, plaintext
+                   key-store fallback
 desktop:platform   Win32 via JNA: hotkey, SendInput, focus tracking, DWM acrylic,
                    Credential Manager, run-at-login
 desktop:app        Compose UI (MVVM) + composition root
+android:arch       MVI plumbing only (MviViewModel, State/Intent/Effect contracts)
+android:platform   Keystore-encrypted key store, filesDir config store, clipboard,
+                   provider availability
+android:app        Jetpack Compose features (popup, settings, home) + Koin modules
 ```
 
 ## Build and run
