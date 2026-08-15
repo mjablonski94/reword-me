@@ -4,6 +4,7 @@ import dev.mjablonski.rewordme.android.arch.MviEffect
 import dev.mjablonski.rewordme.android.arch.MviIntent
 import dev.mjablonski.rewordme.android.arch.MviState
 import dev.mjablonski.rewordme.android.common.UiError
+import dev.mjablonski.rewordme.domain.ModelSelection
 import dev.mjablonski.rewordme.models.ModelInfo
 import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordConfig
@@ -24,11 +25,28 @@ data class SettingsState(
     val models: List<ModelInfo> = emptyList(),
     val isLoadingModels: Boolean = false,
     val modelsError: UiError? = null,
-    val newRuleDraft: String = ""
+    val newRuleDraft: String = "",
+    /**
+     * Text fields edit these synchronously; persistence follows debounced.
+     * Binding fields straight to [config] would route every keystroke
+     * through the disk round-trip and drop characters under fast typing.
+     */
+    val basePromptDraft: String = "",
+    val ollamaHostDraft: String = "",
+    val ruleDrafts: Map<String, String> = emptyMap()
 ) : MviState {
-    /** What "Automatic" currently resolves to, once models are known. */
+    /**
+     * What "Automatic" currently resolves to - computed with the same
+     * ModelSelection the actual request uses, not the list head.
+     */
     val automaticModelHint: String?
-        get() = models.firstOrNull()?.takeIf { config.selectedModel == null }?.id
+        get() {
+            if (config.selectedModel != null || models.isEmpty()) return null
+            return ModelSelection.defaultModel(config.provider, models)?.id
+                ?.takeUnless { it == "automatic" }
+        }
+
+    fun ruleText(id: String, fallback: String): String = ruleDrafts[id] ?: fallback
 }
 
 sealed interface SettingsIntent : MviIntent {
@@ -36,6 +54,7 @@ sealed interface SettingsIntent : MviIntent {
     data class SelectProvider(val provider: ProviderKind) : SettingsIntent
     data class KeyChanged(val value: String) : SettingsIntent
     data object SaveKey : SettingsIntent
+    data object RemoveKey : SettingsIntent
     data object LoadModels : SettingsIntent
     data class SelectModel(val model: String?) : SettingsIntent
     data class OllamaHostChanged(val host: String) : SettingsIntent

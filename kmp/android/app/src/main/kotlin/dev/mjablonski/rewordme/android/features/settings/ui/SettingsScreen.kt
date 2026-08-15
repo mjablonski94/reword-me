@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -68,10 +69,14 @@ fun SettingsScreen(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
         Toolbar(state, onIntent)
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp),
+            // Inset padding sits OUTSIDE the scroll modifier: applied inside,
+            // it would pad the content instead of shrinking the viewport and
+            // the keyboard would cover the focused field.
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             when (state.tab) {
@@ -203,6 +208,13 @@ private fun ProviderTab(state: SettingsState, onIntent: (SettingsIntent) -> Unit
                     primary = true,
                     enabled = state.keyDraft.isNotBlank()
                 ) { onIntent(SettingsIntent.SaveKey) }
+                // The vault never surfaces the key, so revocation needs its
+                // own control - blank-and-save can't reach the delete branch.
+                if (state.hasStoredKey) {
+                    PillButton(stringResource(R.string.provider_removeKey)) {
+                        onIntent(SettingsIntent.RemoveKey)
+                    }
+                }
                 if (state.keySaved || (state.hasStoredKey && state.keyDraft.isEmpty())) {
                     Icon(
                         Icons.Rounded.Check,
@@ -237,7 +249,7 @@ private fun ProviderTab(state: SettingsState, onIntent: (SettingsIntent) -> Unit
         ) {
             LabeledRow(stringResource(R.string.ollama_serverLabel)) {
                 TextInput(
-                    value = state.config.ollamaHost,
+                    value = state.ollamaHostDraft,
                     onValueChange = { onIntent(SettingsIntent.OllamaHostChanged(it)) },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -316,7 +328,7 @@ private fun RewritingTab(state: SettingsState, onIntent: (SettingsIntent) -> Uni
                     )
                 )
                 TextInput(
-                    value = rule.text,
+                    value = state.ruleText(rule.id, rule.text),
                     onValueChange = { onIntent(SettingsIntent.RuleTextChanged(rule.id, it)) },
                     modifier = Modifier.weight(1f)
                 )
@@ -353,7 +365,7 @@ private fun RewritingTab(state: SettingsState, onIntent: (SettingsIntent) -> Uni
         footer = stringResource(R.string.base_footer)
     ) {
         TextInput(
-            value = state.config.basePrompt,
+            value = state.basePromptDraft,
             onValueChange = { onIntent(SettingsIntent.BasePromptChanged(it)) },
             singleLine = false,
             minHeight = 88.dp,

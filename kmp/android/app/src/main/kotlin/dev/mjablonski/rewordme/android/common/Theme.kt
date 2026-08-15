@@ -16,7 +16,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
@@ -78,6 +81,35 @@ internal object Palette {
         Color(0xFFF0A860), Color(0xFF4C9AFF)
     )
     val sparkle = listOf(Color(0xFF9B6CF6), Color(0xFF4C9AFF))
+}
+
+/**
+ * Wraps every screen. Almost all colors are passed explicitly, but Material3
+ * components with internal surfaces (DropdownMenu, Switch thumbs) resolve
+ * against the ambient colorScheme - without this wrapper they'd use the
+ * default LIGHT scheme and pop white menus over the dark UI.
+ */
+@Composable
+internal fun RewordMeTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = Palette.accent,
+            onPrimary = Color.White,
+            surface = Palette.surface,
+            onSurface = Palette.text,
+            surfaceVariant = Palette.card,
+            onSurfaceVariant = Palette.secondary,
+            surfaceContainer = Palette.card,
+            surfaceContainerHigh = Palette.control,
+            surfaceContainerHighest = Palette.control,
+            background = Palette.surface,
+            onBackground = Palette.text,
+            outline = Palette.hairline,
+            secondaryContainer = Palette.control,
+            onSecondaryContainer = Palette.text
+        ),
+        content = content
+    )
 }
 
 internal val pillShape = RoundedCornerShape(50)
@@ -160,6 +192,14 @@ internal fun TextInput(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
+    // Password fields must also declare the password KEYBOARD type, or the
+    // IME keeps autocorrect, capitalization and personal-dictionary learning
+    // on - mangling pasted-in keys and teaching the keyboard the secret.
+    val effectiveOptions = if (password && keyboardOptions == KeyboardOptions.Default) {
+        KeyboardOptions(keyboardType = KeyboardType.Password)
+    } else {
+        keyboardOptions
+    }
     Box(
         modifier
             .background(Palette.well, insetShape)
@@ -177,7 +217,7 @@ internal fun TextInput(
             cursorBrush = SolidColor(Palette.accent),
             visualTransformation =
                 if (password) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = keyboardOptions,
+            keyboardOptions = effectiveOptions,
             keyboardActions = keyboardActions,
             modifier = Modifier.fillMaxWidth().heightIn(min = minHeight)
         )

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -47,12 +48,16 @@ import dev.mjablonski.rewordme.android.features.home.presentation.HomeState
 fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        // Bar and IME padding come BEFORE the scroll modifier so they shrink
+        // the viewport; inside it they'd just add scrollable dead space while
+        // the keyboard or navigation bar covers the content.
         modifier = Modifier
             .fillMaxSize()
             .background(Palette.surface)
             .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
             .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
         Row(
@@ -137,9 +142,12 @@ private fun TryItEditor() {
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
                 setLineSpacing(0f, 1.25f)
                 setBackgroundColor(AndroidColor.TRANSPARENT)
-                setPadding(36, 30, 36, 30)
+                // View padding is raw pixels; convert or low-density devices
+                // get triple the inset and high-density ones almost none.
+                val horizontal = (12 * resources.displayMetrics.density).toInt()
+                val vertical = (10 * resources.displayMetrics.density).toInt()
+                setPadding(horizontal, vertical, horizontal, vertical)
                 highlightColor = highlight
-                setTextIsSelectable(true)
             }
         },
         modifier = Modifier

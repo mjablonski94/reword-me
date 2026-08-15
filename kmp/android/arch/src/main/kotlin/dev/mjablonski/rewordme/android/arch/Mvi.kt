@@ -24,7 +24,8 @@ interface MviEffect
 /**
  * Base for feature view models. State is a single StateFlow the UI collects;
  * effects go through a buffered channel so none is lost while the UI is
- * between collectors (e.g. during a configuration change).
+ * between collectors (during a configuration change) - including one that
+ * was mid-delivery to a collector that got cancelled.
  */
 abstract class MviViewModel<S : MviState, I : MviIntent, E : MviEffect>(
     initialState: S
@@ -33,8 +34,19 @@ abstract class MviViewModel<S : MviState, I : MviIntent, E : MviEffect>(
     private val mutableState = MutableStateFlow(initialState)
     val state: StateFlow<S> = mutableState.asStateFlow()
 
-    private val effectChannel = Channel<E>(Channel.BUFFERED)
+    // onUndeliveredElement closes the cancellation hole in receiveAsFlow: an
+    // element already handed to a collector that dies before acting on it
+    // (activity recreation mid-delivery) is put back for the next collector
+    // instead of vanishing.
+    private val effectChannel = Channel<E>(
+        capacity = Channel.BUFFERED,
+        onUndeliveredElement = { undelivered -> resendDropped(undelivered) }
+    )
     val effects: Flow<E> = effectChannel.receiveAsFlow()
+
+    private fun resendDropped(effect: E) {
+        effectChannel.trySend(effect)
+    }
 
     /** Single entry point for the UI; the view model routes from here. */
     abstract fun onIntent(intent: I)

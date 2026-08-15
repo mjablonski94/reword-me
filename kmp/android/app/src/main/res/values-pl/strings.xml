@@ -71,7 +71,10 @@
     <string name="error_localNotDownloaded">Model lokalny nie został pobrany. Pobierz go w Ustawieniach.</string>
     <string name="error_localRuntime">Dołączony lokalny silnik AI jest niedostępny. Zainstaluj RewordMe ponownie.</string>
     <string name="error_localDownload">Pobieranie modelu lokalnego nie powiodło się: %1$s</string>
+    <string name="android_back">Wstecz</string>
+    <string name="android_close">Zamknij</string>
     <string name="android_keystoreCaption">Przechowywany w postaci zaszyfrowanej kluczem z Android Keystore tego urządzenia, nigdy w zwykłych plikach.</string>
+    <string name="android_noSelection">Nie ma jeszcze nic do przeredagowania. Zaznacz tekst w dowolnej aplikacji, a następnie stuknij „%1$s” w menu.</string>
     <string name="android_processText">Przeredaguj</string>
     <string name="home_description">Twój tekst, poprawiony tam, gdzie go piszesz. Zaznacz tekst w dowolnej aplikacji, w menu zaznaczania stuknij „Przeredaguj”, a potem wybierz korektę, przeredagowanie albo ton – poprawiony tekst zastąpi oryginał dokładnie w tym samym miejscu.</string>
     <string name="home_openSettings">Ustawienia</string>
@@ -80,4 +83,5 @@
     <string name="home_title">Witaj w RewordMe</string>
     <string name="home_tryHint">Przytrzymaj poniższy tekst, aby go zaznaczyć, a następnie stuknij „Przeredaguj” w menu.</string>
     <string name="home_tryTitle">Wypróbuj teraz</string>
+    <string name="provider_removeKey">Usuń klucz</string>
 </resources>

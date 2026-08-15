@@ -10,6 +10,7 @@
         android:fullBackupContent="@xml/full_backup_content"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.RewordMe">
 
@@ -22,9 +23,12 @@
             </intent-filter>
         </activity>
 
+        <!-- singleTop so a double-tap on the Settings pill cannot stack two
+             instances on the back stack. -->
         <activity
             android:name=".features.settings.presentation.SettingsActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop" />
 
         <!-- The entry other apps show in their text-selection menu. Its label
              is the user-facing "Reword me"; the host EditText replaces the
@@ -35,7 +39,7 @@
             android:excludeFromRecents="true"
             android:label="@string/android_processText"
             android:theme="@style/Theme.RewordMe.Popup"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />

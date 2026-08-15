@@ -71,7 +71,10 @@
     <string name="error_localNotDownloaded">Le modèle local n’est pas téléchargé. Téléchargez-le dans Réglages.</string>
     <string name="error_localRuntime">Le moteur d’IA local inclus est indisponible. Réinstallez RewordMe.</string>
     <string name="error_localDownload">Échec du téléchargement du modèle local : %1$s</string>
+    <string name="android_back">Retour</string>
+    <string name="android_close">Fermer</string>
     <string name="android_keystoreCaption">Stockée chiffrée avec une clé conservée dans l\'Android Keystore de cet appareil, jamais en clair dans des fichiers.</string>
+    <string name="android_noSelection">Rien à reformuler pour l\'instant. Sélectionnez du texte dans n\'importe quelle app, puis touchez « %1$s » dans le menu.</string>
     <string name="android_processText">Reformuler</string>
     <string name="home_description">Votre texte, amélioré sur place. Sélectionnez du texte dans n\'importe quelle app, touchez « Reformuler » dans le menu de sélection, puis choisissez Corriger, Reformuler ou un ton : le texte amélioré remplace l\'original là où il se trouvait.</string>
     <string name="home_openSettings">Réglages</string>
@@ -80,4 +83,5 @@
     <string name="home_title">Bienvenue dans RewordMe</string>
     <string name="home_tryHint">Appuyez longuement sur le texte ci-dessous pour le sélectionner, puis touchez « Reformuler » dans le menu.</string>
     <string name="home_tryTitle">Essayez maintenant</string>
+    <string name="provider_removeKey">Supprimer la clé</string>
 </resources>

@@ -4,9 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import dev.mjablonski.rewordme.android.common.RewordMeTheme
 import dev.mjablonski.rewordme.android.features.home.ui.HomeScreen
 import dev.mjablonski.rewordme.android.features.settings.presentation.SettingsActivity
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -17,19 +19,24 @@ class HomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             val state by viewModel.state.collectAsState()
 
             LaunchedEffect(Unit) {
                 viewModel.effects.collect { effect ->
                     when (effect) {
-                        HomeEffect.NavigateToSettings ->
-                            startActivity(Intent(this@HomeActivity, SettingsActivity::class.java))
+                        HomeEffect.NavigateToSettings -> startActivity(
+                            Intent(this@HomeActivity, SettingsActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        )
                     }
                 }
             }
 
-            HomeScreen(state, viewModel::onIntent)
+            RewordMeTheme {
+                HomeScreen(state, viewModel::onIntent)
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import dev.mjablonski.rewordme.models.LocalModelCatalog
 import dev.mjablonski.rewordme.models.ProviderKind
 import dev.mjablonski.rewordme.models.RewordError
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
@@ -18,13 +19,27 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
+ * The shared client. No engine is named - ktor discovers the platform's
+ * (CIO on desktop, OkHttp on Android) - but timeouts must be explicit:
+ * engine defaults (OkHttp reads at 10s, CIO requests at 15s) are shorter
+ * than a slow provider or a cold local model takes to produce a rewrite.
+ * Non-streaming completions send nothing until generation finishes, so the
+ * budget covers the whole silent wait.
+ */
+fun defaultHttpClient(): HttpClient = HttpClient {
+    install(HttpTimeout) {
+        connectTimeoutMillis = 15_000
+        requestTimeoutMillis = 180_000
+        socketTimeoutMillis = 180_000
+    }
+}
+
+/**
  * Performs the actual HTTP calls. Request building and parsing live in
  * the per-provider clients so they stay pure and testable.
  */
 class RewordService(
-    // No engine named: ktor discovers the platform engine on the classpath
-    // (CIO on desktop, OkHttp on Android).
-    private val http: HttpClient = HttpClient(),
+    private val http: HttpClient = defaultHttpClient(),
     private val registry: ProviderClientRegistry = ProviderClientRegistry(),
     private val accountProviders: AccountRewording = UnsupportedAccountRewording,
     private val localModel: LocalModelConnecting = UnsupportedLocalModel

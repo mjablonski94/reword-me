@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cleartext is permitted because the Ollama host is user-entered at runtime
+     (a LAN IP or hostname, plain http by default) and cannot be whitelisted
+     at build time. Every built-in provider talks https regardless; the only
+     cleartext traffic this app can ever attempt is to the server the user
+     configured - the same trust model the desktop apps have. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

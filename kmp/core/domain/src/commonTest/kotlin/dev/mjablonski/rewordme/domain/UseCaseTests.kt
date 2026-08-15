@@ -16,7 +16,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 
 private class FakeConfigStore(var config: RewordConfig = RewordConfig()) : ConfigStore {
     var saves = 0
@@ -167,6 +170,29 @@ class UpdateConfigUseCaseTest {
         assertEquals(ProviderKind.MISTRAL, updated.provider)
         assertEquals("keep me", updated.basePrompt)
         assertEquals(1, store.saves)
+    }
+}
+
+class UseCaseCancellationTest {
+    @Test
+    fun cancellationUnwindsInsteadOfBecomingAFailureResult() = runBlocking {
+        val useCase = object : UseCase<String, Unit>() {
+            override suspend fun action(params: Unit): String {
+                delay(60_000)
+                return "never"
+            }
+        }
+        var resumedNormally = false
+        val job = launch {
+            useCase.safeAction(Unit)
+            // A cancelled safeAction must throw, not hand back Result.failure.
+            resumedNormally = true
+        }
+        yield()
+        job.cancel()
+        job.join()
+        assertTrue(job.isCancelled)
+        assertFalse(resumedNormally)
     }
 }
 

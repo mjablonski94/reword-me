@@ -71,7 +71,10 @@
     <string name="error_localNotDownloaded">Локальну модель не завантажено. Завантажте її в Налаштуваннях.</string>
     <string name="error_localRuntime">Вбудоване локальне середовище ШІ недоступне. Перевстановіть RewordMe.</string>
     <string name="error_localDownload">Не вдалося завантажити локальну модель: %1$s</string>
+    <string name="android_back">Назад</string>
+    <string name="android_close">Закрити</string>
     <string name="android_keystoreCaption">Зберігається зашифрованим ключем із Android Keystore цього пристрою, ніколи у звичайних файлах.</string>
+    <string name="android_noSelection">Поки що немає що переформулювати. Виділіть текст у будь-якому застосунку, а потім торкніться «%1$s» у меню.</string>
     <string name="android_processText">Переформулювати</string>
     <string name="home_description">Ваш текст, покращений там, де ви пишете. Виділіть текст у будь-якому застосунку, торкніться «Переформулювати» в меню виділення й виберіть коректуру, переформулювання або тон – покращений текст замінить оригінал саме там, де він був.</string>
     <string name="home_openSettings">Параметри</string>
@@ -80,4 +83,5 @@
     <string name="home_title">Вітаємо в RewordMe</string>
     <string name="home_tryHint">Утримуйте текст нижче, щоб виділити його, а потім торкніться «Переформулювати» у меню.</string>
     <string name="home_tryTitle">Спробуйте зараз</string>
+    <string name="provider_removeKey">Видалити ключ</string>
 </resources>

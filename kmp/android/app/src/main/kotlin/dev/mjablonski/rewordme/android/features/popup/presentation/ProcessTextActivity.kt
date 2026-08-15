@@ -4,10 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import dev.mjablonski.rewordme.android.common.RewordMeTheme
 import dev.mjablonski.rewordme.android.features.popup.ui.PopupScreen
+import dev.mjablonski.rewordme.domain.SelectionFilter
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
@@ -22,8 +25,14 @@ class ProcessTextActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Real insets on every API level (imePadding, systemBars), not only
+        // where Android 15 forces edge-to-edge.
+        enableEdgeToEdge()
 
-        val text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString().orEmpty()
+        val raw = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString().orEmpty()
+        // Same gate as the desktop entry point: whitespace, bare numbers and
+        // symbol runs get the guidance stage, not a billable rewrite of junk.
+        val text = if (SelectionFilter.isMeaningful(raw)) raw else ""
         val readonly = intent.getBooleanExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, false)
         viewModel.onIntent(PopupIntent.Begin(text, canReplace = !readonly))
 
@@ -45,7 +54,9 @@ class ProcessTextActivity : ComponentActivity() {
                 }
             }
 
-            PopupScreen(state, viewModel::onIntent)
+            RewordMeTheme {
+                PopupScreen(state, viewModel::onIntent)
+            }
         }
     }
 }

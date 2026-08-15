@@ -71,7 +71,10 @@
     <string name="error_localNotDownloaded">尚未下载本地模型。请在“设置”中下载。</string>
     <string name="error_localRuntime">内置本地 AI 运行时不可用。请重新安装 RewordMe。</string>
     <string name="error_localDownload">本地模型下载失败：%1$s</string>
+    <string name="android_back">返回</string>
+    <string name="android_close">关闭</string>
     <string name="android_keystoreCaption">使用保存在本机 Android Keystore 中的密钥加密存储，绝不写入明文文件。</string>
+    <string name="android_noSelection">还没有可改写的文字。请在任意应用中选中文本，然后在菜单中点按“%1$s”。</string>
     <string name="android_processText">改写</string>
     <string name="home_description">在你写作的地方直接润色文字。在任意应用中选中文本，在弹出的菜单中点按“改写”，再选择校对、改写或语气，改好的文字会原地替换所选内容。</string>
     <string name="home_openSettings">设置</string>
@@ -80,4 +83,5 @@
     <string name="home_title">欢迎使用 RewordMe</string>
     <string name="home_tryHint">长按选中下面的文字，然后在菜单中点按“改写”。</string>
     <string name="home_tryTitle">立即试一试</string>
+    <string name="provider_removeKey">移除密钥</string>
 </resources>

@@ -72,7 +72,10 @@
     <string name="error_localNotDownloaded">The local model is not downloaded. Download it in Settings.</string>
     <string name="error_localRuntime">The bundled local AI runtime is unavailable. Reinstall RewordMe.</string>
     <string name="error_localDownload">Local model download failed: %1$s</string>
+    <string name="android_back">Back</string>
+    <string name="android_close">Close</string>
     <string name="android_keystoreCaption">Stored encrypted with a key kept in this device\'s Android Keystore, never in plain files.</string>
+    <string name="android_noSelection">Nothing to reword yet. Select text in any app, then tap “%1$s” in the menu.</string>
     <string name="android_processText">Reword me</string>
     <string name="home_description">Your writing, polished right where you write it. Select text in any app, tap “Reword me” in the selection menu, then pick Proofread, Rewrite or a tone – the improved text replaces the original in place.</string>
     <string name="home_openSettings">Settings</string>
@@ -81,4 +84,5 @@
     <string name="home_title">Welcome to RewordMe</string>
     <string name="home_tryHint">Press and hold the text below to select it, then tap “Reword me” in the menu.</string>
     <string name="home_tryTitle">Try it now</string>
+    <string name="provider_removeKey">Remove Key</string>
 </resources>

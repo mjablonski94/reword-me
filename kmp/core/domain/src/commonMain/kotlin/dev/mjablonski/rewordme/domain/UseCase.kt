@@ -1,5 +1,6 @@
 package dev.mjablonski.rewordme.domain
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,8 +20,17 @@ abstract class UseCase<Type, in Params>(
 
     protected abstract suspend fun action(params: Params): Type
 
-    suspend fun safeAction(params: Params): Result<Type> = runCatching {
-        withContext(coroutineDispatcher) { action(params) }
+    /**
+     * Cancellation is rethrown, never wrapped: a cancelled caller must unwind,
+     * not act on a phantom failure Result (or render "job was cancelled" as an
+     * error to the user).
+     */
+    suspend fun safeAction(params: Params): Result<Type> = try {
+        Result.success(withContext(coroutineDispatcher) { action(params) })
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (failure: Throwable) {
+        Result.failure(failure)
     }.also { result -> doOnResult(params, result) }
 
     open operator fun invoke(

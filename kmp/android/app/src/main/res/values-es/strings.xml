@@ -71,7 +71,10 @@
     <string name="error_localNotDownloaded">El modelo local no está descargado. Descárgalo en Ajustes.</string>
     <string name="error_localRuntime">El entorno de IA local incluido no está disponible. Reinstala RewordMe.</string>
     <string name="error_localDownload">Falló la descarga del modelo local: %1$s</string>
+    <string name="android_back">Atrás</string>
+    <string name="android_close">Cerrar</string>
     <string name="android_keystoreCaption">Se guarda cifrada con una clave que reside en el Android Keystore de este dispositivo, nunca en archivos de texto plano.</string>
+    <string name="android_noSelection">Todavía no hay nada que reformular. Selecciona texto en cualquier app y toca «%1$s» en el menú.</string>
     <string name="android_processText">Reformular</string>
     <string name="home_description">Tu texto, mejorado ahí mismo. Selecciona texto en cualquier app, toca «Reformular» en el menú de selección y elige Corregir, Reformular o un tono: el texto mejorado sustituye al original justo donde estaba.</string>
     <string name="home_openSettings">Ajustes</string>
@@ -80,4 +83,5 @@
     <string name="home_title">Te damos la bienvenida a RewordMe</string>
     <string name="home_tryHint">Mantén pulsado el texto de abajo para seleccionarlo y toca «Reformular» en el menú.</string>
     <string name="home_tryTitle">Pruébalo ahora</string>
+    <string name="provider_removeKey">Eliminar clave</string>
 </resources>

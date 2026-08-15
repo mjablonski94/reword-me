@@ -75,6 +75,10 @@ host app's own field swaps the selection in place; read-only selections offer Co
 ./gradlew :desktop:app:makeAndroidIcons   # regenerate launcher icons from the drawn mark
 ```
 
+The Android modules (and the android targets of the core modules) activate only when an
+Android SDK is discoverable - `sdk.dir` in `local.properties` or `ANDROID_HOME`. Machines
+without one, like the Windows packaging box, keep building the desktop with just a JDK.
+
 ## Settings
 
 | Provider | General |

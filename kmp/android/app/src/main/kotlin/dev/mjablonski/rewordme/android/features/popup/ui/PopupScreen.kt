@@ -9,15 +9,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -107,8 +110,12 @@ fun PopupScreen(state: PopupState, onIntent: (PopupIntent) -> Unit) {
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { onIntent(PopupIntent.Dismiss) }
-            .systemBarsPadding()
-            .imePadding()
+            // union, not systemBars + ime stacked: the IME inset already
+            // reaches up from the bottom of the window, so adding the nav
+            // bar on top of it would lift the card twice. Pre-30 devices
+            // report no IME inset at all; the window-level adjustPan in the
+            // manifest is the fallback that keeps the field visible there.
+            .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.ime))
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -145,7 +152,10 @@ private fun Header(state: PopupState, onIntent: (PopupIntent) -> Unit) {
         modifier = Modifier.fillMaxWidth().heightIn(min = 28.dp)
     ) {
         if (state.stage == PopupStage.RESULT || state.stage == PopupStage.FAILED) {
-            RoundIcon(Icons.Rounded.ChevronLeft) { onIntent(PopupIntent.BackToMenu) }
+            RoundIcon(
+                Icons.Rounded.ChevronLeft,
+                contentDescription = stringResource(R.string.android_back)
+            ) { onIntent(PopupIntent.BackToMenu) }
         }
         Text(
             stringResource(R.string.app_name),
@@ -164,7 +174,10 @@ private fun Header(state: PopupState, onIntent: (PopupIntent) -> Unit) {
                 modifier = Modifier.widthIn(max = 170.dp)
             )
         }
-        RoundIcon(Icons.Rounded.Close) { onIntent(PopupIntent.Dismiss) }
+        RoundIcon(
+            Icons.Rounded.Close,
+            contentDescription = stringResource(R.string.android_close)
+        ) { onIntent(PopupIntent.Dismiss) }
     }
 }
 
@@ -418,7 +431,12 @@ private fun EmptyView() {
             modifier = Modifier.size(28.dp)
         )
         Text(
-            stringResource(R.string.home_tryHint),
+            // Its own string, not the tutorial's "text below" hint: here the
+            // popup floats over someone else's app with nothing below it.
+            stringResource(
+                R.string.android_noSelection,
+                stringResource(R.string.android_processText)
+            ),
             color = Palette.secondary,
             fontSize = 14.sp,
             textAlign = TextAlign.Center

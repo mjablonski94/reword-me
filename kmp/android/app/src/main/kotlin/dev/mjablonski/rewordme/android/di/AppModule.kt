@@ -19,7 +19,9 @@ import dev.mjablonski.rewordme.domain.usecase.RewordTextUseCase
 import dev.mjablonski.rewordme.domain.usecase.SaveApiKeyUseCase
 import dev.mjablonski.rewordme.domain.usecase.UpdateConfigUseCase
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -28,6 +30,9 @@ import org.koin.dsl.module
 
 val IO_DISPATCHER = named("io")
 
+/** Outlives any screen: writes that must not die with a view model run here. */
+val APP_SCOPE = named("appScope")
+
 /**
  * The composition root, as Koin modules instead of the desktop's
  * AppDependencies class: singletons for stores and services, factories
@@ -35,6 +40,7 @@ val IO_DISPATCHER = named("io")
  */
 val appModule = module {
     single<CoroutineDispatcher>(IO_DISPATCHER) { Dispatchers.IO }
+    single(APP_SCOPE) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
 
     single<ConfigStore> { AndroidConfigStore(androidContext()) }
     single<ApiKeyStore> { KeystoreApiKeyStore(androidContext()) }

@@ -71,7 +71,10 @@
     <string name="error_localNotDownloaded">로컬 모델이 다운로드되지 않았습니다. 설정에서 다운로드하세요.</string>
     <string name="error_localRuntime">포함된 로컬 AI 런타임을 사용할 수 없습니다. RewordMe를 다시 설치하세요.</string>
     <string name="error_localDownload">로컬 모델 다운로드 실패: %1$s</string>
+    <string name="android_back">뒤로</string>
+    <string name="android_close">닫기</string>
     <string name="android_keystoreCaption">이 기기의 Android Keystore에 보관된 키로 암호화해 저장되며, 일반 파일에는 저장되지 않습니다.</string>
+    <string name="android_noSelection">아직 다듬을 텍스트가 없습니다. 아무 앱에서나 텍스트를 선택한 다음 메뉴에서 \'%1$s\'를 탭하세요.</string>
     <string name="android_processText">다듬기</string>
     <string name="home_description">쓰던 자리에서 바로 글을 다듬어 보세요. 아무 앱에서나 텍스트를 선택하고 선택 메뉴에서 \'다듬기\'를 탭한 뒤 교정, 다듬기 또는 어조를 고르면 됩니다. 다듬어진 텍스트가 원래 자리에 그대로 들어갑니다.</string>
     <string name="home_openSettings">설정</string>
@@ -80,4 +83,5 @@
     <string name="home_title">RewordMe에 오신 것을 환영합니다</string>
     <string name="home_tryHint">아래 텍스트를 길게 눌러 선택한 다음 메뉴에서 \'다듬기\'를 탭하세요.</string>
     <string name="home_tryTitle">지금 해보기</string>
+    <string name="provider_removeKey">키 삭제</string>
 </resources>
