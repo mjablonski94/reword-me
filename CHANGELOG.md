@@ -4,6 +4,23 @@ All notable changes to RewordMe are documented in this file.
 
 The project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Added an Android app draft built on the shared KMP core, with an
+  `ACTION_PROCESS_TEXT` selection-menu workflow, launcher tutorial, settings,
+  encrypted API-key storage, and 11 interface languages.
+- Added a downloadable Android 1.0.0 development APK for cable-free testing on
+  Android 8.0 or newer devices, together with its SHA-256 checksum.
+
+### Fixed
+
+- Hardened the Android draft after review, including atomic configuration
+  writes, serialized Keystore access, request timeouts, user-configured Ollama
+  cleartext support, edge-to-edge/keyboard insets, dark Material menus,
+  cancellation handling, accessibility labels, and settings persistence.
+
 ## [1.0.1] - 2026-08-04
 
 ### Added
@@ -60,4 +77,5 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Downloadable model weights are not bundled with RewordMe and retain their own
   licenses. See `THIRD_PARTY_NOTICES.txt` for details.
 
+[Unreleased]: https://github.com/mjablonski94/reword-me/compare/v1.0.1...HEAD
 [1.0.1]: https://github.com/mjablonski94/reword-me/releases/tag/v1.0.1

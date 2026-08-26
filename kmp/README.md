@@ -3,7 +3,7 @@
 The KMP sibling of the [macOS app](../macos/): Compose Multiplatform desktop app targeting
 **Windows first**, plus an **Android** app on the same core; Linux is planned.
 
-## Status: 1.0.1, released for Windows; Android draft
+## Status: 1.0.1, released for Windows; Android test build available
 
 Linux remains planned on the same core.
 
@@ -46,6 +46,17 @@ Still planned: UI Automation `TextPattern` (clipboard-free reads + a selection r
 place the popup against), Linux support.
 
 ## Android
+
+### Download the test APK
+
+Download [`RewordMe-Android-1.0.0-dev.apk`](RewordMe-Android-1.0.0-dev.apk) directly on an
+Android 8.0 or newer phone—no USB cable is needed. Open the downloaded file and allow your
+browser or file manager to install unknown apps when Android asks. The accompanying
+[`SHA-256 file`](RewordMe-Android-1.0.0-dev.apk.sha256) can be used to verify the download.
+
+This is a debug-signed development build (`dev.mjablonski.rewordme.debug`), intended for
+hands-on testing rather than Play Store distribution. It can remain installed alongside a
+future production-signed RewordMe release.
 
 The phone has no global hotkey, so the entry point is the OS text-selection menu
 (`ACTION_PROCESS_TEXT`): select text in any app, tap **Reword me** (localized per language,
