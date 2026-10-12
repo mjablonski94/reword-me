@@ -267,3 +267,53 @@ An automated end-to-end suite (`kmp/android/app/src/androidTest/.../RewordMeE2ET
 - The suite taps "Try again" once on a dropped emulator connection, as a user would.
 
 **Visibility:** from Android 11 onward, the stock Messages, Gmail and Contacts apps cannot list RewordMe in their selection menu; on Android 8–10 everything can. The Share route added earlier is therefore the way in on Android 11+.
+
+---
+
+# 1.1.0: the floating icon, Android 12–16 (API 31–36)
+
+**Why the icon.** From Android 11 Messages, Gmail and Contacts cannot list "Reword me" in their selection menu. One workaround was tried and dropped: RewordMe launching Messages *for a result* makes Messages see RewordMe ("queryable via interaction"), and "Reword me" then appears under ⋮ with Replace working. But Android forgets that grant on every reboot and every app update, and a plain launch does not grant it. The floating icon does not depend on the host at all: an accessibility service notices a selection in any app, shows a small RewordMe icon next to it, and writes the rewrite back into the field.
+
+**Minimum version raised to Android 12 (API 31).** The Android 8–11 workarounds are gone: the pre-API 28 focus sinks, the Android 8–9 "second selection" hint, and the pre-API 30 window-metrics fallback.
+
+The suite now has 15 scenarios: the ten above, plus five for the icon:
+
+11. Tutorial: a selection gets the icon, clear of the selection toolbar; tap → Proofread → Replace lands in the field; the icon goes when the selection does.
+12. **Google Messages**: the first long-press into a draft that is not focused yet gets the icon; Replace lands in the Messages field.
+13. Deselecting hides the icon.
+14. RewordMe's own switch hides the icon without Android settings.
+15. Closing the popup without a rewrite brings the icon back for another go.
+
+| Android | API | Device | Result |
+|---|---|---|---|
+| 12 | 31 | Pixel 4 | ✅ 15/15 |
+| 12L | 32 | Pixel 4 | ✅ 15/15 |
+| 13 | 33 | Pixel 4 | ✅ 15/15 |
+| 14 | 34 | Pixel 4 | ✅ 15/15 |
+| 15 | 35 | Pixel 6 | ✅ 15/15 |
+| 16 | 36 | Pixel 4 | ✅ 15/15 |
+
+The Google Messages scenario runs on every version: the stock Messages of each image (older builds label the button next to the draft differently, and once a thread opened without its draft, which the test then fills in itself, unfocused).
+
+**Found and fixed while testing the icon:**
+- A fresh install opened Settings with an orange "Android's switch is still off" warning before anyone had asked for the icon. RewordMe's switch now starts off, and turning the service on in Android's settings counts as asking.
+- With the keyboard right below the selected line, the icon landed on the selection toolbar and covered its Share button. It now goes just above the selection, and above the toolbar when that is there; below only when there is no room at the top; never on the toolbar or the keyboard.
+- The icon appeared before the toolbar (Android shows it only once the finger lifts) and then jumped out of its way. Its first appearance now waits for the toolbar (up to 0.9 s in apps without one), and any later move glides.
+- Opened from the icon, the popup appeared without its fade: the new task's system transition ran first and the fade was over before the window showed. The popup now starts the fade once its window is on screen, and the icon launches it without a system animation.
+- **The first long-press into an unfocused field in Google Messages showed no icon** (caught in the dry run for the demo: every test before had used a field that was already focused). Messages reports that selection from a view it swaps out right away, and sends nothing for the real field. The icon now also checks the field with input focus.
+
+**Android behaviour worth knowing (not fixable in the app):**
+- **Force stop switches the service off.** Android removes a force-stopped app's accessibility service from the enabled list, and opening the app does not bring it back. RewordMe's Settings then shows the warning with a link to Accessibility settings, and the home screen shows "Set up the floating icon" again.
+- Android 13+ may grey the switch out for an APK installed from a file ("Restricted setting"); App info → ⋮ → *Allow restricted settings* unlocks it. The Settings hint says so.
+- Android's confirmation reads "full control of your device" for every accessibility service; RewordMe's own explanation comes first.
+
+**Test infrastructure, not the app:**
+- UiAutomator connects as an accessibility client and by default switches every other accessibility service off; the icon tests ask it not to. With the service under test running in the same process, UiAutomator no longer lists classic text fields (the service still sees them), so those tests find the field through the raw accessibility connection or next to a neighbouring button, wait until its layout settles, and read it back through the focused node or the activity.
+- `am instrument` force-stops the app first, which (see above) drops its accessibility service; the tests turn it off and on again.
+- An emulator with a visible window attaches the PC keyboard as a hardware keyboard, and Gboard then shows its small toolbar instead of the on-screen keyboard. The Settings keyboard test only means something on a headless emulator, which is how the matrix runs.
+
+**Release APK smoke test (Android 15, `RewordMe-Android-1.1.0.apk`):** configured through its own UI against the PC's Ollama (`10.0.2.2:11434`, `gemma4:26b-a4b-it-qat`). Disclosure → Android's Accessibility page → Allow → the switch shows on → the icon in Google Messages → real rewrites replaced in place. That run produced the demo:
+
+<p align="center"><img src="../kmp/docs/media/android-floating-icon.gif" width="320" alt="RewordMe's floating icon in Google Messages: select, tap the icon, Proofread, Replace; then Professional"></p>
+
+The rewrites in it are real output of the local model; the waiting for it is cut short.

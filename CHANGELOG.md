@@ -16,7 +16,20 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Animated the Android popup: it fades in and out over the host app, the
   card morphs to each stage's size, and stage content cross-fades.
 - Added an on-device end-to-end suite for Android (UiAutomator against a mock
-  provider), run green on every supported version from Android 8.0 to 16.
+  provider), run green on every supported version from Android 12 to 16.
+- Added an optional floating icon on Android: once turned on, a small RewordMe
+  icon appears next to text selected in any app - including Gmail, Messages
+  and others that hide "Reword me" from their menu - and Replace writes the
+  rewrite back into that field. It sits above the selection toolbar, never on
+  it, follows the selection and fades out when the text is deselected. It uses
+  an accessibility service the user enables after an in-app explanation, reads
+  only the selected text, and can be switched off in RewordMe at any time.
+- Added the Android 1.1.0 APK with the floating icon.
+
+### Changed
+
+- Android now requires Android 12 (API 31) or newer; the workarounds for
+  Android 8-11 are gone.
 
 ### Fixed
 

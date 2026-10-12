@@ -3,7 +3,7 @@
 The KMP sibling of the [macOS app](../macos/): Compose Multiplatform desktop app targeting
 **Windows first**, plus an **Android** app on the same core; Linux is planned.
 
-## Status: 1.0.1, released for Windows; Android test build available
+## Status: 1.0.1, released for Windows; Android 1.1.0 test build available
 
 Linux remains planned on the same core.
 
@@ -53,14 +53,15 @@ place the popup against), Linux support.
 
 ### Download the test APK
 
-Download [`RewordMe-Android-1.0.0-dev.apk`](RewordMe-Android-1.0.0-dev.apk) directly on an
+Download [`RewordMe-Android-1.1.0.apk`](RewordMe-Android-1.1.0.apk) directly on an
 Android 12 or newer phone—no USB cable is needed. Open the downloaded file and allow your
 browser or file manager to install unknown apps when Android asks. The accompanying
-[`SHA-256 file`](RewordMe-Android-1.0.0-dev.apk.sha256) can be used to verify the download.
+[`SHA-256 file`](RewordMe-Android-1.1.0.apk.sha256) can be used to verify the download.
 
-This is a debug-signed development build (`dev.mjablonski.rewordme.debug`), intended for
-hands-on testing rather than Play Store distribution. It can remain installed alongside a
-future production-signed RewordMe release.
+This is a minified release build (`dev.mjablonski.rewordme`) signed with a development
+key, intended for hands-on testing rather than Play Store distribution. It installs over
+1.0.1 as an update and can remain installed alongside the older debug build
+(`dev.mjablonski.rewordme.debug`).
 
 The phone has no global hotkey, so the entry point is the OS text-selection menu
 (`ACTION_PROCESS_TEXT`): select text in any app, tap **Reword me** (localized per language,
@@ -68,6 +69,32 @@ e.g. *Przeredaguj*, *Reformuler*, *リライト*), and the popup opens with the 
 flow as the desktops - describe field, Proofread/Rewrite, tone presets, then
 Again/Copy/Replace. **Replace** hands the rewrite back through `EXTRA_PROCESS_TEXT`, so the
 host app's own field swaps the selection in place; read-only selections offer Copy instead.
+
+### Floating icon
+
+Since Android 11 many apps (Gmail, Messages, Contacts) cannot list **Reword me** in their
+selection menu at all. For those, turn on **Settings → General → Floating icon**: whenever
+text is selected in any app, a small RewordMe icon appears next to it - above the selection
+toolbar, never on its buttons - and tapping it opens the same popup, where **Replace** writes
+the rewrite back into that field. The icon follows the selection and fades out when the text
+is deselected.
+
+<p align="center">
+  <img src="docs/media/android-floating-icon.gif" width="360" alt="RewordMe's floating icon in Google Messages: select a word, the icon appears above the selection toolbar, tap it, Proofread, Replace swaps the text in the message field">
+</p>
+
+<p align="center">
+  <img src="docs/media/android-floating-settings.png" width="260" alt="RewordMe Settings, General tab: the Floating icon switch">
+  <img src="docs/media/android-floating-disclosure.png" width="260" alt="The explanation shown before RewordMe sends you to Android's Accessibility settings">
+  <img src="docs/media/android-floating-messages.png" width="260" alt="The RewordMe icon above the selection toolbar in Google Messages">
+</p>
+
+It is an Android accessibility service, which only the user can switch on: RewordMe first
+explains what it reads - only the selected text, sent to your provider only when you tap
+the icon - and then opens Android's Accessibility settings. Android 13+ may grey the switch
+out for an APK installed from a file ("Restricted setting"); **App info → ⋮ → Allow
+restricted settings** unlocks it. Force-stopping RewordMe switches the service off again
+(an Android rule); Settings and the home screen then say so and link straight back.
 
 - Architecture mirrors the tvapp conventions: per-feature `di` / `presentation` / `ui`
   packages, MVI (`MviViewModel` with a single `StateFlow` state, intents in, one-shot
