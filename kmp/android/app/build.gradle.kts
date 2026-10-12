@@ -29,6 +29,8 @@ android {
         targetSdk = libs.versions.androidCompileSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
+        // End-to-end suite on devices: ./gradlew :android:app:connectedDebugAndroidTest
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -115,6 +117,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.uiautomator)
     // Hosts the empty activity createAndroidComposeRule launches.
     debugImplementation(libs.compose.ui.test.manifest)
 }
