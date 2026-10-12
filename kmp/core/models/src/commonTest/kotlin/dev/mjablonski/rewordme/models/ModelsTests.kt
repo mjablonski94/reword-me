@@ -114,6 +114,11 @@ class ProviderKindTest {
         assertFalse(ProviderKind.MISTRAL.includesModel("mistral-embed"))
         assertFalse(ProviderKind.XAI.includesModel("grok-2-image"))
         assertFalse(ProviderKind.OLLAMA.includesModel("nomic-embed-text"))
+        assertTrue(ProviderKind.GEMINI.includesModel("gemini-3.5-flash-lite"))
+        assertFalse(ProviderKind.GEMINI.includesModel("gemini-3.8-flash-lite-tts"))
+        assertFalse(ProviderKind.GEMINI.includesModel("gemini-3.1-flash-lite-image"))
+        assertFalse(ProviderKind.GEMINI.includesModel("gemini-3.5-transcribe"))
+        assertFalse(ProviderKind.GEMINI.includesModel("gemma-4-31b-it"))
     }
 
     @Test
