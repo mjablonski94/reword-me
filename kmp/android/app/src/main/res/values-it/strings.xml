@@ -73,9 +73,19 @@
     <string name="error_localDownload">Download del modello locale non riuscito: %1$s</string>
     <string name="android_back">Indietro</string>
     <string name="android_close">Chiudi</string>
+    <string name="android_copied">Copiato negli appunti</string>
+    <string name="android_errorNetwork">Impossibile raggiungere il provider. Controlla la connessione a Internet o l\'indirizzo del server nelle Impostazioni, poi riprova.</string>
+    <string name="android_errorTimeout">Il provider ha impiegato troppo tempo a rispondere. Riprova tra un attimo.</string>
     <string name="android_keystoreCaption">Salvata cifrata con una chiave custodita nell\'Android Keystore di questo dispositivo, mai in file in chiaro.</string>
+    <string name="android_menuHint">Non vedi «Riformula»? Apri il menu ⋮. Su Android 8–9 potrebbe comparire solo dopo aver selezionato il testo una seconda volta.</string>
     <string name="android_noSelection">Non c\'è ancora nulla da riformulare. Seleziona il testo in qualsiasi app, poi tocca «%1$s» nel menu.</string>
+    <string name="android_ollamaPhoneHint">Sul telefono «localhost» indica il telefono stesso. Inserisci l\'indirizzo del computer sulla stessa rete Wi-Fi (ad esempio 192.168.1.20:11434) e avvia Ollama con OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Riformula</string>
+    <string name="android_replaceAlsoCopied">Copiato anche negli appunti: se il testo non è cambiato, incollalo al posto della selezione.</string>
+    <string name="android_replaceUnavailable">Questa app non permette a RewordMe di sostituire il testo. Copia il risultato e incollalo dove ti serve.</string>
+    <string name="android_selectionTooShort">La selezione è troppo corta. Seleziona un testo più lungo e riprova.</string>
+    <string name="android_shareHint">Alcune app (ad es. Messaggi, Gmail, Contatti) non mostrano «Riformula». Lì tocca Condividi, scegli «Riformula» e poi incolla il risultato.</string>
+    <string name="android_slowHint">Ancora in corso… I modelli locali e i provider sovraccarichi possono richiedere un po\' di tempo.</string>
     <string name="home_description">Il tuo testo, migliorato sul posto. Seleziona il testo in qualsiasi app, tocca «Riformula» nel menu di selezione e scegli Correggi, Riformula o un tono: il testo migliorato sostituisce l\'originale esattamente dov\'era.</string>
     <string name="home_openSettings">Impostazioni</string>
     <string name="home_sample">ciao, volevo solo chiederti se magari hai tempo di dare un\'occhiata al report che ti ho mandato, non è urgentissimo però mi farebbe molto piacere se riuscissi a rispondermi entro venerdi in qualche modo</string>

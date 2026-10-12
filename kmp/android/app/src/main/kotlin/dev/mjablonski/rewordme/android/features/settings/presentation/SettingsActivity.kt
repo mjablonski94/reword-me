@@ -34,7 +34,7 @@ class SettingsActivity : ComponentActivity() {
             }
 
             RewordMeTheme {
-                SettingsScreen(state, viewModel::onIntent)
+                SettingsScreen(state, viewModel::onIntent, onBack = ::finish)
             }
         }
     }

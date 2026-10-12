@@ -73,9 +73,19 @@
     <string name="error_localDownload">Download des lokalen Modells fehlgeschlagen: %1$s</string>
     <string name="android_back">Zurück</string>
     <string name="android_close">Schließen</string>
+    <string name="android_copied">In die Zwischenablage kopiert</string>
+    <string name="android_errorNetwork">Der Anbieter ist nicht erreichbar. Prüfe deine Internetverbindung oder die Serveradresse in den Einstellungen und versuche es erneut.</string>
+    <string name="android_errorTimeout">Der Anbieter hat zu lange nicht geantwortet. Versuche es gleich noch einmal.</string>
     <string name="android_keystoreCaption">Verschlüsselt gespeichert mit einem Schlüssel im Android-Keystore dieses Geräts, nie in Klartextdateien.</string>
+    <string name="android_menuHint">Du siehst „Umformulieren“ nicht? Öffne das ⋮-Menü. Unter Android 8–9 erscheint es eventuell erst, wenn du den Text ein zweites Mal markierst.</string>
     <string name="android_noSelection">Noch nichts zum Umformulieren. Markiere Text in einer beliebigen App und tippe dann im Menü auf „%1$s“.</string>
+    <string name="android_ollamaPhoneHint">Auf dem Handy bedeutet „localhost“ das Handy selbst. Gib die Adresse deines Computers im selben WLAN ein (z. B. 192.168.1.20:11434) und starte Ollama mit OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Umformulieren</string>
+    <string name="android_replaceAlsoCopied">Auch kopiert – falls sich der Text nicht geändert hat, füge ihn über der Auswahl ein.</string>
+    <string name="android_replaceUnavailable">Diese App lässt RewordMe den Text nicht ersetzen. Kopiere das Ergebnis und füge es dort ein, wo du es brauchst.</string>
+    <string name="android_selectionTooShort">Die Auswahl ist zu kurz. Markiere einen längeren Text und versuche es erneut.</string>
+    <string name="android_shareHint">Manche Apps (z. B. Messages, Gmail, Kontakte) zeigen „Umformulieren“ gar nicht an. Tippe dort auf „Teilen“, wähle „Umformulieren“ und füge das Ergebnis anschließend ein.</string>
+    <string name="android_slowHint">Läuft noch… Lokale Modelle und ausgelastete Anbieter brauchen manchmal etwas länger.</string>
     <string name="home_description">Dein Text, direkt an Ort und Stelle verbessert. Markiere Text in einer beliebigen App, tippe im Auswahlmenü auf „Umformulieren“ und wähle Korrektur, Umformulieren oder einen Ton – der verbesserte Text ersetzt das Original an derselben Stelle.</string>
     <string name="home_openSettings">Einstellungen</string>
     <string name="home_sample">hey wollte nur kurz fragen ob du vieleicht zeit hast dir den bericht anzuschauen den ich geschickt hab, ist nicht super dringend aber wär echt nett wenn du dich bis freitag irgendwie melden könntest</string>

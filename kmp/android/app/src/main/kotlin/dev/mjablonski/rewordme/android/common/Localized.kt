@@ -18,7 +18,7 @@ fun RewordError.localized(context: Context): String = when (this) {
         ?: context.getString(R.string.error_rateLimited)
     RewordError.UsageLimitReached -> context.getString(R.string.error_usageLimit)
     is RewordError.Refused -> explanation ?: context.getString(R.string.error_refused)
-    is RewordError.Api -> context.getString(R.string.error_api, status, detail)
+    is RewordError.Api -> context.getString(R.string.error_api, status, readableDetail(detail))
     RewordError.EmptyResponse -> context.getString(R.string.error_empty)
     RewordError.InvalidResponse -> context.getString(R.string.error_invalidResponse)
     RewordError.NoModelAvailable -> context.getString(R.string.error_noModel)
@@ -33,4 +33,13 @@ fun RewordError.localized(context: Context): String = when (this) {
     RewordError.LocalRuntimeUnavailable -> context.getString(R.string.error_localRuntime)
     is RewordError.LocalModelDownloadFailed ->
         context.getString(R.string.error_localDownload, detail)
+}
+
+/**
+ * Proxies and gateways answer errors with HTML pages; the error detail is the
+ * raw body, so strip the markup rather than show "<html><body>..." to people.
+ */
+internal fun readableDetail(detail: String): String {
+    if ('<' !in detail || '>' !in detail) return detail
+    return detail.replace(Regex("<[^>]*>"), " ").replace(Regex("\\s+"), " ").trim().take(160)
 }

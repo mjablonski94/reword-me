@@ -2,6 +2,7 @@ package dev.mjablonski.rewordme.android.features.settings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import dev.mjablonski.rewordme.android.R
 import dev.mjablonski.rewordme.android.common.Palette
 import dev.mjablonski.rewordme.android.common.PillButton
+import dev.mjablonski.rewordme.android.common.RoundIcon
 import dev.mjablonski.rewordme.android.common.TextInput
 import dev.mjablonski.rewordme.android.common.controlShape
 import dev.mjablonski.rewordme.android.common.insetShape
@@ -57,7 +60,11 @@ import dev.mjablonski.rewordme.models.ProviderKind
 private const val SUPPORT_URL = "https://buymeacoffee.com/kofcio94f"
 
 @Composable
-fun SettingsScreen(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+fun SettingsScreen(
+    state: SettingsState,
+    onIntent: (SettingsIntent) -> Unit,
+    onBack: () -> Unit = {}
+) {
     // The activity is edge-to-edge; the surface paints behind the system
     // bars and the content starts below them.
     Column(
@@ -66,7 +73,7 @@ fun SettingsScreen(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
             .background(Palette.surface)
             .statusBarsPadding()
     ) {
-        Toolbar(state, onIntent)
+        Toolbar(state, onIntent, onBack)
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             // Inset padding sits OUTSIDE the scroll modifier: applied inside,
@@ -89,14 +96,35 @@ fun SettingsScreen(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
 }
 
 @Composable
-private fun Toolbar(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
-    Column(Modifier.fillMaxWidth().background(Palette.toolbar).padding(16.dp, 12.dp)) {
-        Text(
-            stringResource(R.string.settings_windowTitle),
-            color = Palette.text,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+private fun Toolbar(
+    state: SettingsState,
+    onIntent: (SettingsIntent) -> Unit,
+    onBack: () -> Unit
+) {
+    // focusable(): before API 28 the window hands initial focus to the first
+    // focusable node, which would be the API key field - and Compose then
+    // opens the keyboard over the screen. The toolbar takes it instead.
+    Column(
+        Modifier.fillMaxWidth().background(Palette.toolbar).focusable().padding(16.dp, 12.dp)
+    ) {
+        // A visible way back: Settings is often reached from the popup, in
+        // its own task, where the system back gesture is not obvious.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            RoundIcon(
+                Icons.Rounded.ChevronLeft,
+                contentDescription = stringResource(R.string.android_back),
+                onClick = onBack
+            )
+            Text(
+                stringResource(R.string.settings_windowTitle),
+                color = Palette.text,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
         Spacer(Modifier.size(10.dp))
         Row(
             Modifier
@@ -254,6 +282,15 @@ private fun ProviderTab(state: SettingsState, onIntent: (SettingsIntent) -> Unit
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            // The shared default points at localhost, which on a phone is the
+            // phone itself; spell out what to enter instead.
+            Text(
+                stringResource(R.string.android_ollamaPhoneHint),
+                color = if (pointsAtThisDevice(state.ollamaHostDraft)) Palette.warn
+                else Palette.secondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
             LinkText(
                 stringResource(R.string.ollama_getLink, provider.apiKeyConsoleName)
             ) { onIntent(SettingsIntent.OpenUrl(provider.apiKeyConsoleUrl)) }
@@ -454,6 +491,18 @@ private fun Dropdown(
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(
                     text = { Text(option, fontSize = 14.sp) },
+                    trailingIcon = if (option == current) {
+                        {
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = Palette.accent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    } else {
+                        null
+                    },
                     onClick = {
                         expanded = false
                         onSelect(index)
@@ -462,4 +511,9 @@ private fun Dropdown(
             }
         }
     }
+}
+
+private fun pointsAtThisDevice(host: String): Boolean {
+    val value = host.trim().lowercase()
+    return value.isEmpty() || "localhost" in value || "127.0.0.1" in value
 }

@@ -73,9 +73,19 @@
     <string name="error_localDownload">Falló la descarga del modelo local: %1$s</string>
     <string name="android_back">Atrás</string>
     <string name="android_close">Cerrar</string>
+    <string name="android_copied">Copiado al portapapeles</string>
+    <string name="android_errorNetwork">No se ha podido conectar con el proveedor. Comprueba tu conexión a internet o la dirección del servidor en Ajustes y vuelve a intentarlo.</string>
+    <string name="android_errorTimeout">El proveedor ha tardado demasiado en responder. Vuelve a intentarlo en un momento.</string>
     <string name="android_keystoreCaption">Se guarda cifrada con una clave que reside en el Android Keystore de este dispositivo, nunca en archivos de texto plano.</string>
+    <string name="android_menuHint">¿No ves «Reformular»? Abre el menú ⋮. En Android 8–9 puede aparecer solo después de seleccionar el texto por segunda vez.</string>
     <string name="android_noSelection">Todavía no hay nada que reformular. Selecciona texto en cualquier app y toca «%1$s» en el menú.</string>
+    <string name="android_ollamaPhoneHint">En el móvil, «localhost» es el propio móvil. Introduce la dirección de tu ordenador en la misma red wifi (por ejemplo, 192.168.1.20:11434) e inicia Ollama con OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Reformular</string>
+    <string name="android_replaceAlsoCopied">También se ha copiado: si el texto no ha cambiado, pégalo sobre la selección.</string>
+    <string name="android_replaceUnavailable">Esta app no permite que RewordMe sustituya el texto. Copia el resultado y pégalo donde lo necesites.</string>
+    <string name="android_selectionTooShort">La selección es demasiado corta. Selecciona un fragmento más largo y vuelve a intentarlo.</string>
+    <string name="android_shareHint">Algunas apps (p. ej., Mensajes, Gmail, Contactos) no muestran «Reformular». En ellas, toca Compartir, elige «Reformular» y luego pega el resultado.</string>
+    <string name="android_slowHint">Seguimos trabajando… Los modelos locales y los proveedores saturados pueden tardar un poco.</string>
     <string name="home_description">Tu texto, mejorado ahí mismo. Selecciona texto en cualquier app, toca «Reformular» en el menú de selección y elige Corregir, Reformular o un tono: el texto mejorado sustituye al original justo donde estaba.</string>
     <string name="home_openSettings">Ajustes</string>
     <string name="home_sample">hola, solo queria saber si igual tienes un rato para mirar el informe que te mandé, no es muy urgente pero te agradeceria mucho si me pudieras contestar antes del viernes de alguna forma</string>

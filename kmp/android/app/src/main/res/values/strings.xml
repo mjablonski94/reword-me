@@ -74,9 +74,19 @@
     <string name="error_localDownload">Local model download failed: %1$s</string>
     <string name="android_back">Back</string>
     <string name="android_close">Close</string>
+    <string name="android_copied">Copied to clipboard</string>
+    <string name="android_errorNetwork">Couldn\'t reach the provider. Check your internet connection or the server address in Settings, then try again.</string>
+    <string name="android_errorTimeout">The provider took too long to answer. Try again in a moment.</string>
     <string name="android_keystoreCaption">Stored encrypted with a key kept in this device\'s Android Keystore, never in plain files.</string>
+    <string name="android_menuHint">Don\'t see “Reword me”? Open the ⋮ menu. On Android 8–9 it may only appear after you select the text a second time.</string>
     <string name="android_noSelection">Nothing to reword yet. Select text in any app, then tap “%1$s” in the menu.</string>
+    <string name="android_ollamaPhoneHint">On a phone, “localhost” means the phone itself. Enter your computer\'s address on the same Wi-Fi (for example 192.168.1.20:11434) and start Ollama with OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Reword me</string>
+    <string name="android_replaceAlsoCopied">Also copied – if the text didn\'t change, paste it over the selection.</string>
+    <string name="android_replaceUnavailable">This app doesn\'t let RewordMe replace the text. Copy the result and paste it where you need it.</string>
+    <string name="android_selectionTooShort">The selection is too short. Select a longer piece of text, then try again.</string>
+    <string name="android_shareHint">Some apps (e.g. Messages, Gmail, Contacts) don\'t show “Reword me” at all. There, tap Share, pick “Reword me”, then paste the result back.</string>
+    <string name="android_slowHint">Still working… Local models and busy providers can take a while.</string>
     <string name="home_description">Your writing, polished right where you write it. Select text in any app, tap “Reword me” in the selection menu, then pick Proofread, Rewrite or a tone – the improved text replaces the original in place.</string>
     <string name="home_openSettings">Settings</string>
     <string name="home_sample">hey, just wanted to check if you maybe have time to look at the report i sent over, its not super urgent but i would really apreciate if you could get back to me before friday somehow</string>

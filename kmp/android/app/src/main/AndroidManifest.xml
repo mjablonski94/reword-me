@@ -14,9 +14,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RewordMe">
 
+        <!-- adjustResize on every screen with a text field: below API 30
+             Compose only receives IME insets in adjustResize windows, and
+             without them imePadding() keeps stale space after the keyboard
+             closes. stateHidden because adjustResize windows otherwise pop the
+             keyboard for whichever field holds initial focus. -->
         <activity
             android:name=".features.home.presentation.HomeActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,7 +34,8 @@
         <activity
             android:name=".features.settings.presentation.SettingsActivity"
             android:exported="false"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
 
         <!-- The entry other apps show in their text-selection menu. Its label
              is the user-facing "Reword me"; the host EditText replaces the
@@ -39,9 +46,20 @@
             android:excludeFromRecents="true"
             android:label="@string/android_processText"
             android:theme="@style/Theme.RewordMe.Popup"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- The fallback entry. Since Android 11 an app lists only the
+                 PROCESS_TEXT handlers it can see, and many (Messages, Gmail,
+                 Contacts) declare no such <queries>, so "Reword me" never
+                 appears there. Every selection toolbar offers Share, and the
+                 system share sheet sees all apps; the rewrite then goes back
+                 by Copy, since a share has no result channel. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>

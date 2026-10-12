@@ -1,5 +1,6 @@
 package dev.mjablonski.rewordme.android.features.popup.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,13 +39,18 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.HighlightAlt
 import androidx.compose.material.icons.rounded.Mood
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,12 +64,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import dev.mjablonski.rewordme.android.R
 import dev.mjablonski.rewordme.android.common.Palette
 import dev.mjablonski.rewordme.android.common.PillButton
@@ -97,10 +105,12 @@ private val PopupAction.titleRes: Int
 
 /**
  * The desktop popup as a centered card over a scrim. Tapping the scrim
- * dismisses, exactly like the desktop popup losing focus.
+ * dismisses like the desktop popup losing focus - except while a request is
+ * running or its result is shown, where a stray tap would throw work away.
  */
 @Composable
 fun PopupScreen(state: PopupState, onIntent: (PopupIntent) -> Unit) {
+    BackHandler { onIntent(PopupIntent.BackPressed) }
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -109,12 +119,12 @@ fun PopupScreen(state: PopupState, onIntent: (PopupIntent) -> Unit) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { onIntent(PopupIntent.Dismiss) }
+            ) { onIntent(PopupIntent.ScrimTapped) }
             // union, not systemBars + ime stacked: the IME inset already
             // reaches up from the bottom of the window, so adding the nav
             // bar on top of it would lift the card twice. Pre-30 devices
-            // report no IME inset at all; the window-level adjustPan in the
-            // manifest is the fallback that keeps the field visible there.
+            // report the IME inset only to adjustResize windows, hence the
+            // manifest setting; the card then shrinks and scrolls.
             .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.ime))
     ) {
         Column(
@@ -122,7 +132,9 @@ fun PopupScreen(state: PopupState, onIntent: (PopupIntent) -> Unit) {
             modifier = Modifier
                 .widthIn(max = 360.dp)
                 .fillMaxWidth()
-                .padding(24.dp)
+                // 12dp sides, not 24: a 320dp-wide phone needs every pixel
+                // for the action row.
+                .padding(horizontal = 12.dp, vertical = 24.dp)
                 .clip(cardShape)
                 .background(Palette.surface)
                 .border(1.dp, Palette.hairline, cardShape)
@@ -130,11 +142,15 @@ fun PopupScreen(state: PopupState, onIntent: (PopupIntent) -> Unit) {
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { /* swallow taps so they don't reach the scrim */ }
+                // Large fonts, small screens and the keyboard all make the
+                // content taller than the window; it must scroll, not clip.
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             Header(state, onIntent)
             when (state.stage) {
-                PopupStage.EMPTY -> EmptyView()
+                PopupStage.EMPTY -> EmptyView(state.tooShort)
+                PopupStage.SETUP -> SetupView(onIntent)
                 PopupStage.MENU -> Menu(state, onIntent)
                 PopupStage.LOADING -> Loading(onIntent)
                 PopupStage.RESULT -> ResultView(state, onIntent)
@@ -163,17 +179,19 @@ private fun Header(state: PopupState, onIntent: (PopupIntent) -> Unit) {
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold
         )
-        Spacer(Modifier.weight(1f))
-        if (state.modelLabel.isNotEmpty()) {
-            Text(
-                state.modelLabel,
-                color = Palette.secondary.copy(alpha = 0.7f),
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 170.dp)
-            )
-        }
+        // The label takes whatever width is left and ellipsizes inside it; a
+        // capped width instead pushed the close button off narrow cards.
+        val automatic = stringResource(R.string.provider_automatic)
+        Text(
+            if (state.providerName.isEmpty()) "" else
+                "${state.modelName ?: automatic} · ${state.providerName}",
+            color = Palette.secondary.copy(alpha = 0.7f),
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f)
+        )
         RoundIcon(
             Icons.Rounded.Close,
             contentDescription = stringResource(R.string.android_close)
@@ -184,6 +202,7 @@ private fun Header(state: PopupState, onIntent: (PopupIntent) -> Unit) {
 @Composable
 private fun Menu(state: PopupState, onIntent: (PopupIntent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SelectionPreview(state.original)
         DescribeField(state, onIntent)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BigButton(PopupAction.PROOFREAD, Modifier.weight(1f)) {
@@ -201,6 +220,26 @@ private fun Menu(state: PopupState, onIntent: (PopupIntent) -> Unit) {
                 }
         }
     }
+}
+
+/**
+ * A long-press selects a single word; without seeing the selection people
+ * rewrite one word and wonder why the result is so short.
+ */
+@Composable
+private fun SelectionPreview(text: String) {
+    Text(
+        text.trim(),
+        color = Palette.secondary,
+        fontSize = 13.sp,
+        fontStyle = FontStyle.Italic,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Palette.well, RoundedCornerShape(10.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    )
 }
 
 @Composable
@@ -317,6 +356,19 @@ private fun Loading(onIntent: (PopupIntent) -> Unit) {
             color = Palette.secondary,
             fontSize = 14.sp
         )
+        var slow by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(SLOW_HINT_MILLIS)
+            slow = true
+        }
+        if (slow) {
+            Text(
+                stringResource(R.string.android_slowHint),
+                color = Palette.secondary.copy(alpha = 0.8f),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        }
         PillButton(stringResource(R.string.popup_cancel)) {
             onIntent(PopupIntent.BackToMenu)
         }
@@ -356,21 +408,48 @@ private fun ResultView(state: PopupState, onIntent: (PopupIntent) -> Unit) {
                 )
             }
         }
+        if (!state.canReplace) {
+            Text(
+                stringResource(R.string.android_replaceUnavailable),
+                color = Palette.secondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
+        }
+        // The primary action gets a full-width row of its own: squeezed in
+        // beside Again and Copy it wrapped to "Repl/ace" on 4-inch phones
+        // and lost its label entirely in longer languages.
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            PillButton(stringResource(R.string.popup_again), icon = Icons.Rounded.Refresh) {
-                onIntent(PopupIntent.Again)
-            }
-            Spacer(Modifier.weight(1f))
-            PillButton(stringResource(R.string.popup_copy)) { onIntent(PopupIntent.Copy) }
+            // Again keeps its natural width ("Jeszcze raz" plus the icon does
+            // not fit half a 320dp card); Copy takes what is left.
+            PillButton(
+                stringResource(R.string.popup_again),
+                icon = Icons.Rounded.Refresh,
+                modifier = if (state.canReplace) Modifier else Modifier.weight(1f)
+            ) { onIntent(PopupIntent.Again) }
             if (state.canReplace) {
-                PillButton(stringResource(R.string.popup_replace), primary = true) {
-                    onIntent(PopupIntent.Replace)
-                }
+                PillButton(
+                    stringResource(R.string.popup_copy),
+                    modifier = Modifier.weight(1f)
+                ) { onIntent(PopupIntent.Copy) }
             }
+        }
+        if (state.canReplace) {
+            PillButton(
+                stringResource(R.string.popup_replace),
+                primary = true,
+                modifier = Modifier.fillMaxWidth()
+            ) { onIntent(PopupIntent.Replace) }
+        } else {
+            PillButton(
+                stringResource(R.string.popup_copy),
+                primary = true,
+                modifier = Modifier.fillMaxWidth()
+            ) { onIntent(PopupIntent.Copy) }
         }
     }
 }
@@ -406,19 +485,59 @@ private fun ErrorView(state: PopupState, onIntent: (PopupIntent) -> Unit) {
             )
         }
         Text(message, color = Palette.secondary, fontSize = 13.sp)
-        if (error?.isRetryable != false) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Spacer(Modifier.weight(1f))
-                PillButton(stringResource(R.string.popup_tryAgain)) {
-                    onIntent(PopupIntent.Retry)
-                }
-            }
+        val retryable = error?.isRetryable != false
+        val fixInSettings = error?.needsSettings == true
+        // Stacked full-width: side by side, "Spróbuj ponownie" next to
+        // "Ustawienia" ran out of room on small screens with large fonts.
+        if (retryable) {
+            PillButton(
+                stringResource(R.string.popup_tryAgain),
+                icon = Icons.Rounded.Refresh,
+                modifier = Modifier.fillMaxWidth()
+            ) { onIntent(PopupIntent.Retry) }
+        }
+        if (fixInSettings) {
+            PillButton(
+                stringResource(R.string.home_openSettings),
+                icon = Icons.Rounded.Settings,
+                primary = !retryable,
+                modifier = Modifier.fillMaxWidth()
+            ) { onIntent(PopupIntent.OpenSettings) }
         }
     }
 }
 
+/** Caught when the popup opens, not after the user has picked an action. */
 @Composable
-private fun EmptyView() {
+private fun SetupView(onIntent: (PopupIntent) -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            Icons.Rounded.Settings,
+            contentDescription = null,
+            tint = Palette.secondary,
+            modifier = Modifier.size(28.dp)
+        )
+        Text(
+            stringResource(R.string.home_setupHint),
+            color = Palette.text,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+        PillButton(
+            stringResource(R.string.home_openSettings),
+            icon = Icons.Rounded.Settings,
+            primary = true,
+            modifier = Modifier.fillMaxWidth()
+        ) { onIntent(PopupIntent.OpenSettings) }
+    }
+}
+
+@Composable
+private fun EmptyView(tooShort: Boolean) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
@@ -433,13 +552,19 @@ private fun EmptyView() {
         Text(
             // Its own string, not the tutorial's "text below" hint: here the
             // popup floats over someone else's app with nothing below it.
-            stringResource(
-                R.string.android_noSelection,
-                stringResource(R.string.android_processText)
-            ),
+            if (tooShort) {
+                stringResource(R.string.android_selectionTooShort)
+            } else {
+                stringResource(
+                    R.string.android_noSelection,
+                    stringResource(R.string.android_processText)
+                )
+            },
             color = Palette.secondary,
             fontSize = 14.sp,
             textAlign = TextAlign.Center
         )
     }
 }
+
+private const val SLOW_HINT_MILLIS = 8_000L

@@ -86,7 +86,7 @@ fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
             lineHeight = 20.sp
         )
 
-        if (!state.isConfigured) {
+        if (state.isConfigured == false) {
             Text(
                 stringResource(R.string.home_setupHint),
                 color = Palette.warn,
@@ -102,7 +102,7 @@ fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
         PillButton(
             stringResource(R.string.home_openSettings),
             icon = Icons.Rounded.Settings,
-            primary = !state.isConfigured
+            primary = state.isConfigured == false
         ) { onIntent(HomeIntent.OpenSettings) }
 
         Text(
@@ -113,6 +113,23 @@ fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
         )
         Text(
             stringResource(R.string.home_tryHint),
+            color = Palette.secondary,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
+        )
+        // Most selection toolbars park third-party actions in the overflow,
+        // and Android 8-9 only list them from the second selection on; the
+        // tutorial has to say so or the entry looks missing.
+        Text(
+            stringResource(R.string.android_menuHint),
+            color = Palette.secondary,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
+        )
+        // Since Android 11 many apps cannot list RewordMe in that menu at
+        // all; Share is the way in there.
+        Text(
+            stringResource(R.string.android_shareHint),
             color = Palette.secondary,
             fontSize = 13.sp,
             lineHeight = 18.sp
@@ -148,6 +165,10 @@ private fun TryItEditor() {
                 val vertical = (10 * resources.displayMetrics.density).toInt()
                 setPadding(horizontal, vertical, horizontal, vertical)
                 highlightColor = highlight
+                // Editable so the rewrite can land back in it, but the sample
+                // is for selecting, not typing: a keyboard popping up on every
+                // long-press covered the very text on small phones.
+                showSoftInputOnFocus = false
             }
         },
         modifier = Modifier

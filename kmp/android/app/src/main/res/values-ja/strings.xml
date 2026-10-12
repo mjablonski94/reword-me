@@ -73,9 +73,19 @@
     <string name="error_localDownload">ローカルモデルのダウンロードに失敗しました：%1$s</string>
     <string name="android_back">戻る</string>
     <string name="android_close">閉じる</string>
+    <string name="android_copied">クリップボードにコピーしました</string>
+    <string name="android_errorNetwork">プロバイダーに接続できませんでした。インターネット接続または設定のサーバーアドレスを確認して、もう一度お試しください。</string>
+    <string name="android_errorTimeout">プロバイダーの応答に時間がかかりすぎました。少し待ってからもう一度お試しください。</string>
     <string name="android_keystoreCaption">この端末の Android Keystore に保管された鍵で暗号化して保存されます。平文のファイルには保存されません。</string>
+    <string name="android_menuHint">「リライト」が見つからない場合は、⋮ メニューを開いてください。Android 8〜9 では、テキストをもう一度選択しないと表示されないことがあります。</string>
     <string name="android_noSelection">リライトするテキストがありません。任意のアプリでテキストを選択し、メニューの「%1$s」をタップしてください。</string>
+    <string name="android_ollamaPhoneHint">スマートフォンでは「localhost」はスマートフォン自体を指します。同じ Wi-Fi 上のパソコンのアドレス（例: 192.168.1.20:11434）を入力し、Ollama を OLLAMA_HOST=0.0.0.0 で起動してください。</string>
     <string name="android_processText">リライト</string>
+    <string name="android_replaceAlsoCopied">コピーもしました。テキストが置き換わっていない場合は、選択範囲に貼り付けてください。</string>
+    <string name="android_replaceUnavailable">このアプリでは RewordMe がテキストを置き換えられません。結果をコピーして、必要な場所に貼り付けてください。</string>
+    <string name="android_selectionTooShort">選択したテキストが短すぎます。もう少し長く選択してから、もう一度お試しください。</string>
+    <string name="android_shareHint">一部のアプリ（メッセージ、Gmail、連絡帳など）では「リライト」が表示されません。その場合は［共有］から「リライト」を選び、結果を貼り付けてください。</string>
+    <string name="android_slowHint">処理中です… ローカルモデルや混雑しているプロバイダーでは時間がかかることがあります。</string>
     <string name="home_description">書いたその場で文章を磨けます。任意のアプリでテキストを選択し、表示されるメニューで「リライト」をタップして、校正・リライト・トーンを選ぶだけ。改善された文章が元の場所をそのまま置き換えます。</string>
     <string name="home_openSettings">設定</string>
     <string name="home_sample">おつかれさまです、せんじつおおくりしたレポートですが、もしお時間あれば見ていただけたらうれしいです。急ぎではないのですが、できれば金曜までにお返事いただけるとたすかります</string>
