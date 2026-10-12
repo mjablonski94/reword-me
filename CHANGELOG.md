@@ -13,6 +13,8 @@ The project follows [Semantic Versioning](https://semver.org/).
   encrypted API-key storage, and 11 interface languages.
 - Added a downloadable Android 1.0.0 development APK for cable-free testing on
   Android 8.0 or newer devices, together with its SHA-256 checksum.
+- Animated the Android popup: it fades in and out over the host app, the
+  card morphs to each stage's size, and stage content cross-fades.
 
 ### Fixed
 

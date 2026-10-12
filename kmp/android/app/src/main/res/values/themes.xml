@@ -19,6 +19,8 @@
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <!-- No window animation: the popup fades itself in and out in
+             Compose, and a dialog animation on top doubled the transition. -->
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 </resources>

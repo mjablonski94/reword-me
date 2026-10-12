@@ -1,6 +1,21 @@
 package dev.mjablonski.rewordme.android.features.popup.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -61,6 +76,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -103,59 +119,104 @@ private val PopupAction.titleRes: Int
         PopupAction.CONCISE -> R.string.popup_concise
     }
 
+/** Lets tests find the card to measure its morph; no visual effect. */
+internal const val POPUP_CARD_TAG = "popupCard"
+
+private const val ENTER_MILLIS = 200
+private const val EXIT_MILLIS = 160
+private const val MORPH_MILLIS = 260
+
 /**
  * The desktop popup as a centered card over a scrim. Tapping the scrim
  * dismisses like the desktop popup losing focus - except while a request is
  * running or its result is shown, where a stray tap would throw work away.
+ *
+ * [visibility] drives the fade in and out; the activity flips it to false
+ * and finishes once the exit has played. The default shows the card at once.
  */
 @Composable
-fun PopupScreen(state: PopupState, onIntent: (PopupIntent) -> Unit) {
+fun PopupScreen(
+    state: PopupState,
+    visibility: MutableTransitionState<Boolean> = remember { MutableTransitionState(true) },
+    onIntent: (PopupIntent) -> Unit
+) {
     BackHandler { onIntent(PopupIntent.BackPressed) }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x66000000))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onIntent(PopupIntent.ScrimTapped) }
-            // union, not systemBars + ime stacked: the IME inset already
-            // reaches up from the bottom of the window, so adding the nav
-            // bar on top of it would lift the card twice. Pre-30 devices
-            // report the IME inset only to adjustResize windows, hence the
-            // manifest setting; the card then shrinks and scrolls.
-            .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.ime))
+    AnimatedVisibility(
+        visibleState = visibility,
+        enter = fadeIn(tween(ENTER_MILLIS)),
+        exit = fadeOut(tween(EXIT_MILLIS))
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
-                .widthIn(max = 360.dp)
-                .fillMaxWidth()
-                // 12dp sides, not 24: a 320dp-wide phone needs every pixel
-                // for the action row.
-                .padding(horizontal = 12.dp, vertical = 24.dp)
-                .clip(cardShape)
-                .background(Palette.surface)
-                .border(1.dp, Palette.hairline, cardShape)
+                .fillMaxSize()
+                .background(Color(0x66000000))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                ) { /* swallow taps so they don't reach the scrim */ }
-                // Large fonts, small screens and the keyboard all make the
-                // content taller than the window; it must scroll, not clip.
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                ) { onIntent(PopupIntent.ScrimTapped) }
+                // union, not systemBars + ime stacked: the IME inset already
+                // reaches up from the bottom of the window, so adding the nav
+                // bar on top of it would lift the card twice. Pre-30 devices
+                // report the IME inset only to adjustResize windows, hence the
+                // manifest setting; the card then shrinks and scrolls.
+                .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.ime))
         ) {
-            Header(state, onIntent)
-            when (state.stage) {
-                PopupStage.EMPTY -> EmptyView(state.tooShort)
-                PopupStage.SETUP -> SetupView(onIntent)
-                PopupStage.MENU -> Menu(state, onIntent)
-                PopupStage.LOADING -> Loading(onIntent)
-                PopupStage.RESULT -> ResultView(state, onIntent)
-                PopupStage.FAILED -> ErrorView(state, onIntent)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    // The card itself pops in slightly scaled on top of the fade.
+                    .animateEnterExit(
+                        enter = scaleIn(tween(ENTER_MILLIS), initialScale = 0.94f),
+                        exit = scaleOut(tween(EXIT_MILLIS), targetScale = 0.96f)
+                    )
+                    .testTag(POPUP_CARD_TAG)
+                    .widthIn(max = 360.dp)
+                    .fillMaxWidth()
+                    // 12dp sides, not 24: a 320dp-wide phone needs every pixel
+                    // for the action row.
+                    .padding(horizontal = 12.dp, vertical = 24.dp)
+                    .clip(cardShape)
+                    .background(Palette.surface)
+                    .border(1.dp, Palette.hairline, cardShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { /* swallow taps so they don't reach the scrim */ }
+                    // Large fonts, small screens and the keyboard all make the
+                    // content taller than the window; it must scroll, not clip.
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+            ) {
+                Header(state, onIntent)
+                StageContent(state, onIntent)
             }
+        }
+    }
+}
+
+/**
+ * One stage cross-fades into the next while the card morphs to the new
+ * size: the old content leaves quickly, the new one fades in once the
+ * resize is under way, and the card's background follows the animated size.
+ */
+@Composable
+private fun StageContent(state: PopupState, onIntent: (PopupIntent) -> Unit) {
+    AnimatedContent(
+        targetState = state.stage,
+        transitionSpec = {
+            (fadeIn(tween(220, delayMillis = 90)) togetherWith fadeOut(tween(90)))
+                .using(SizeTransform { _, _ -> tween(MORPH_MILLIS, easing = FastOutSlowInEasing) })
+        },
+        label = "popupStage"
+    ) { stage ->
+        when (stage) {
+            PopupStage.EMPTY -> EmptyView(state.tooShort)
+            PopupStage.SETUP -> SetupView(onIntent)
+            PopupStage.MENU -> Menu(state, onIntent)
+            PopupStage.LOADING -> Loading(onIntent)
+            PopupStage.RESULT -> ResultView(state, onIntent)
+            PopupStage.FAILED -> ErrorView(state, onIntent)
         }
     }
 }
@@ -167,7 +228,11 @@ private fun Header(state: PopupState, onIntent: (PopupIntent) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth().heightIn(min = 28.dp)
     ) {
-        if (state.stage == PopupStage.RESULT || state.stage == PopupStage.FAILED) {
+        AnimatedVisibility(
+            visible = state.stage == PopupStage.RESULT || state.stage == PopupStage.FAILED,
+            enter = fadeIn() + expandHorizontally(),
+            exit = fadeOut() + shrinkHorizontally()
+        ) {
             RoundIcon(
                 Icons.Rounded.ChevronLeft,
                 contentDescription = stringResource(R.string.android_back)
@@ -361,7 +426,7 @@ private fun Loading(onIntent: (PopupIntent) -> Unit) {
             delay(SLOW_HINT_MILLIS)
             slow = true
         }
-        if (slow) {
+        AnimatedVisibility(visible = slow, enter = fadeIn() + expandVertically()) {
             Text(
                 stringResource(R.string.android_slowHint),
                 color = Palette.secondary.copy(alpha = 0.8f),
@@ -390,7 +455,11 @@ private fun ResultView(state: PopupState, onIntent: (PopupIntent) -> Unit) {
                 .verticalScroll(rememberScrollState())
         )
         DescribeField(state, onIntent)
-        if (state.actionFailedCopy) {
+        AnimatedVisibility(
+            visible = state.actionFailedCopy,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
