@@ -73,9 +73,19 @@
     <string name="error_localDownload">Pobieranie modelu lokalnego nie powiodło się: %1$s</string>
     <string name="android_back">Wstecz</string>
     <string name="android_close">Zamknij</string>
+    <string name="android_copied">Skopiowano do schowka</string>
+    <string name="android_errorNetwork">Nie udało się połączyć z dostawcą. Sprawdź połączenie z internetem lub adres serwera w Ustawieniach i spróbuj ponownie.</string>
+    <string name="android_errorTimeout">Dostawca zbyt długo nie odpowiadał. Spróbuj ponownie za chwilę.</string>
     <string name="android_keystoreCaption">Przechowywany w postaci zaszyfrowanej kluczem z Android Keystore tego urządzenia, nigdy w zwykłych plikach.</string>
+    <string name="android_menuHint">Nie widzisz „Przeredaguj”? Otwórz menu ⋮. Na Androidzie 8–9 opcja może pojawić się dopiero po ponownym zaznaczeniu tekstu.</string>
     <string name="android_noSelection">Nie ma jeszcze nic do przeredagowania. Zaznacz tekst w dowolnej aplikacji, a następnie stuknij „%1$s” w menu.</string>
+    <string name="android_ollamaPhoneHint">Na telefonie „localhost” oznacza sam telefon. Wpisz adres komputera w tej samej sieci Wi-Fi (np. 192.168.1.20:11434) i uruchom Ollamę z OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Przeredaguj</string>
+    <string name="android_replaceAlsoCopied">Skopiowano też do schowka – jeśli tekst się nie zmienił, wklej go w miejsce zaznaczenia.</string>
+    <string name="android_replaceUnavailable">Ta aplikacja nie pozwala RewordMe podmienić tekstu. Skopiuj wynik i wklej go tam, gdzie potrzebujesz.</string>
+    <string name="android_selectionTooShort">Zaznaczenie jest za krótkie. Zaznacz dłuższy fragment i spróbuj ponownie.</string>
+    <string name="android_shareHint">Niektóre aplikacje (np. Wiadomości, Gmail, Kontakty) w ogóle nie pokazują „Przeredaguj”. Tam stuknij „Udostępnij”, wybierz „Przeredaguj”, a potem wklej wynik.</string>
+    <string name="android_slowHint">Wciąż pracuję… Modele lokalne i przeciążeni dostawcy potrzebują czasem więcej czasu.</string>
     <string name="home_description">Twój tekst, poprawiony tam, gdzie go piszesz. Zaznacz tekst w dowolnej aplikacji, w menu zaznaczania stuknij „Przeredaguj”, a potem wybierz korektę, przeredagowanie albo ton – poprawiony tekst zastąpi oryginał dokładnie w tym samym miejscu.</string>
     <string name="home_openSettings">Ustawienia</string>
     <string name="home_sample">hej, chciałem tylko zapytać czy miałbys może chwilę żeby rzucić okiem na raport który ci wysłałem, to nie jest jakoś super pilne ale byłbym wdzieczny gdybyś dał znać jakoś przed piątkiem</string>

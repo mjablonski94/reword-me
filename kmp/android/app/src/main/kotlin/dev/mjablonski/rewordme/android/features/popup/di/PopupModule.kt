@@ -5,5 +5,5 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val popupModule = module {
-    viewModel { PopupViewModel(get(), get(), get()) }
+    viewModel { PopupViewModel(get(), get(), get(), get()) }
 }

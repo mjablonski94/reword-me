@@ -73,9 +73,19 @@
     <string name="error_localDownload">Échec du téléchargement du modèle local : %1$s</string>
     <string name="android_back">Retour</string>
     <string name="android_close">Fermer</string>
+    <string name="android_copied">Copié dans le presse-papiers</string>
+    <string name="android_errorNetwork">Impossible de joindre le fournisseur. Vérifiez votre connexion Internet ou l\'adresse du serveur dans les Réglages, puis réessayez.</string>
+    <string name="android_errorTimeout">Le fournisseur a mis trop de temps à répondre. Réessayez dans un instant.</string>
     <string name="android_keystoreCaption">Stockée chiffrée avec une clé conservée dans l\'Android Keystore de cet appareil, jamais en clair dans des fichiers.</string>
+    <string name="android_menuHint">Vous ne voyez pas « Reformuler » ? Ouvrez le menu ⋮. Sous Android 8–9, l\'option peut n\'apparaître qu\'après avoir sélectionné le texte une deuxième fois.</string>
     <string name="android_noSelection">Rien à reformuler pour l\'instant. Sélectionnez du texte dans n\'importe quelle app, puis touchez « %1$s » dans le menu.</string>
+    <string name="android_ollamaPhoneHint">Sur un téléphone, « localhost » désigne le téléphone lui-même. Saisissez l\'adresse de votre ordinateur sur le même Wi-Fi (par exemple 192.168.1.20:11434) et lancez Ollama avec OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Reformuler</string>
+    <string name="android_replaceAlsoCopied">Également copié : si le texte n\'a pas changé, collez-le à la place de la sélection.</string>
+    <string name="android_replaceUnavailable">Cette app ne permet pas à RewordMe de remplacer le texte. Copiez le résultat et collez-le là où vous en avez besoin.</string>
+    <string name="android_selectionTooShort">La sélection est trop courte. Sélectionnez un passage plus long, puis réessayez.</string>
+    <string name="android_shareHint">Certaines apps (p. ex. Messages, Gmail, Contacts) n\'affichent pas « Reformuler ». Touchez alors Partager, choisissez « Reformuler », puis collez le résultat.</string>
+    <string name="android_slowHint">Toujours en cours… Les modèles locaux et les fournisseurs très sollicités peuvent prendre un moment.</string>
     <string name="home_description">Votre texte, amélioré sur place. Sélectionnez du texte dans n\'importe quelle app, touchez « Reformuler » dans le menu de sélection, puis choisissez Corriger, Reformuler ou un ton : le texte amélioré remplace l\'original là où il se trouvait.</string>
     <string name="home_openSettings">Réglages</string>
     <string name="home_sample">salut, je voulais juste savoir si tu aurais peut etre le temps de regarder le rapport que je t\'ai envoyé, c\'est pas hyper urgent mais ce serait vraimant sympa si tu pouvais me répondre avant vendredi</string>

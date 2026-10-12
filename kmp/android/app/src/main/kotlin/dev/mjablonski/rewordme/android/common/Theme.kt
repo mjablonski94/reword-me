@@ -30,6 +30,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -137,7 +138,8 @@ internal fun PillButton(
     val content = if (primary) Color.White else Palette.text
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        // Centered so a pill stretched to full width still reads as a button.
+        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
         modifier = modifier
             .clip(pillShape)
             .background(if (enabled) fill else fill.copy(alpha = fill.alpha * 0.4f))
@@ -149,7 +151,14 @@ internal fun PillButton(
         if (icon != null) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
         }
-        Text(label, color = tint, fontSize = 14.sp)
+        // One line, always: a wrapped label turns the pill into a blob.
+        Text(
+            label,
+            color = tint,
+            fontSize = 14.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

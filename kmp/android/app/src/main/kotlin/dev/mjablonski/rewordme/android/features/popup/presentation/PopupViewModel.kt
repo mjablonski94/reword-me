@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import dev.mjablonski.rewordme.android.arch.MviViewModel
 import dev.mjablonski.rewordme.android.common.UiError
 import dev.mjablonski.rewordme.android.platform.Clipboard
+import dev.mjablonski.rewordme.domain.usecase.HasApiKeyUseCase
 import dev.mjablonski.rewordme.domain.usecase.LoadConfigUseCase
 import dev.mjablonski.rewordme.domain.usecase.RewordParams
 import dev.mjablonski.rewordme.domain.usecase.RewordTextUseCase
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 class PopupViewModel(
     private val rewordText: RewordTextUseCase,
     private val loadConfig: LoadConfigUseCase,
+    private val hasApiKey: HasApiKeyUseCase,
     private val clipboard: Clipboard
 ) : MviViewModel<PopupState, PopupIntent, PopupEffect>(PopupState()) {
 
@@ -31,7 +33,7 @@ class PopupViewModel(
 
     override fun onIntent(intent: PopupIntent) {
         when (intent) {
-            is PopupIntent.Begin -> begin(intent.text, intent.canReplace)
+            is PopupIntent.Begin -> begin(intent)
             is PopupIntent.SteeringChanged -> setState { copy(steering = intent.value) }
             is PopupIntent.Run -> run(intent.action.instruction ?: steeringOrNull())
             PopupIntent.SubmitSteering ->
@@ -41,25 +43,51 @@ class PopupViewModel(
             PopupIntent.BackToMenu -> backToMenu()
             PopupIntent.Replace -> replace()
             PopupIntent.Copy -> copy()
+            PopupIntent.OpenSettings -> {
+                cancelGeneration()
+                sendEffect(PopupEffect.OpenSettings)
+            }
+            PopupIntent.BackPressed -> when (currentState.stage) {
+                PopupStage.LOADING, PopupStage.RESULT, PopupStage.FAILED -> backToMenu()
+                else -> dismiss()
+            }
+            // A stray tap next to the card must not throw away a request the
+            // user is waiting for, or a result that may have cost money.
+            PopupIntent.ScrimTapped -> when (currentState.stage) {
+                PopupStage.LOADING, PopupStage.RESULT -> Unit
+                else -> dismiss()
+            }
             PopupIntent.Dismiss -> dismiss()
         }
     }
 
     /** Re-delivered on every activity recreation; only the first one counts. */
-    private fun begin(text: String, canReplace: Boolean) {
+    private fun begin(intent: PopupIntent.Begin) {
         if (started) return
         started = true
         lastInstruction = null
         setState {
             copy(
-                stage = if (text.isEmpty()) PopupStage.EMPTY else PopupStage.MENU,
-                original = text,
-                canReplace = canReplace
+                stage = if (intent.text.isEmpty()) PopupStage.EMPTY else PopupStage.MENU,
+                original = intent.text,
+                canReplace = intent.canReplace,
+                tooShort = intent.tooShort,
+                replaceAlsoCopies = intent.fromBrowser && intent.canReplace
             )
         }
         viewModelScope.launch {
             val config = loadConfig.safeAction(Unit).getOrNull() ?: return@launch
-            setState { copy(modelLabel = modelLabel(config, null)) }
+            val ready = !config.provider.requiresApiKey ||
+                hasApiKey.safeAction(config.provider).getOrDefault(false)
+            setState {
+                copy(
+                    modelName = modelName(config, null),
+                    providerName = providerName(config.provider),
+                    // Only from the untouched menu: an action already running
+                    // reports the missing key through its own error.
+                    stage = if (!ready && stage == PopupStage.MENU) PopupStage.SETUP else stage
+                )
+            }
         }
     }
 
@@ -89,8 +117,9 @@ class PopupViewModel(
                     setState {
                         copy(
                             stage = PopupStage.RESULT,
-                            result = generated.text,
-                            modelLabel = modelLabel(generated.config, generated.model)
+                            result = withoutReasoning(generated.text),
+                            modelName = modelName(generated.config, generated.model),
+                            providerName = providerName(generated.config.provider)
                         )
                     }
                 },
@@ -114,13 +143,18 @@ class PopupViewModel(
 
     private fun replace() {
         val result = currentState.result
-        if (result.isNotEmpty()) sendEffect(PopupEffect.FinishWithReplacement(result))
+        if (result.isEmpty()) return
+        // Browsers can accept the result and still leave the field as it was;
+        // with the rewrite on the clipboard the user can always paste it.
+        val copied = currentState.replaceAlsoCopies && clipboard.copy(result)
+        sendEffect(PopupEffect.FinishWithReplacement(result, alsoCopied = copied))
     }
 
     private fun copy() {
         val result = currentState.result
         if (result.isEmpty()) return
         if (clipboard.copy(result)) {
+            sendEffect(PopupEffect.Copied)
             dismiss()
         } else {
             setState { copy(actionFailedCopy = true) }
@@ -138,13 +172,25 @@ class PopupViewModel(
         generationId++
     }
 
-    private fun modelLabel(config: RewordConfig, resolvedModel: String?): String {
+    private fun modelName(config: RewordConfig, resolvedModel: String?): String? {
         if (config.provider == ProviderKind.LOCAL) {
             return LocalModelCatalog.model(resolvedModel ?: config.selectedModel).displayName
         }
-        val model = resolvedModel ?: config.selectedModel ?: "Automatic"
-        return "$model · ${config.provider.displayName}"
+        return resolvedModel ?: config.selectedModel
     }
+}
+
+/** "Gemini (Recommended)" is a settings label; the cramped header needs "Gemini". */
+internal fun providerName(provider: ProviderKind): String =
+    provider.displayName.substringBefore(" (")
+
+/**
+ * Reasoning models served through OpenAI-style endpoints can prefix the answer
+ * with a <think> block; Replace must never paste that into someone's message.
+ */
+internal fun withoutReasoning(text: String): String {
+    val stripped = text.replace(Regex("(?s)<think>.*?</think>"), "").trim()
+    return stripped.ifEmpty { text }
 }
 
 internal fun instructionForAgain(steering: String, previous: String?): String? {

@@ -16,6 +16,25 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Fixed Gemini's automatic model choice picking a text-to-speech model, which
+  made every rewrite fail with "Developer instruction is not enabled"; speech,
+  image, transcription, agent and Gemma models are no longer offered.
+- Reworked the Android popup for small screens, large fonts and longer
+  languages: a full-width primary action, a scrollable card, a visible close
+  button, a preview of the selection and a localized model label.
+- Added an Android setup state and "Settings" shortcuts in the popup so a
+  missing or rejected key is no longer a dead end.
+- Added RewordMe to the Android share sheet: since Android 11 many apps
+  (Messages, Gmail, Contacts) cannot list "Reword me" in their selection menu,
+  but every one offers Share; the result comes back by Copy.
+- Made browser selections on Android usable: when the host cannot take the
+  rewrite back, Copy becomes the primary action with an explanation, and
+  Replace from a browser also copies the text as a fallback.
+- Kept Android results from being lost to the back gesture or a stray tap,
+  showed friendly network and timeout errors, confirmed copies on Android
+  versions without a system clipboard notice, and hinted at slow providers.
+- Fixed stale keyboard space on Android 8-10 screens, explained where to find
+  "Reword me" in selection menus, and explained Ollama addresses on phones.
 - Hardened the Android draft after review, including atomic configuration
   writes, serialized Keystore access, request timeouts, user-configured Ollama
   cleartext support, edge-to-edge/keyboard insets, dark Material menus,

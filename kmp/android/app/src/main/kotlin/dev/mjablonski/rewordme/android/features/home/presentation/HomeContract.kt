@@ -5,8 +5,11 @@ import dev.mjablonski.rewordme.android.arch.MviIntent
 import dev.mjablonski.rewordme.android.arch.MviState
 
 data class HomeState(
-    /** True once the selected provider can actually serve a request. */
-    val isConfigured: Boolean = true
+    /**
+     * True once the selected provider can actually serve a request; null
+     * until the config has loaded, so neither state flashes on launch.
+     */
+    val isConfigured: Boolean? = null
 ) : MviState
 
 sealed interface HomeIntent : MviIntent {

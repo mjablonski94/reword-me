@@ -73,9 +73,19 @@
     <string name="error_localDownload">Не вдалося завантажити локальну модель: %1$s</string>
     <string name="android_back">Назад</string>
     <string name="android_close">Закрити</string>
+    <string name="android_copied">Скопійовано в буфер обміну</string>
+    <string name="android_errorNetwork">Не вдалося звʼязатися з провайдером. Перевірте підключення до інтернету або адресу сервера в Параметрах і спробуйте ще раз.</string>
+    <string name="android_errorTimeout">Провайдер надто довго не відповідав. Спробуйте ще раз за мить.</string>
     <string name="android_keystoreCaption">Зберігається зашифрованим ключем із Android Keystore цього пристрою, ніколи у звичайних файлах.</string>
+    <string name="android_menuHint">Не бачите «Переформулювати»? Відкрийте меню ⋮. На Android 8–9 пункт може зʼявитися лише після повторного виділення тексту.</string>
     <string name="android_noSelection">Поки що немає що переформулювати. Виділіть текст у будь-якому застосунку, а потім торкніться «%1$s» у меню.</string>
+    <string name="android_ollamaPhoneHint">На телефоні «localhost» означає сам телефон. Введіть адресу компʼютера в тій самій мережі Wi-Fi (наприклад, 192.168.1.20:11434) і запустіть Ollama з OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Переформулювати</string>
+    <string name="android_replaceAlsoCopied">Також скопійовано – якщо текст не змінився, вставте його замість виділення.</string>
+    <string name="android_replaceUnavailable">Цей застосунок не дозволяє RewordMe замінити текст. Скопіюйте результат і вставте його туди, де потрібно.</string>
+    <string name="android_selectionTooShort">Виділення надто коротке. Виділіть довший фрагмент і спробуйте ще раз.</string>
+    <string name="android_shareHint">Деякі застосунки (наприклад, Повідомлення, Gmail, Контакти) взагалі не показують «Переформулювати». У них торкніться «Поділитися», виберіть «Переформулювати», а потім вставте результат.</string>
+    <string name="android_slowHint">Ще працюю… Локальні моделі та перевантажені провайдери можуть відповідати довше.</string>
     <string name="home_description">Ваш текст, покращений там, де ви пишете. Виділіть текст у будь-якому застосунку, торкніться «Переформулювати» в меню виділення й виберіть коректуру, переформулювання або тон – покращений текст замінить оригінал саме там, де він був.</string>
     <string name="home_openSettings">Параметри</string>
     <string name="home_sample">привіт, хотів лише спитати чи не мав би ти часом змоги глянути на звіт який я надіслав, це не дуже терміново але я був би дуже вдячний якби ти якось відповів до пятниці</string>
