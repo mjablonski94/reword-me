@@ -304,7 +304,7 @@ The Google Messages scenario runs on every version: the stock Messages of each i
 
 **Android behaviour worth knowing (not fixable in the app):**
 - **Force stop switches the service off.** Android removes a force-stopped app's accessibility service from the enabled list, and opening the app does not bring it back. RewordMe's Settings then shows the warning with a link to Accessibility settings, and the home screen shows "Set up the floating icon" again.
-- Android 13+ may grey the switch out for an APK installed from a file ("Restricted setting"); App info → ⋮ → *Allow restricted settings* unlocks it. The Settings hint says so.
+- Android 13+ holds back the accessibility service of an APK installed from a file. Checked with the 1.1.0 APK installed through the Files app on Android 15 (`packageSource=3`): the switch shows **App was denied access**; App info → ⋮ → **Allow restricted settings** flips the `ACCESS_RESTRICTED_SETTINGS` app-op to allow, after which the switch and Android's confirmation work as usual. Android 13 words the block **Restricted setting** ("For your security, this setting is currently unavailable"), and Android 16 says **App was denied access** too. From a computer, `adb shell appops set dev.mjablonski.rewordme ACCESS_RESTRICTED_SETTINGS allow` unblocks it as well (checked on Android 13 and 16). RewordMe's Settings hint names only "Restricted setting" so far. The README walks through the steps.
 - Android's confirmation reads "full control of your device" for every accessibility service; RewordMe's own explanation comes first.
 
 **Test infrastructure, not the app:**
