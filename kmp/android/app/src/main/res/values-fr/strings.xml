@@ -77,7 +77,7 @@
     <string name="android_errorNetwork">Impossible de joindre le fournisseur. Vérifiez votre connexion Internet ou l\'adresse du serveur dans les Réglages, puis réessayez.</string>
     <string name="android_errorTimeout">Le fournisseur a mis trop de temps à répondre. Réessayez dans un instant.</string>
     <string name="android_keystoreCaption">Stockée chiffrée avec une clé conservée dans l\'Android Keystore de cet appareil, jamais en clair dans des fichiers.</string>
-    <string name="android_menuHint">Vous ne voyez pas « Reformuler » ? Ouvrez le menu ⋮. Sous Android 8–9, l\'option peut n\'apparaître qu\'après avoir sélectionné le texte une deuxième fois.</string>
+    <string name="android_menuHint">Vous ne voyez pas « Reformuler » ? Ouvrez le menu ⋮.</string>
     <string name="android_noSelection">Rien à reformuler pour l\'instant. Sélectionnez du texte dans n\'importe quelle app, puis touchez « %1$s » dans le menu.</string>
     <string name="android_ollamaPhoneHint">Sur un téléphone, « localhost » désigne le téléphone lui-même. Saisissez l\'adresse de votre ordinateur sur le même Wi-Fi (par exemple 192.168.1.20:11434) et lancez Ollama avec OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Reformuler</string>

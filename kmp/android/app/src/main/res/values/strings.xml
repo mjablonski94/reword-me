@@ -78,7 +78,7 @@
     <string name="android_errorNetwork">Couldn\'t reach the provider. Check your internet connection or the server address in Settings, then try again.</string>
     <string name="android_errorTimeout">The provider took too long to answer. Try again in a moment.</string>
     <string name="android_keystoreCaption">Stored encrypted with a key kept in this device\'s Android Keystore, never in plain files.</string>
-    <string name="android_menuHint">Don\'t see “Reword me”? Open the ⋮ menu. On Android 8–9 it may only appear after you select the text a second time.</string>
+    <string name="android_menuHint">Don\'t see “Reword me”? Open the ⋮ menu.</string>
     <string name="android_noSelection">Nothing to reword yet. Select text in any app, then tap “%1$s” in the menu.</string>
     <string name="android_ollamaPhoneHint">On a phone, “localhost” means the phone itself. Enter your computer\'s address on the same Wi-Fi (for example 192.168.1.20:11434) and start Ollama with OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Reword me</string>

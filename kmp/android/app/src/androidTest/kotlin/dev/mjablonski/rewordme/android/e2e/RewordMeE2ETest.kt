@@ -2,7 +2,6 @@ package dev.mjablonski.rewordme.android.e2e
 
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -74,10 +73,6 @@ class RewordMeE2ETest {
 
     @Test
     fun tutorialSelectionIsRewordedAndReplacedInPlace() {
-        assumeTrue(
-            "UiAutomator cannot reach the floating selection toolbar before Android 9",
-            Build.VERSION.SDK_INT >= 28
-        )
         launch(HOME)
         // Slow emulators take a moment; a swipe before that lands on the launcher.
         waitFor(By.pkg(pkg).depth(0))
@@ -313,8 +308,8 @@ class RewordMeE2ETest {
 
     /**
      * Long-press, Select all, then "Reword me" from the toolbar or its
-     * overflow. Android 8-9 list third-party actions only from the second
-     * selection in a field on, so a miss is retried with a fresh selection.
+     * overflow; a miss (a long-press the emulator read as a tap) is retried
+     * with a fresh selection.
      */
     private fun selectAllAndReword(editor: UiObject2) {
         repeat(3) {

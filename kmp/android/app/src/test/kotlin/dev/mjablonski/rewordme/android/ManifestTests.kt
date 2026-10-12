@@ -21,8 +21,8 @@ class ManifestTests {
 
     @Test
     fun screensWithTextFieldsResizeForTheKeyboardButNeverOpenIt() {
-        // Below API 30 Compose only sees IME insets in adjustResize windows;
-        // without stateHidden those windows pop the keyboard on their own.
+        // Compose's imePadding() expects adjustResize; without stateHidden
+        // those windows pop the keyboard on their own.
         val screens = listOf(
             HomeActivity::class.java,
             SettingsActivity::class.java,

@@ -77,7 +77,7 @@
     <string name="android_errorNetwork">No se ha podido conectar con el proveedor. Comprueba tu conexión a internet o la dirección del servidor en Ajustes y vuelve a intentarlo.</string>
     <string name="android_errorTimeout">El proveedor ha tardado demasiado en responder. Vuelve a intentarlo en un momento.</string>
     <string name="android_keystoreCaption">Se guarda cifrada con una clave que reside en el Android Keystore de este dispositivo, nunca en archivos de texto plano.</string>
-    <string name="android_menuHint">¿No ves «Reformular»? Abre el menú ⋮. En Android 8–9 puede aparecer solo después de seleccionar el texto por segunda vez.</string>
+    <string name="android_menuHint">¿No ves «Reformular»? Abre el menú ⋮.</string>
     <string name="android_noSelection">Todavía no hay nada que reformular. Selecciona texto en cualquier app y toca «%1$s» en el menú.</string>
     <string name="android_ollamaPhoneHint">En el móvil, «localhost» es el propio móvil. Introduce la dirección de tu ordenador en la misma red wifi (por ejemplo, 192.168.1.20:11434) e inicia Ollama con OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Reformular</string>

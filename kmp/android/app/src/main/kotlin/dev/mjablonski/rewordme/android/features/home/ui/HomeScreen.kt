@@ -117,9 +117,8 @@ fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
             fontSize = 13.sp,
             lineHeight = 18.sp
         )
-        // Most selection toolbars park third-party actions in the overflow,
-        // and Android 8-9 only list them from the second selection on; the
-        // tutorial has to say so or the entry looks missing.
+        // Most selection toolbars park third-party actions in the overflow;
+        // the tutorial has to say so or the entry looks missing.
         Text(
             stringResource(R.string.android_menuHint),
             color = Palette.secondary,

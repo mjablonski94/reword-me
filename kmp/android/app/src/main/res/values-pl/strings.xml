@@ -77,7 +77,7 @@
     <string name="android_errorNetwork">Nie udało się połączyć z dostawcą. Sprawdź połączenie z internetem lub adres serwera w Ustawieniach i spróbuj ponownie.</string>
     <string name="android_errorTimeout">Dostawca zbyt długo nie odpowiadał. Spróbuj ponownie za chwilę.</string>
     <string name="android_keystoreCaption">Przechowywany w postaci zaszyfrowanej kluczem z Android Keystore tego urządzenia, nigdy w zwykłych plikach.</string>
-    <string name="android_menuHint">Nie widzisz „Przeredaguj”? Otwórz menu ⋮. Na Androidzie 8–9 opcja może pojawić się dopiero po ponownym zaznaczeniu tekstu.</string>
+    <string name="android_menuHint">Nie widzisz „Przeredaguj”? Otwórz menu ⋮.</string>
     <string name="android_noSelection">Nie ma jeszcze nic do przeredagowania. Zaznacz tekst w dowolnej aplikacji, a następnie stuknij „%1$s” w menu.</string>
     <string name="android_ollamaPhoneHint">Na telefonie „localhost” oznacza sam telefon. Wpisz adres komputera w tej samej sieci Wi-Fi (np. 192.168.1.20:11434) i uruchom Ollamę z OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Przeredaguj</string>

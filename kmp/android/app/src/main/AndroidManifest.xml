@@ -14,11 +14,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RewordMe">
 
-        <!-- adjustResize on every screen with a text field: below API 30
-             Compose only receives IME insets in adjustResize windows, and
-             without them imePadding() keeps stale space after the keyboard
-             closes. stateHidden because adjustResize windows otherwise pop the
-             keyboard for whichever field holds initial focus. -->
+        <!-- adjustResize on every screen with a text field, as Compose's
+             imePadding() expects. stateHidden because adjustResize windows
+             otherwise pop the keyboard for whichever field holds initial
+             focus. -->
         <activity
             android:name=".features.home.presentation.HomeActivity"
             android:exported="true"

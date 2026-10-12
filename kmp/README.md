@@ -54,7 +54,7 @@ place the popup against), Linux support.
 ### Download the test APK
 
 Download [`RewordMe-Android-1.0.0-dev.apk`](RewordMe-Android-1.0.0-dev.apk) directly on an
-Android 8.0 or newer phone—no USB cable is needed. Open the downloaded file and allow your
+Android 12 or newer phone—no USB cable is needed. Open the downloaded file and allow your
 browser or file manager to install unknown apps when Android asks. The accompanying
 [`SHA-256 file`](RewordMe-Android-1.0.0-dev.apk.sha256) can be used to verify the download.
 
