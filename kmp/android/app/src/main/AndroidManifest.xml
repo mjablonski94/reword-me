@@ -63,5 +63,21 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+
+        <!-- The floating icon. Off until the user turns it on in Android's
+             accessibility settings; only the system can bind it (the BIND
+             permission), and Settings lists it under RewordMe's label. -->
+        <service
+            android:name=".features.floating.presentation.FloatingIconService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/floating_icon_service" />
+        </service>
     </application>
 </manifest>

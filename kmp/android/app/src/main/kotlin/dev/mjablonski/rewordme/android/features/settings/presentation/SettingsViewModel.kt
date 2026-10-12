@@ -3,6 +3,7 @@ package dev.mjablonski.rewordme.android.features.settings.presentation
 import androidx.lifecycle.viewModelScope
 import dev.mjablonski.rewordme.android.arch.MviViewModel
 import dev.mjablonski.rewordme.android.common.UiError
+import dev.mjablonski.rewordme.android.features.floating.data.FloatingIconSettings
 import dev.mjablonski.rewordme.domain.ProviderAvailability
 import dev.mjablonski.rewordme.domain.usecase.HasApiKeyUseCase
 import dev.mjablonski.rewordme.domain.usecase.ListModelsParams
@@ -36,6 +37,7 @@ class SettingsViewModel(
     private val saveApiKey: SaveApiKeyUseCase,
     private val listModels: ListModelsUseCase,
     availability: ProviderAvailability,
+    private val floatingIcon: FloatingIconSettings,
     private val appScope: CoroutineScope
 ) : MviViewModel<SettingsState, SettingsIntent, SettingsEffect>(
     SettingsState(providers = availability.available)
@@ -46,6 +48,7 @@ class SettingsViewModel(
     private val pendingCommits = mutableMapOf<String, Job>()
 
     init {
+        refreshFloatingIcon()
         viewModelScope.launch {
             val config = loadConfig.safeAction(Unit).getOrDefault(RewordConfig())
             val storedKey = hasApiKey.safeAction(config.provider).getOrDefault(false)
@@ -93,7 +96,45 @@ class SettingsViewModel(
                 persist { it.copy(rules = it.rules.filterNot { rule -> rule.id == intent.id }) }
             }
             is SettingsIntent.OpenUrl -> sendEffect(SettingsEffect.OpenUrl(intent.url))
+            is SettingsIntent.FloatingIconToggled -> floatingIconToggled(intent.on)
+            SettingsIntent.FloatingDisclosureAccepted -> {
+                floatingIcon.iconEnabled = true
+                setState { copy(floatingDisclosure = false, floatingIconOn = true) }
+                sendEffect(SettingsEffect.OpenAccessibilitySettings)
+            }
+            SettingsIntent.FloatingDisclosureDismissed ->
+                setState { copy(floatingDisclosure = false) }
+            SettingsIntent.RefreshFloatingIcon -> refreshFloatingIcon()
+            SettingsIntent.OpenAccessibilitySettings ->
+                sendEffect(SettingsEffect.OpenAccessibilitySettings)
+            SettingsIntent.OpenAppInfo -> sendEffect(SettingsEffect.OpenAppInfo)
         }
+    }
+
+    /**
+     * Switching on needs Android's accessibility switch, which only the user
+     * can flip: when it is off, explain first what the service can see, and
+     * only then send them there. Switching off is RewordMe's own switch -
+     * immediate, and no trip through Android settings.
+     */
+    private fun floatingIconToggled(on: Boolean) {
+        when {
+            !on -> {
+                floatingIcon.iconEnabled = false
+                setState { copy(floatingIconOn = false) }
+            }
+            currentState.floatingServiceOn -> {
+                floatingIcon.iconEnabled = true
+                setState { copy(floatingIconOn = true) }
+            }
+            else -> setState { copy(floatingDisclosure = true) }
+        }
+    }
+
+    private fun refreshFloatingIcon() {
+        val serviceOn = floatingIcon.serviceEnabled()
+        val iconOn = floatingIcon.iconEnabled
+        setState { copy(floatingServiceOn = serviceOn, floatingIconOn = iconOn) }
     }
 
     private fun selectProvider(provider: ProviderKind) {

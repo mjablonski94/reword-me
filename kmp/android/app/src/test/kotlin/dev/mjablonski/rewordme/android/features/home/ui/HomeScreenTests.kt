@@ -8,11 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.mjablonski.rewordme.android.R
 import dev.mjablonski.rewordme.android.common.RewordMeTheme
+import dev.mjablonski.rewordme.android.features.home.presentation.HomeIntent
 import dev.mjablonski.rewordme.android.features.home.presentation.HomeState
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Rule
@@ -59,5 +62,24 @@ class HomeScreenTests {
         assertTrue(editor.onCheckIsTextEditor())
         // ...but a keyboard on every long-press covered the sample on small phones.
         assertFalse(editor.showSoftInputOnFocus)
+    }
+
+    @Test
+    fun theTutorialPointsToTheFloatingIconUntilItIsOn() {
+        val intents = mutableListOf<HomeIntent>()
+        var state by mutableStateOf(HomeState(isConfigured = true))
+        compose.setContent { RewordMeTheme { HomeScreen(state) { intents += it } } }
+        // Unknown yet: neither the pointer nor the "it's on" line flashes.
+        compose.onNodeWithText(str(R.string.floating_homeHint)).assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.floating_homeOn)).assertDoesNotExist()
+
+        state = HomeState(isConfigured = true, floatingIconShown = false)
+        compose.onNodeWithText(str(R.string.floating_homeHint)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.floating_homeAction)).performScrollTo().performClick()
+        assertEquals(listOf<HomeIntent>(HomeIntent.SetUpFloatingIcon), intents)
+
+        state = HomeState(isConfigured = true, floatingIconShown = true)
+        compose.onNodeWithText(str(R.string.floating_homeAction)).assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.floating_homeOn)).performScrollTo().assertIsDisplayed()
     }
 }

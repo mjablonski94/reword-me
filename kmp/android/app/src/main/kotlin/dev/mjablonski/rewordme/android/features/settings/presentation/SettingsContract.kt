@@ -33,8 +33,17 @@ data class SettingsState(
      */
     val basePromptDraft: String = "",
     val ollamaHostDraft: String = "",
-    val ruleDrafts: Map<String, String> = emptyMap()
+    val ruleDrafts: Map<String, String> = emptyMap(),
+    /** Android's accessibility switch for the floating icon's service. */
+    val floatingServiceOn: Boolean = false,
+    /** RewordMe's own switch for the icon. */
+    val floatingIconOn: Boolean = false,
+    /** The disclosure shown before anyone is sent to Android's accessibility settings. */
+    val floatingDisclosure: Boolean = false
 ) : MviState {
+    /** The icon really appears only when both switches are on. */
+    val floatingIconShown: Boolean get() = floatingServiceOn && floatingIconOn
+
     /**
      * What "Automatic" currently resolves to - computed with the same
      * ModelSelection the actual request uses, not the list head.
@@ -65,8 +74,18 @@ sealed interface SettingsIntent : MviIntent {
     data class RuleTextChanged(val id: String, val text: String) : SettingsIntent
     data class RemoveRule(val id: String) : SettingsIntent
     data class OpenUrl(val url: String) : SettingsIntent
+    data class FloatingIconToggled(val on: Boolean) : SettingsIntent
+    data object FloatingDisclosureAccepted : SettingsIntent
+    data object FloatingDisclosureDismissed : SettingsIntent
+    /** Back from Android settings: the service may have been switched either way. */
+    data object RefreshFloatingIcon : SettingsIntent
+    data object OpenAccessibilitySettings : SettingsIntent
+    /** Android 13+ blocks the switch for sideloaded apps until App info allows it. */
+    data object OpenAppInfo : SettingsIntent
 }
 
 sealed interface SettingsEffect : MviEffect {
     data class OpenUrl(val url: String) : SettingsEffect
+    data object OpenAccessibilitySettings : SettingsEffect
+    data object OpenAppInfo : SettingsEffect
 }
