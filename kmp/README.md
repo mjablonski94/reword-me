@@ -91,10 +91,43 @@ is deselected.
 
 It is an Android accessibility service, which only the user can switch on: RewordMe first
 explains what it reads - only the selected text, sent to your provider only when you tap
-the icon - and then opens Android's Accessibility settings. Android 13+ may grey the switch
-out for an APK installed from a file ("Restricted setting"); **App info → ⋮ → Allow
-restricted settings** unlocks it. Force-stopping RewordMe switches the service off again
-(an Android rule); Settings and the home screen then say so and link straight back.
+the icon - and then opens Android's Accessibility settings. Force-stopping RewordMe switches
+the service off again (an Android rule); Settings and the home screen then say so and link
+straight back.
+
+#### If Android blocks the switch
+
+Android 13 and newer hold back the accessibility service of an app installed from a file -
+such as this APK - rather than from an app store. Tapping RewordMe in Accessibility settings
+then shows **Restricted setting** ("For your security, this setting is currently
+unavailable", Android 13-14) or **App was denied access** (Android 15 and newer), and the
+switch stays off. To allow it:
+
+1. Try the switch once (Accessibility settings → RewordMe) and close the dialog. Android
+   offers the option in step 3 only after such an attempt.
+2. Open RewordMe's **App info**: the *Open App info* link under the floating icon switch in
+   RewordMe's Settings, or long-press the RewordMe launcher icon → **App info**.
+3. Tap **⋮** in the top-right corner → **Allow restricted settings**, and confirm with your
+   PIN, pattern or fingerprint if Android asks.
+4. Go back to **Accessibility settings → RewordMe** (RewordMe's Settings links there too),
+   turn it on and confirm.
+
+<p align="center">
+  <img src="docs/media/android-restricted-android13.png" width="250" alt="Android 13: the Restricted setting dialog">
+  <img src="docs/media/android-restricted-android15.png" width="250" alt="Android 15: the App was denied access dialog">
+  <img src="docs/media/android-restricted-allow.png" width="250" alt="App info with the ⋮ menu open: Allow restricted settings">
+</p>
+
+Some phone brands move or rename this option. If App info has no **Allow restricted
+settings**, search the phone's Settings for "restricted". Failing that, a computer with
+[ADB](https://developer.android.com/tools/adb) (USB debugging on) can allow it; then continue
+with step 4:
+
+```bash
+adb shell appops set dev.mjablonski.rewordme ACCESS_RESTRICTED_SETTINGS allow
+```
+
+An APK installed with `adb install` is not restricted in the first place.
 
 - Architecture mirrors the tvapp conventions: per-feature `di` / `presentation` / `ui`
   packages, MVI (`MviViewModel` with a single `StateFlow` state, intents in, one-shot
