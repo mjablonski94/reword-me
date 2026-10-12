@@ -27,8 +27,10 @@ android {
         applicationId = "dev.mjablonski.rewordme"
         minSdk = libs.versions.androidMinSdk.get().toInt()
         targetSdk = libs.versions.androidCompileSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0.0"
+        // 1.0.1: the E2E fixes, verified on Android 8.0-16. versionCode must
+        // grow with every published APK so each installs as an update.
+        versionCode = 2
+        versionName = "1.0.1"
         // End-to-end suite on devices: ./gradlew :android:app:connectedDebugAndroidTest
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
