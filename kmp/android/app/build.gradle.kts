@@ -68,6 +68,14 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            // Robolectric UI tests resolve the real strings and manifest:
+            // Polish labels, error texts, soft-input modes, intent filters.
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -101,4 +109,12 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.koin.test)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.junit)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    // Hosts the empty activity createAndroidComposeRule launches.
+    debugImplementation(libs.compose.ui.test.manifest)
 }
