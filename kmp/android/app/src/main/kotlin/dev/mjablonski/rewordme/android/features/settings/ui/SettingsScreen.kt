@@ -2,7 +2,6 @@ package dev.mjablonski.rewordme.android.features.settings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -101,12 +100,7 @@ private fun Toolbar(
     onIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit
 ) {
-    // focusable(): before API 28 the window hands initial focus to the first
-    // focusable node, which would be the API key field - and Compose then
-    // opens the keyboard over the screen. The toolbar takes it instead.
-    Column(
-        Modifier.fillMaxWidth().background(Palette.toolbar).focusable().padding(16.dp, 12.dp)
-    ) {
+    Column(Modifier.fillMaxWidth().background(Palette.toolbar).padding(16.dp, 12.dp)) {
         // A visible way back: Settings is often reached from the popup, in
         // its own task, where the system back gesture is not obvious.
         Row(

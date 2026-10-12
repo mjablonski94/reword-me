@@ -77,7 +77,7 @@
     <string name="android_errorNetwork">プロバイダーに接続できませんでした。インターネット接続または設定のサーバーアドレスを確認して、もう一度お試しください。</string>
     <string name="android_errorTimeout">プロバイダーの応答に時間がかかりすぎました。少し待ってからもう一度お試しください。</string>
     <string name="android_keystoreCaption">この端末の Android Keystore に保管された鍵で暗号化して保存されます。平文のファイルには保存されません。</string>
-    <string name="android_menuHint">「リライト」が見つからない場合は、⋮ メニューを開いてください。Android 8〜9 では、テキストをもう一度選択しないと表示されないことがあります。</string>
+    <string name="android_menuHint">「リライト」が見つからない場合は、⋮ メニューを開いてください。</string>
     <string name="android_noSelection">リライトするテキストがありません。任意のアプリでテキストを選択し、メニューの「%1$s」をタップしてください。</string>
     <string name="android_ollamaPhoneHint">スマートフォンでは「localhost」はスマートフォン自体を指します。同じ Wi-Fi 上のパソコンのアドレス（例: 192.168.1.20:11434）を入力し、Ollama を OLLAMA_HOST=0.0.0.0 で起動してください。</string>
     <string name="android_processText">リライト</string>

@@ -77,7 +77,7 @@
     <string name="android_errorNetwork">Не вдалося звʼязатися з провайдером. Перевірте підключення до інтернету або адресу сервера в Параметрах і спробуйте ще раз.</string>
     <string name="android_errorTimeout">Провайдер надто довго не відповідав. Спробуйте ще раз за мить.</string>
     <string name="android_keystoreCaption">Зберігається зашифрованим ключем із Android Keystore цього пристрою, ніколи у звичайних файлах.</string>
-    <string name="android_menuHint">Не бачите «Переформулювати»? Відкрийте меню ⋮. На Android 8–9 пункт може зʼявитися лише після повторного виділення тексту.</string>
+    <string name="android_menuHint">Не бачите «Переформулювати»? Відкрийте меню ⋮.</string>
     <string name="android_noSelection">Поки що немає що переформулювати. Виділіть текст у будь-якому застосунку, а потім торкніться «%1$s» у меню.</string>
     <string name="android_ollamaPhoneHint">На телефоні «localhost» означає сам телефон. Введіть адресу компʼютера в тій самій мережі Wi-Fi (наприклад, 192.168.1.20:11434) і запустіть Ollama з OLLAMA_HOST=0.0.0.0.</string>
     <string name="android_processText">Переформулювати</string>

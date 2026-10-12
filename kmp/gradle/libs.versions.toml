@@ -20,7 +20,7 @@ androidxTestRunner = "1.6.2"
 uiautomator = "2.3.0"
 # ACTION_PROCESS_TEXT needs 23 and Keystore AES/GCM needs 23; 26 is the floor
 # that keeps java.nio and the modern Keystore APIs available without desugaring.
-androidMinSdk = "26"
+androidMinSdk = "31"
 androidCompileSdk = "35"
 
 [libraries]
