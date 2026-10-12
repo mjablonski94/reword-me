@@ -226,3 +226,44 @@ Zrzuty po poprawkach: `img/10-…`, `img/11-…`, `img/12-…`.
 **WhatsApp, Messenger, Instagram, Telegram, Slack, Teams, Outlook itd.** – nie da się ich zainstalować na tym emulatorze (brak Sklepu Play, a pobieranie APK z nieoficjalnych źródeł odpada). Zależnie od tego, czy deklarują widoczność PROCESS_TEXT, zadziała „Reword me” albo tylko Udostępnij. Najszybciej sprawdzić to na telefonie: po podłączeniu przez USB (debugowanie) `dumpsys package queries` pokaże dla wszystkich zainstalowanych aplikacji naraz, które widzą RewordMe.
 
 Zrzuty: `img/13-sms-brak-pozycji-i-share.png`, `img/14-kontakty-vs-ustawienia.png`.
+
+---
+
+# Every supported Android version (API 26–36)
+
+An automated end-to-end suite (`kmp/android/app/src/androidTest/.../RewordMeE2ETest.kt`, UiAutomator) drives the real system UI on clean emulators against the mock provider. It covers ten scenarios:
+
+1. Tutorial: selection menu → "Reword me" → Proofread → Replace, text swapped in place, no keyboard.
+2. Missing key: setup state → Settings, and no keyboard opens by itself.
+3. A result survives a backdrop tap; Back goes result → menu → close.
+4. Errors: 401 offers Settings, a 502 HTML page is stripped, an unreachable host shows the network message with Try again.
+5. Read-only host: Copy first, with the explanation.
+6. The share-sheet entry is registered and works without a result channel.
+7. A too-short selection explains itself.
+8. Close fades out and the activity finishes.
+9. The keyboard in Settings leaves no stale space behind.
+10. Font 1.3×: every result action is reachable and Replace is full width.
+
+| Android | API | Device | Result | Can Messages / Gmail / Contacts see RewordMe? | Chrome |
+|---|---|---|---|---|---|
+| 8.0 | 26 | 480×800 (Nexus S) | ✅ 10/10* | yes | yes |
+| 8.1 | 27 | Pixel 4 | ✅ 10/10* | yes | yes |
+| 9 | 28 | Pixel 4 | ✅ 10/10 | yes | yes |
+| 10 | 29 | Pixel 4 | ✅ 10/10 | yes | yes |
+| 11 | 30 | Pixel 4 | ✅ 10/10 | **no** | yes |
+| 12 | 31 | Pixel 4 | ✅ 10/10 | **no** | yes |
+| 12L | 32 | Pixel 4 | ✅ 10/10 | **no** | yes |
+| 13 | 33 | Pixel 4 | ✅ 10/10 | **no** | yes |
+| 14 | 34 | Pixel 4 | ✅ 10/10 | **no** | yes |
+| 15 | 35 | Pixel 6 | ✅ 10/10 | **no** | yes |
+| 16 | 36 | Pixel 4 | ✅ 10/10 | **no** | yes |
+
+\* On Android 8.x UiAutomator cannot reach the floating selection toolbar, so test 1 is skipped there. Its manual result is earlier in this report: "Reword me" shows from the second selection, under ⋮, and Replace works.
+
+**Found and fixed during the matrix:** on Android 8–9 the popup opened the keyboard over its own result after a stage change. The cross-fade removed the focused node and the old focus rules handed focus to the describe field. The popup header is now the focus target.
+
+**Test infrastructure, not the app:**
+- The mock server needed a larger connection backlog and HTTP/1.1 to serve four emulators at once.
+- The suite taps "Try again" once on a dropped emulator connection, as a user would.
+
+**Visibility:** from Android 11 onward, the stock Messages, Gmail and Contacts apps cannot list RewordMe in their selection menu; on Android 8–10 everything can. The Share route added earlier is therefore the way in on Android 11+.
