@@ -47,6 +47,10 @@ place the popup against), Linux support.
 
 ## Android
 
+<p align="center">
+  <img src="docs/media/android-demo.gif" width="360" alt="RewordMe on Android: select text, tap Reword me, then Proofread, Professional and a custom translation replace the text in place">
+</p>
+
 ### Download the test APK
 
 Download [`RewordMe-Android-1.0.0-dev.apk`](RewordMe-Android-1.0.0-dev.apk) directly on an
