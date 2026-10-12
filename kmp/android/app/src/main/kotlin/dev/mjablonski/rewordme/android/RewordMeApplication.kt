@@ -2,6 +2,7 @@ package dev.mjablonski.rewordme.android
 
 import android.app.Application
 import dev.mjablonski.rewordme.android.di.appModule
+import dev.mjablonski.rewordme.android.features.floating.di.floatingModule
 import dev.mjablonski.rewordme.android.features.home.di.homeModule
 import dev.mjablonski.rewordme.android.features.popup.di.popupModule
 import dev.mjablonski.rewordme.android.features.settings.di.settingsModule
@@ -13,7 +14,7 @@ class RewordMeApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@RewordMeApplication)
-            modules(appModule, popupModule, settingsModule, homeModule)
+            modules(appModule, floatingModule, popupModule, settingsModule, homeModule)
         }
     }
 }

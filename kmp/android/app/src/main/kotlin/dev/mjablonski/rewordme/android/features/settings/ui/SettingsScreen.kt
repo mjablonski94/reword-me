@@ -1,5 +1,6 @@
 package dev.mjablonski.rewordme.android.features.settings.ui
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -30,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,7 +91,7 @@ fun SettingsScreen(
             when (state.tab) {
                 SettingsTab.PROVIDER -> ProviderTab(state, onIntent)
                 SettingsTab.REWRITING -> RewritingTab(state, onIntent)
-                SettingsTab.GENERAL -> GeneralTab(onIntent)
+                SettingsTab.GENERAL -> GeneralTab(state, onIntent)
             }
         }
     }
@@ -406,8 +409,11 @@ private fun RewritingTab(state: SettingsState, onIntent: (SettingsIntent) -> Uni
 }
 
 @Composable
-private fun GeneralTab(onIntent: (SettingsIntent) -> Unit) {
+private fun GeneralTab(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     val context = LocalContext.current
+
+    FloatingIconSection(state, onIntent)
+
     val version = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -430,6 +436,92 @@ private fun GeneralTab(onIntent: (SettingsIntent) -> Unit) {
         LinkText(stringResource(R.string.general_buyCoffee)) {
             onIntent(SettingsIntent.OpenUrl(SUPPORT_URL))
         }
+    }
+}
+
+/**
+ * The floating icon's switch. It reads as one switch, though it spans two:
+ * Android's accessibility setting (only the user can flip it, and only after
+ * the disclosure) and RewordMe's own, which hides the icon at once.
+ */
+@Composable
+private fun FloatingIconSection(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+    SectionCard(
+        stringResource(R.string.floating_title),
+        footer = stringResource(R.string.floating_description)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                stringResource(R.string.floating_switch),
+                color = Palette.text,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = state.floatingIconShown,
+                onCheckedChange = { onIntent(SettingsIntent.FloatingIconToggled(it)) },
+                colors = SwitchDefaults.colors(
+                    checkedTrackColor = Palette.accent,
+                    uncheckedTrackColor = Palette.control
+                )
+            )
+        }
+        // Wanted on, but Android's half is off: never enabled yet, or Android
+        // (or a battery saver) switched the service off since.
+        if (state.floatingIconOn && !state.floatingServiceOn) {
+            HorizontalDivider(color = Palette.hairline)
+            Text(
+                stringResource(R.string.floating_serviceOff),
+                color = Palette.warn,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+            LinkText(stringResource(R.string.floating_openAccessibility)) {
+                onIntent(SettingsIntent.OpenAccessibilitySettings)
+            }
+            // Android 13+ greys the switch out for apps installed from a file.
+            if (Build.VERSION.SDK_INT >= 33) {
+                Text(
+                    stringResource(R.string.floating_restrictedHint),
+                    color = Palette.secondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+                LinkText(stringResource(R.string.floating_openAppInfo)) {
+                    onIntent(SettingsIntent.OpenAppInfo)
+                }
+            }
+        }
+    }
+
+    if (state.floatingDisclosure) {
+        AlertDialog(
+            onDismissRequest = { onIntent(SettingsIntent.FloatingDisclosureDismissed) },
+            containerColor = Palette.card,
+            titleContentColor = Palette.text,
+            textContentColor = Palette.secondary,
+            title = { Text(stringResource(R.string.floating_disclosureTitle)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.floating_disclosureBody), fontSize = 14.sp)
+                    Text(stringResource(R.string.floating_disclosureSteps), fontSize = 14.sp)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.FloatingDisclosureAccepted) }) {
+                    Text(stringResource(R.string.floating_continue), color = Palette.link)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.FloatingDisclosureDismissed) }) {
+                    Text(stringResource(R.string.floating_notNow), color = Palette.secondary)
+                }
+            }
+        )
     }
 }
 

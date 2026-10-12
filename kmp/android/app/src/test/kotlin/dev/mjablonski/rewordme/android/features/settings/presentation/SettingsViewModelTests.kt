@@ -3,6 +3,7 @@ package dev.mjablonski.rewordme.android.features.settings.presentation
 import dev.mjablonski.rewordme.android.common.UiError
 import dev.mjablonski.rewordme.android.platform.AndroidProviderAvailability
 import dev.mjablonski.rewordme.android.support.FakeConfigStore
+import dev.mjablonski.rewordme.android.support.FakeFloatingIconSettings
 import dev.mjablonski.rewordme.android.support.FakeKeyStore
 import dev.mjablonski.rewordme.android.support.FakeRewording
 import dev.mjablonski.rewordme.android.support.MainDispatcherRule
@@ -22,6 +23,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -34,6 +36,7 @@ class SettingsViewModelTests {
         configStore: FakeConfigStore = FakeConfigStore(),
         keyStore: FakeKeyStore = FakeKeyStore(),
         service: FakeRewording = FakeRewording(),
+        floatingIcon: FakeFloatingIconSettings = FakeFloatingIconSettings(),
         appScope: CoroutineScope = backgroundScope
     ): SettingsViewModel {
         val resolver = ModelResolver()
@@ -45,6 +48,7 @@ class SettingsViewModelTests {
             saveApiKey = SaveApiKeyUseCase(keyStore, resolver, dispatcher),
             listModels = ListModelsUseCase(configStore, keyStore, service, dispatcher),
             availability = AndroidProviderAvailability(),
+            floatingIcon = floatingIcon,
             appScope = appScope
         )
     }
@@ -240,5 +244,60 @@ class SettingsViewModelTests {
         vm.onIntent(SettingsIntent.RemoveRule(rule.id))
         advanceUntilIdle()
         assertTrue(configStore.config.rules.isEmpty())
+    }
+
+    @Test
+    fun theFloatingIconSwitchReflectsBothAndroidsAndRewordMesHalf() = mainDispatcher.runVm {
+        val floating = FakeFloatingIconSettings(serviceOn = true, iconEnabled = true)
+        val vm = viewModel(floatingIcon = floating)
+        assertTrue(vm.state.value.floatingIconShown)
+
+        floating.serviceOn = false
+        vm.onIntent(SettingsIntent.RefreshFloatingIcon)
+        assertFalse(vm.state.value.floatingIconShown, "Android switched the service off")
+        assertTrue(vm.state.value.floatingIconOn, "but RewordMe still wants it: show the warning")
+    }
+
+    @Test
+    fun switchingOnWithTheServiceOffExplainsBeforeSendingAnyoneAway() = mainDispatcher.runVm {
+        val floating = FakeFloatingIconSettings(serviceOn = false, iconEnabled = false)
+        val vm = viewModel(floatingIcon = floating)
+
+        vm.onIntent(SettingsIntent.FloatingIconToggled(true))
+        assertTrue(vm.state.value.floatingDisclosure)
+        assertFalse(floating.iconEnabled, "nothing changes before the user agrees")
+
+        vm.onIntent(SettingsIntent.FloatingDisclosureAccepted)
+        assertFalse(vm.state.value.floatingDisclosure)
+        assertTrue(floating.iconEnabled)
+        assertEquals(SettingsEffect.OpenAccessibilitySettings, vm.effects.first())
+    }
+
+    @Test
+    fun dismissingTheDisclosureChangesNothing() = mainDispatcher.runVm {
+        val floating = FakeFloatingIconSettings(serviceOn = false, iconEnabled = false)
+        val vm = viewModel(floatingIcon = floating)
+
+        vm.onIntent(SettingsIntent.FloatingIconToggled(true))
+        vm.onIntent(SettingsIntent.FloatingDisclosureDismissed)
+
+        assertFalse(vm.state.value.floatingDisclosure)
+        assertFalse(floating.iconEnabled)
+        assertFalse(vm.state.value.floatingIconShown)
+    }
+
+    @Test
+    fun withTheServiceOnTheSwitchActsAtOnceBothWays() = mainDispatcher.runVm {
+        val floating = FakeFloatingIconSettings(serviceOn = true, iconEnabled = true)
+        val vm = viewModel(floatingIcon = floating)
+
+        vm.onIntent(SettingsIntent.FloatingIconToggled(false))
+        assertFalse(floating.iconEnabled)
+        assertFalse(vm.state.value.floatingIconShown)
+
+        vm.onIntent(SettingsIntent.FloatingIconToggled(true))
+        assertTrue(floating.iconEnabled)
+        assertTrue(vm.state.value.floatingIconShown)
+        assertFalse(vm.state.value.floatingDisclosure, "no disclosure for RewordMe's own half")
     }
 }

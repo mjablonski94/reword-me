@@ -5,6 +5,7 @@ import android.util.TypedValue
 import android.widget.EditText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +37,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import dev.mjablonski.rewordme.android.R
 import dev.mjablonski.rewordme.android.common.Palette
 import dev.mjablonski.rewordme.android.common.PillButton
+import dev.mjablonski.rewordme.android.common.controlShape
 import dev.mjablonski.rewordme.android.common.insetShape
 import dev.mjablonski.rewordme.android.features.home.presentation.HomeIntent
 import dev.mjablonski.rewordme.android.features.home.presentation.HomeState
@@ -133,6 +136,34 @@ fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
             fontSize = 13.sp,
             lineHeight = 18.sp
         )
+        // The way into those apps without Share: the floating icon. Once it
+        // is on, the tutorial says how to try it on the editor below.
+        when (state.floatingIconShown) {
+            false -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    stringResource(R.string.floating_homeHint),
+                    color = Palette.secondary,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+                Text(
+                    stringResource(R.string.floating_homeAction),
+                    color = Palette.link,
+                    fontSize = 13.sp,
+                    modifier = Modifier
+                        .clip(controlShape)
+                        .clickable { onIntent(HomeIntent.SetUpFloatingIcon) }
+                        .padding(vertical = 4.dp)
+                )
+            }
+            true -> Text(
+                stringResource(R.string.floating_homeOn),
+                color = Palette.accent,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+            null -> Unit
+        }
         TryItEditor()
     }
 }

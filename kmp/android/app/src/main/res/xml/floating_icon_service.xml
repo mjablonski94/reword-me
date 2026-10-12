@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The floating icon's accessibility service. It listens only to what it
+     needs to follow a selection: selection changes, plus the scrolls, taps,
+     focus moves and window changes that can move or end one. Interactive
+     windows: to keep the icon above the keyboard. View IDs: to recognize
+     RewordMe's own tutorial editor. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeViewTextSelectionChanged|typeViewScrolled|typeViewClicked|typeViewFocused|typeWindowStateChanged|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/floating_serviceDescription"
+    android:notificationTimeout="60" />

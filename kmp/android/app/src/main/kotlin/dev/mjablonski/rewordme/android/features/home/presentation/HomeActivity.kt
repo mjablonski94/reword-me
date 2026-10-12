@@ -30,6 +30,11 @@ class HomeActivity : ComponentActivity() {
                             Intent(this@HomeActivity, SettingsActivity::class.java)
                                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                         )
+                        HomeEffect.NavigateToFloatingIcon -> startActivity(
+                            Intent(this@HomeActivity, SettingsActivity::class.java)
+                                .putExtra(SettingsActivity.EXTRA_FLOATING_ICON, true)
+                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        )
                     }
                 }
             }

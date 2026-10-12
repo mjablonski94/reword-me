@@ -1,5 +1,7 @@
 package dev.mjablonski.rewordme.android.support
 
+import dev.mjablonski.rewordme.android.features.floating.data.FloatingIconSettings
+import dev.mjablonski.rewordme.android.platform.Clipboard
 import dev.mjablonski.rewordme.domain.ApiKeyStore
 import dev.mjablonski.rewordme.domain.ConfigStore
 import dev.mjablonski.rewordme.domain.Rewording
@@ -82,5 +84,21 @@ class FakeRewording(
         lastSystemPrompt = systemPrompt
         failure?.let { throw it }
         return answer
+    }
+}
+
+class FakeFloatingIconSettings(
+    var serviceOn: Boolean = false,
+    override var iconEnabled: Boolean = false
+) : FloatingIconSettings {
+    override fun serviceEnabled(): Boolean = serviceOn
+    override fun serviceConnected() = Unit
+}
+
+class RecordingClipboard(var succeeds: Boolean = true) : Clipboard {
+    val copies = mutableListOf<String>()
+    override fun copy(text: String): Boolean {
+        copies += text
+        return succeeds
     }
 }
