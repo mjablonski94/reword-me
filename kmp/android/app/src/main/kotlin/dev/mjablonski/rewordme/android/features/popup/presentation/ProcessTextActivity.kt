@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,11 +29,21 @@ class ProcessTextActivity : ComponentActivity() {
 
     private val viewModel: PopupViewModel by viewModel()
 
+    /** Fades the popup in on start and out before the activity finishes. */
+    private val visibility = MutableTransitionState(false).apply { targetState = true }
+    private var closing = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Real insets on every API level (imePadding, systemBars), not only
         // where Android 15 forces edge-to-edge.
         enableEdgeToEdge()
+        // Compose owns the show/hide fade; a window animation on top of it
+        // would play the same transition twice.
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        }
 
         // Shared text arrives through the share sheet, where hosts that hide
         // "Reword me" still offer Share; it has no way back but the clipboard.
@@ -61,7 +72,7 @@ class ProcessTextActivity : ComponentActivity() {
                                 Intent().putExtra(Intent.EXTRA_PROCESS_TEXT, effect.text)
                             )
                             if (effect.alsoCopied) toast(R.string.android_replaceAlsoCopied)
-                            finish()
+                            closeAnimated()
                         }
                         // Android 13+ confirms clipboard writes itself.
                         PopupEffect.Copied ->
@@ -75,14 +86,34 @@ class ProcessTextActivity : ComponentActivity() {
                             )
                             finish()
                         }
-                        PopupEffect.Finish -> finish()
+                        PopupEffect.Finish -> closeAnimated()
                     }
                 }
             }
 
-            RewordMeTheme {
-                PopupScreen(state, viewModel::onIntent)
+            // Finish only once the exit fade has played out. With animations
+            // turned off system-wide it settles at once and closes at once.
+            LaunchedEffect(visibility.isIdle, visibility.currentState) {
+                if (closing && visibility.isIdle && !visibility.currentState) finishQuietly()
             }
+
+            RewordMeTheme {
+                PopupScreen(state, visibility = visibility, onIntent = viewModel::onIntent)
+            }
+        }
+    }
+
+    private fun closeAnimated() {
+        if (closing) return
+        closing = true
+        visibility.targetState = false
+    }
+
+    private fun finishQuietly() {
+        finish()
+        if (Build.VERSION.SDK_INT < 34) {
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
         }
     }
 

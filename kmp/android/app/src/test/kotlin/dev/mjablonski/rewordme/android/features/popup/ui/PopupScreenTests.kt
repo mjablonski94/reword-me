@@ -1,13 +1,18 @@
 package dev.mjablonski.rewordme.android.features.popup.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -23,6 +28,7 @@ import dev.mjablonski.rewordme.android.features.popup.presentation.PopupStage
 import dev.mjablonski.rewordme.android.features.popup.presentation.PopupState
 import dev.mjablonski.rewordme.models.RewordError
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -199,7 +205,8 @@ class PopupScreenTests {
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText(str(R.string.android_slowHint)).assertDoesNotExist()
 
-        compose.mainClock.advanceTimeBy(8_500)
+        // 8s until the hint, then its short fade-in.
+        compose.mainClock.advanceTimeBy(9_000)
 
         compose.onNodeWithText(str(R.string.android_slowHint)).assertIsDisplayed()
     }
@@ -221,4 +228,63 @@ class PopupScreenTests {
 
         assertEquals(listOf<PopupIntent>(PopupIntent.ScrimTapped), intents)
     }
+
+    @Test
+    fun theWindowFadesInAndOutAroundTheCard() {
+        val visibility = MutableTransitionState(false).apply { targetState = true }
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            RewordMeTheme {
+                PopupScreen(PopupState(stage = PopupStage.MENU, original = "x"), visibility) {
+                    intents += it
+                }
+            }
+        }
+        compose.mainClock.advanceTimeByFrame()
+        assertFalse(visibility.isIdle, "the popup should still be fading in")
+
+        compose.mainClock.advanceTimeBy(400)
+        assertTrue(visibility.isIdle && visibility.currentState)
+        compose.onNodeWithText(str(R.string.popup_proofread)).assertIsDisplayed()
+
+        compose.runOnUiThread { visibility.targetState = false }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        // Still on screen while it fades out - the activity finishes after.
+        compose.onNodeWithText(str(R.string.popup_proofread)).assertExists()
+        compose.mainClock.advanceTimeBy(400)
+        assertTrue(visibility.isIdle && !visibility.currentState)
+        compose.onNodeWithText(str(R.string.popup_proofread)).assertDoesNotExist()
+    }
+
+    @Test
+    fun aStageChangeCrossFadesWhileTheCardMorphsToItsNewSize() {
+        var state by mutableStateOf(PopupState(stage = PopupStage.MENU, original = "który"))
+        compose.mainClock.autoAdvance = false
+        compose.setContent { RewordMeTheme { PopupScreen(state) { intents += it } } }
+        compose.mainClock.advanceTimeByFrame()
+        val menuHeight = cardHeight()
+
+        compose.runOnUiThread { state = state.copy(stage = PopupStage.LOADING) }
+        // Apply the change, then let the paused clock run 100ms into the transition.
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        // Mid-transition both stages are composed, one fading into the other...
+        compose.onNodeWithText(str(R.string.popup_proofread)).assertExists()
+        compose.onNodeWithText(str(R.string.popup_rewording)).assertExists()
+        val midHeight = cardHeight()
+
+        compose.mainClock.advanceTimeBy(600)
+        val loadingHeight = cardHeight()
+        compose.onNodeWithText(str(R.string.popup_proofread)).assertDoesNotExist()
+        // ...and the card passes through the sizes in between instead of jumping.
+        assertTrue(loadingHeight < menuHeight, "loading $loadingHeight vs menu $menuHeight")
+        assertTrue(
+            midHeight in (loadingHeight + 1) until menuHeight,
+            "mid-morph height $midHeight not between $loadingHeight and $menuHeight"
+        )
+    }
+
+    private fun cardHeight(): Int =
+        compose.onNodeWithTag(POPUP_CARD_TAG).fetchSemanticsNode().size.height
 }
