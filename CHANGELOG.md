@@ -15,6 +15,8 @@ The project follows [Semantic Versioning](https://semver.org/).
   Android 8.0 or newer devices, together with its SHA-256 checksum.
 - Animated the Android popup: it fades in and out over the host app, the
   card morphs to each stage's size, and stage content cross-fades.
+- Added an on-device end-to-end suite for Android (UiAutomator against a mock
+  provider), run green on every supported version from Android 8.0 to 16.
 
 ### Fixed
 
@@ -37,6 +39,8 @@ The project follows [Semantic Versioning](https://semver.org/).
   versions without a system clipboard notice, and hinted at slow providers.
 - Fixed stale keyboard space on Android 8-10 screens, explained where to find
   "Reword me" in selection menus, and explained Ollama addresses on phones.
+- Fixed the Android popup opening the keyboard over its own result on
+  Android 8-9 after a stage change.
 - Hardened the Android draft after review, including atomic configuration
   writes, serialized Keystore access, request timeouts, user-configured Ollama
   cleartext support, edge-to-edge/keyboard insets, dark Material menus,
