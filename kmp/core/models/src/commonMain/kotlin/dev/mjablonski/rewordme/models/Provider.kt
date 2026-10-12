@@ -107,7 +107,15 @@ enum class ProviderKind(val id: String) {
     fun includesModel(modelId: String): Boolean {
         val lower = modelId.lowercase()
         return when (this) {
-            ANTHROPIC, GEMINI -> true // their APIs are filtered during parsing
+            ANTHROPIC -> true // its API is filtered during parsing
+            // generateContent alone also admits speech, image, transcription
+            // and agent models, plus Gemma, which rejects system instructions;
+            // the cheapest-tier pick landed on "...-flash-lite-tts" and every
+            // automatic rewrite failed with a 400.
+            GEMINI -> listOf(
+                "tts", "image", "audio", "transcribe", "live", "embedding", "computer-use",
+                "robotics", "customtools", "banana", "gemma", "aqa", "imagen", "veo"
+            ).none(lower::contains)
             CODEX, CLAUDE_ACCOUNT, LOCAL -> true // locally supplied catalogs
             OPENAI -> {
                 val excluded = listOf(

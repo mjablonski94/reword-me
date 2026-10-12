@@ -97,6 +97,26 @@ class ModelResolverTest {
     }
 
     @Test
+    fun automaticSkipsModelsThatCannotRewriteText() = runBlocking {
+        val listing = object : ModelListing {
+            override suspend fun listModels(
+                provider: ProviderKind,
+                apiKey: String,
+                endpoint: String?
+            ) = listOf(
+                ModelInfo("gemini-3.8-flash-lite-tts"),
+                ModelInfo("gemini-3.1-flash-lite-image"),
+                ModelInfo("gemini-3.5-flash-lite"),
+                ModelInfo("gemma-4-26b-a4b-it")
+            )
+        }
+
+        val model = ModelResolver().model(RewordConfig(provider = ProviderKind.GEMINI), "key", listing)
+
+        assertEquals("gemini-3.5-flash-lite", model)
+    }
+
+    @Test
     fun automaticCacheIncludesApiKey() = runBlocking {
         val listing = Listing()
         val resolver = ModelResolver()

@@ -20,7 +20,10 @@ class ModelResolver {
         val key = CacheKey(config.provider, apiKey, config.endpointOverride)
         mutex.withLock { cache[key] }?.let { return it }
 
+        // Same filter Settings applies, so Automatic can never pick a model
+        // the picker would not even offer.
         val models = service.listModels(config.provider, apiKey, config.endpointOverride)
+            .filter { config.provider.includesModel(it.id) }
         val pick = ModelSelection.defaultModel(config.provider, models)
             ?: throw RewordError.NoModelAvailable
         mutex.withLock { cache[key] = pick.id }
