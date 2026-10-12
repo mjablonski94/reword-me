@@ -19,6 +19,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -226,7 +227,11 @@ private fun Header(state: PopupState, onIntent: (PopupIntent) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 28.dp)
+        // focusable(): before API 28 the window hands focus to the first
+        // focusable node - on open, and again whenever a stage swap removes
+        // the focused one. Without a target up here that was the describe
+        // field, and the keyboard popped over every result.
+        modifier = Modifier.fillMaxWidth().heightIn(min = 28.dp).focusable()
     ) {
         AnimatedVisibility(
             visible = state.stage == PopupStage.RESULT || state.stage == PopupStage.FAILED,
